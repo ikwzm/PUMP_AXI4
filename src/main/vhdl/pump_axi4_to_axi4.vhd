@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
---!     @version 0.0.6
---!     @date    2013/1/9
+--!     @version 0.0.8
+--!     @date    2013/1/15
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -239,7 +239,12 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     ------------------------------------------------------------------------------
     -- バッファデータのビット幅.
     ------------------------------------------------------------------------------
-    constant BUF_DATA_WIDTH     : integer := O_DATA_WIDTH;
+    function MAX(A,B:integer) return integer is begin
+        if (A > B) then return A;
+        else            return B;
+        end if;
+    end function;
+    constant BUF_DATA_WIDTH     : integer := MAX(O_DATA_WIDTH,I_DATA_WIDTH);
     ------------------------------------------------------------------------------
     -- バッファデータのバイト数(２のべき乗値).
     ------------------------------------------------------------------------------
@@ -305,6 +310,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     signal   i_addr_up_ben      : std_logic_vector(I_ADDR_WIDTH     -1 downto 0);
     signal   i_req_addr         : std_logic_vector(I_ADDR_WIDTH     -1 downto 0);
     signal   i_req_size         : std_logic_vector(SIZE_REGS_BITS   -1 downto 0);
+    signal   i_req_buf_ptr      : std_logic_vector(BUF_DEPTH        -1 downto 0);
     signal   i_req_first        : std_logic;
     signal   i_req_last         : std_logic;
     signal   i_req_valid        : std_logic;
@@ -345,6 +351,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     signal   o_addr_up_ben      : std_logic_vector(I_ADDR_WIDTH     -1 downto 0);
     signal   o_req_addr         : std_logic_vector(I_ADDR_WIDTH     -1 downto 0);
     signal   o_req_size         : std_logic_vector(SIZE_REGS_BITS   -1 downto 0);
+    signal   o_req_buf_ptr      : std_logic_vector(BUF_DEPTH        -1 downto 0);
     signal   o_req_first        : std_logic;
     signal   o_req_last         : std_logic;
     signal   o_req_valid        : std_logic;
@@ -379,6 +386,10 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     ------------------------------------------------------------------------------
     -- バッファへのアクセス用信号群.
     ------------------------------------------------------------------------------
+    constant BUF_INIT_PTR       : std_logic_vector(BUF_DEPTH        -1 downto 0) := (others => '0');
+    constant BUF_UP_BEN         : std_logic_vector(BUF_DEPTH        -1 downto 0) := (others => '1');
+    signal   i_buf_ptr_init     : std_logic_vector(BUF_DEPTH        -1 downto 0);
+    signal   o_buf_ptr_init     : std_logic_vector(BUF_DEPTH        -1 downto 0);
     signal   buf_wdata          : std_logic_vector(BUF_DATA_WIDTH   -1 downto 0);
     signal   buf_ben            : std_logic_vector(BUF_DATA_WIDTH/8 -1 downto 0);
     signal   buf_we             : std_logic_vector(BUF_DATA_WIDTH/8 -1 downto 0);
@@ -571,6 +582,7 @@ begin
             REQ_PROT        => I_PROT          , -- In  :
             REQ_QOS         => I_QOS           , -- In  :
             REQ_REGION      => I_REGION        , -- In  :
+            REQ_BUF_PTR     => i_req_buf_ptr   , -- In  :
             REQ_FIRST       => i_req_first     , -- In  :
             REQ_LAST        => i_req_last      , -- In  :
             REQ_SPECULATIVE => I_SPECULATIVE   , -- In  :
@@ -686,6 +698,7 @@ begin
             REQ_PROT        => O_PROT          , -- In  :
             REQ_QOS         => O_QOS           , -- In  :
             REQ_REGION      => O_REGION        , -- In  :
+            REQ_BUF_PTR     => o_req_buf_ptr   , -- In  :
             REQ_FIRST       => o_req_first     , -- In  :
             REQ_LAST        => o_req_last      , -- In  :
             REQ_SPECULATIVE => O_SPECULATIVE   , -- In  :
@@ -833,6 +846,29 @@ begin
             ZERO            => open            ,
             NEG             => open
        );
+    ------------------------------------------------------------------------------
+    -- 
+    ------------------------------------------------------------------------------
+    I_BUF_PTR: PUMP_COUNT_UP_REGISTER
+        generic map (
+            VALID           => 1               ,
+            BITS            => BUF_DEPTH       ,
+            REGS_BITS       => BUF_DEPTH
+        )
+        port map (
+            CLK             => ACLK            ,
+            RST             => RST             ,
+            CLR             => CLR             ,
+            REGS_WEN        => i_buf_ptr_init  ,
+            REGS_WDATA      => BUF_INIT_PTR    ,
+            REGS_RDATA      => open            ,
+            UP_ENA          => i_running       ,
+            UP_VAL          => i_ack_valid     ,
+            UP_BEN          => BUF_UP_BEN      ,
+            UP_SIZE         => i_ack_size      ,
+            COUNTER         => i_req_buf_ptr
+       );
+    i_buf_ptr_init <= (others => '1') when (i_open = '0') else (others => '0');
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
@@ -1000,6 +1036,29 @@ begin
             ZERO            => open            ,
             NEG             => open
        );
+    ------------------------------------------------------------------------------
+    -- 
+    ------------------------------------------------------------------------------
+    O_BUF_PTR: PUMP_COUNT_UP_REGISTER
+        generic map (
+            VALID           => 1               ,
+            BITS            => BUF_DEPTH       ,
+            REGS_BITS       => BUF_DEPTH
+        )
+        port map (
+            CLK             => ACLK            ,
+            RST             => RST             ,
+            CLR             => CLR             ,
+            REGS_WEN        => o_buf_ptr_init  ,
+            REGS_WDATA      => BUF_INIT_PTR    ,
+            REGS_RDATA      => open            ,
+            UP_ENA          => o_running       ,
+            UP_VAL          => o_ack_valid     ,
+            UP_BEN          => BUF_UP_BEN      ,
+            UP_SIZE         => o_ack_size      ,
+            COUNTER         => o_req_buf_ptr
+       );
+    o_buf_ptr_init <= (others => '1') when (o_open = '0') else (others => '0');
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
