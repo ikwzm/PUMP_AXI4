@@ -200,8 +200,8 @@ use     PIPEWORK.COMPONENTS.SDPRAM;
 use     PIPEWORK.PUMP_COMPONENTS.PUMP_COUNT_UP_REGISTER;
 use     PIPEWORK.PUMP_COMPONENTS.PUMP_COUNT_DOWN_REGISTER;
 use     PIPEWORK.PUMP_COMPONENTS.PUMP_CONTROL_REGISTER;
-use     PIPEWORK.PUMP_COMPONENTS.PUMP_IN_VALVE;
-use     PIPEWORK.PUMP_COMPONENTS.PUMP_OUT_VALVE;
+use     PIPEWORK.PUMP_COMPONENTS.PUMP_INTAKE_VALVE;
+use     PIPEWORK.PUMP_COMPONENTS.PUMP_OUTLET_VALVE;
 architecture RTL of PUMP_AXI4_TO_AXI4 is
     ------------------------------------------------------------------------------
     -- リセット信号.
@@ -939,7 +939,7 @@ begin
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
-    I_VALVE: PUMP_IN_VALVE 
+    I_VALVE: PUMP_INTAKE_VALVE 
         generic map (
             COUNT_BITS              => SIZE_BITS       ,
             SIZE_BITS               => SIZE_BITS       
@@ -1129,7 +1129,7 @@ begin
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
-    O_VALVE: PUMP_OUT_VALVE 
+    O_VALVE: PUMP_OUTLET_VALVE 
         generic map (
             COUNT_BITS              => SIZE_BITS       ,
             SIZE_BITS               => SIZE_BITS       
