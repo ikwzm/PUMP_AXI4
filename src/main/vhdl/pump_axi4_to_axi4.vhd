@@ -531,10 +531,11 @@ begin
             AXI4_ADDR_WIDTH => I_ADDR_WIDTH    ,
             AXI4_DATA_WIDTH => I_DATA_WIDTH    ,
             AXI4_ID_WIDTH   => I_ID_WIDTH      ,
+            VAL_BITS        => 1               ,
             SIZE_BITS       => SIZE_BITS       ,
             REQ_SIZE_BITS   => SIZE_REGS_BITS  ,
-            REQ_SIZE_ENABLE => 1               ,
-            FLOW_ENABLE     => 1               ,
+            REQ_SIZE_VALID  => 1               ,
+            FLOW_VALID      => 1               ,
             BUF_DATA_WIDTH  => BUF_DATA_WIDTH  ,
             BUF_PTR_BITS    => BUF_DEPTH       ,
             XFER_MIN_SIZE   => MAX_XFER_SIZE   ,
@@ -589,14 +590,14 @@ begin
             REQ_LAST        => i_req_last      , -- In  :
             REQ_SPECULATIVE => I_SPECULATIVE   , -- In  :
             REQ_SAFETY      => I_SAFETY        , -- In  :
-            REQ_VAL         => i_req_valid     , -- In  :
+            REQ_VAL(0)      => i_req_valid     , -- In  :
             REQ_RDY         => i_req_ready     , -- Out :
             XFER_SIZE_SEL   => I_XFER_SIZE_SEL , -- In  :
             XFER_BUSY       => i_xfer_busy     , -- Out :
             -----------------------------------------------------------------------
             -- Response Signals.
             -----------------------------------------------------------------------
-            ACK_VAL         => i_ack_valid     , -- Out :
+            ACK_VAL(0)      => i_ack_valid     , -- Out :
             ACK_ERROR       => i_ack_error     , -- Out :
             ACK_NEXT        => i_ack_next      , -- Out :
             ACK_LAST        => i_ack_last      , -- Out :
@@ -620,14 +621,14 @@ begin
             -----------------------------------------------------------------------
             -- Push Size Signals.
             -----------------------------------------------------------------------
-            PUSH_VAL        => push_valid      , -- Out :
+            PUSH_VAL(0)     => push_valid      , -- Out :
             PUSH_SIZE       => push_size       , -- Out :
             PUSH_LAST       => push_last       , -- Out :
             PUSH_ERROR      => push_error      , -- Out :
             -----------------------------------------------------------------------
             -- Read Buffer Interface Signals.
             -----------------------------------------------------------------------
-            BUF_WEN         => buf_wen         , -- Out :
+            BUF_WEN(0)      => buf_wen         , -- Out :
             BUF_BEN         => buf_ben         , -- Out :
             BUF_DATA        => buf_wdata       , -- Out :
             BUF_PTR         => buf_wptr        , -- Out :
@@ -642,10 +643,11 @@ begin
             AXI4_ADDR_WIDTH => O_ADDR_WIDTH    ,
             AXI4_DATA_WIDTH => O_DATA_WIDTH    ,
             AXI4_ID_WIDTH   => O_ID_WIDTH      ,
+            VAL_BITS        => 1               ,
             SIZE_BITS       => SIZE_BITS       ,
             REQ_SIZE_BITS   => SIZE_REGS_BITS  ,
-            REQ_SIZE_ENABLE => 1               ,
-            FLOW_ENABLE     => 1               ,
+            REQ_SIZE_VALID  => 1               ,
+            FLOW_VALID      => 1               ,
             BUF_DATA_WIDTH  => BUF_DATA_WIDTH  ,
             BUF_PTR_BITS    => BUF_DEPTH       ,
             XFER_MIN_SIZE   => MAX_XFER_SIZE   ,
@@ -707,14 +709,14 @@ begin
             REQ_LAST        => o_req_last      , -- In  :
             REQ_SPECULATIVE => O_SPECULATIVE   , -- In  :
             REQ_SAFETY      => O_SAFETY        , -- In  :
-            REQ_VAL         => o_req_valid     , -- In  :
+            REQ_VAL(0)      => o_req_valid     , -- In  :
             REQ_RDY         => o_req_ready     , -- Out :
             XFER_SIZE_SEL   => O_XFER_SIZE_SEL , -- In  :
             XFER_BUSY       => o_xfer_busy     , -- Out :
             -----------------------------------------------------------------------
             -- Response Signals.
             -----------------------------------------------------------------------
-            ACK_VAL         => o_ack_valid     , -- Out :
+            ACK_VAL(0)      => o_ack_valid     , -- Out :
             ACK_ERROR       => o_ack_error     , -- Out :
             ACK_NEXT        => o_ack_next      , -- Out :
             ACK_LAST        => o_ack_last      , -- Out :
@@ -738,7 +740,7 @@ begin
             -----------------------------------------------------------------------
             -- Pull Size Signals.
             -----------------------------------------------------------------------
-            PULL_VAL        => pull_valid      , -- Out :
+            PULL_VAL(0)     => pull_valid      , -- Out :
             PULL_SIZE       => pull_size       , -- Out :
             PULL_LAST       => pull_last       , -- Out :
             PULL_ERROR      => pull_error      , -- Out :
