@@ -63,9 +63,13 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1358151340" xil_pn:in_ck="-2598531613247310563" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1358151339">
+    <transform xil_pn:end_ts="1358592306" xil_pn:in_ck="5104436878389476933" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1358592306">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForInputs"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="InputChanged"/>
+      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_channel_player.vhd"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_core.vhd"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_master_player.vhd"/>
@@ -99,10 +103,11 @@
       <outfile xil_pn:name="../../../PipeWork/src/components/syncronizer_input_pending_register.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_components.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_control_register.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_controller.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_down_register.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_up_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_in_valve.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_out_valve.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_intake_valve.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_outlet_valve.vhd"/>
       <outfile xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4.vhd"/>
       <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench.vhd"/>
       <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench_32_32.vhd"/>
@@ -119,9 +124,14 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1358151340" xil_pn:in_ck="-2598531613247310563" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1358151340">
+    <transform xil_pn:end_ts="1358592306" xil_pn:in_ck="5104436878389476933" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1358592306">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForInputs"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="InputChanged"/>
+      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_channel_player.vhd"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_core.vhd"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_master_player.vhd"/>
@@ -155,26 +165,36 @@
       <outfile xil_pn:name="../../../PipeWork/src/components/syncronizer_input_pending_register.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_components.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_control_register.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_controller.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_down_register.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_up_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_in_valve.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_out_valve.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_intake_valve.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_outlet_valve.vhd"/>
       <outfile xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4.vhd"/>
       <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench.vhd"/>
       <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench_32_32.vhd"/>
     </transform>
-    <transform xil_pn:end_ts="1358151378" xil_pn:in_ck="-2598531613247310563" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="3339511213927817329" xil_pn:start_ts="1358151340">
+    <transform xil_pn:end_ts="1358592356" xil_pn:in_ck="5104436878389476933" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="3339511213927817329" xil_pn:start_ts="1358592306">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForInputs"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="InputChanged"/>
+      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_beh.prj"/>
       <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_isim_beh.exe"/>
       <outfile xil_pn:name="fuse.log"/>
       <outfile xil_pn:name="isim"/>
+      <outfile xil_pn:name="isim.log"/>
       <outfile xil_pn:name="xilinxsim.ini"/>
     </transform>
-    <transform xil_pn:end_ts="1358151379" xil_pn:in_ck="1464123064449591107" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-7906703972340566701" xil_pn:start_ts="1358151378">
+    <transform xil_pn:end_ts="1358592434" xil_pn:in_ck="1464123064449591107" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-7906703972340566701" xil_pn:start_ts="1358592433">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_isim_beh.wdb"/>
       <outfile xil_pn:name="isim.cmd"/>
       <outfile xil_pn:name="isim.log"/>

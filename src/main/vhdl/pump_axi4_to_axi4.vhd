@@ -197,11 +197,7 @@ use     PIPEWORK.AXI4_COMPONENTS.AXI4_MASTER_READ_INTERFACE;
 use     PIPEWORK.AXI4_COMPONENTS.AXI4_MASTER_WRITE_INTERFACE;
 use     PIPEWORK.AXI4_COMPONENTS.AXI4_REGISTER_INTERFACE;
 use     PIPEWORK.COMPONENTS.SDPRAM;
-use     PIPEWORK.PUMP_COMPONENTS.PUMP_COUNT_UP_REGISTER;
-use     PIPEWORK.PUMP_COMPONENTS.PUMP_COUNT_DOWN_REGISTER;
-use     PIPEWORK.PUMP_COMPONENTS.PUMP_CONTROL_REGISTER;
-use     PIPEWORK.PUMP_COMPONENTS.PUMP_INTAKE_VALVE;
-use     PIPEWORK.PUMP_COMPONENTS.PUMP_OUTLET_VALVE;
+use     PIPEWORK.PUMP_COMPONENTS.PUMP_CONTROLLER;
 architecture RTL of PUMP_AXI4_TO_AXI4 is
     ------------------------------------------------------------------------------
     -- リセット信号.
@@ -250,21 +246,6 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     ------------------------------------------------------------------------------
     constant BUF_DATA_SIZE      : integer := CALC_DATA_SIZE(BUF_DATA_WIDTH);
     ------------------------------------------------------------------------------
-    -- バッファのバイト数.
-    ------------------------------------------------------------------------------
-    constant BUF_BYTES          : std_logic_vector(SIZE_BITS-1 downto 0) := 
-                                  std_logic_vector(to_unsigned(2**BUF_DEPTH  , SIZE_BITS));
-    ------------------------------------------------------------------------------
-    -- 入力側の閾値. フローカウンタがこの値以下の時に入力する.
-    ------------------------------------------------------------------------------
-    constant I_THRESHOLD_SIZE   : std_logic_vector(SIZE_BITS-1 downto 0) :=
-                                  std_logic_vector(to_unsigned(2**BUF_DEPTH-MAX_XFER_BYTES, SIZE_BITS));
-    ------------------------------------------------------------------------------
-    -- 出力側の閾値. フローカウンタがこの値以上の時に出力する.
-    ------------------------------------------------------------------------------
-    constant O_THRESHOLD_SIZE   : std_logic_vector(SIZE_BITS-1 downto 0) :=
-                                  std_logic_vector(to_unsigned(MAX_XFER_BYTES, SIZE_BITS));
-    ------------------------------------------------------------------------------
     -- レジスタアクセスインターフェースのアドレスのビット数.
     ------------------------------------------------------------------------------
     constant REGS_ADDR_WIDTH    : integer := 5;
@@ -307,7 +288,6 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     ------------------------------------------------------------------------------
     -- 入力側の各種信号群.
     ------------------------------------------------------------------------------
-    signal   i_addr_up_ben      : std_logic_vector(I_ADDR_WIDTH     -1 downto 0);
     signal   i_req_addr         : std_logic_vector(I_ADDR_WIDTH     -1 downto 0);
     signal   i_req_size         : std_logic_vector(SIZE_REGS_BITS   -1 downto 0);
     signal   i_req_buf_ptr      : std_logic_vector(BUF_DEPTH        -1 downto 0);
@@ -348,7 +328,6 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     ------------------------------------------------------------------------------
     -- 出力側の各種信号群.
     ------------------------------------------------------------------------------
-    signal   o_addr_up_ben      : std_logic_vector(I_ADDR_WIDTH     -1 downto 0);
     signal   o_req_addr         : std_logic_vector(I_ADDR_WIDTH     -1 downto 0);
     signal   o_req_size         : std_logic_vector(SIZE_REGS_BITS   -1 downto 0);
     signal   o_req_buf_ptr      : std_logic_vector(BUF_DEPTH        -1 downto 0);
@@ -386,10 +365,6 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     ------------------------------------------------------------------------------
     -- バッファへのアクセス用信号群.
     ------------------------------------------------------------------------------
-    constant BUF_INIT_PTR       : std_logic_vector(BUF_DEPTH        -1 downto 0) := (others => '0');
-    constant BUF_UP_BEN         : std_logic_vector(BUF_DEPTH        -1 downto 0) := (others => '1');
-    signal   i_buf_ptr_init     : std_logic_vector(BUF_DEPTH        -1 downto 0);
-    signal   o_buf_ptr_init     : std_logic_vector(BUF_DEPTH        -1 downto 0);
     signal   buf_wdata          : std_logic_vector(BUF_DATA_WIDTH   -1 downto 0);
     signal   buf_ben            : std_logic_vector(BUF_DATA_WIDTH/8 -1 downto 0);
     signal   buf_we             : std_logic_vector(BUF_DATA_WIDTH/8 -1 downto 0);
@@ -421,7 +396,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant O_CTRL_START_POS   : integer := 8*O_CTRL_REGS_ADDR + 24;
     constant O_CTRL_FIRST_POS   : integer := 8*O_CTRL_REGS_ADDR + 25;
     constant O_CTRL_LAST_POS    : integer := 8*O_CTRL_REGS_ADDR + 26;
-    constant O_CTRL_EVREQ_POS   : integer := 8*O_CTRL_REGS_ADDR + 27;
+    constant O_CTRL_DONE_EN_POS : integer := 8*O_CTRL_REGS_ADDR + 27;
     constant O_CTRL_RESV_POS    : integer := 8*O_CTRL_REGS_ADDR + 28;
     constant O_CTRL_STOP_POS    : integer := 8*O_CTRL_REGS_ADDR + 29;
     constant O_CTRL_PAUSE_POS   : integer := 8*O_CTRL_REGS_ADDR + 30;
@@ -439,7 +414,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant I_CTRL_START_POS   : integer := 8*I_CTRL_REGS_ADDR + 24;
     constant I_CTRL_FIRST_POS   : integer := 8*I_CTRL_REGS_ADDR + 25;
     constant I_CTRL_LAST_POS    : integer := 8*I_CTRL_REGS_ADDR + 26;
-    constant I_CTRL_EVREQ_POS   : integer := 8*I_CTRL_REGS_ADDR + 27;
+    constant I_CTRL_DONE_EN_POS : integer := 8*I_CTRL_REGS_ADDR + 27;
     constant I_CTRL_RESV_POS    : integer := 8*I_CTRL_REGS_ADDR + 28;
     constant I_CTRL_STOP_POS    : integer := 8*I_CTRL_REGS_ADDR + 29;
     constant I_CTRL_PAUSE_POS   : integer := 8*I_CTRL_REGS_ADDR + 30;
@@ -809,172 +784,202 @@ begin
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
-    I_ADDR_REGS: PUMP_COUNT_UP_REGISTER
+    CTRL: PUMP_CONTROLLER 
         generic map (
-            VALID           => 1               ,
-            BITS            => I_ADDR_WIDTH    ,
-            REGS_BITS       => ADDR_REGS_BITS
+            I_REQ_ADDR_VALID=> 1               , 
+            I_REQ_ADDR_BITS => I_ADDR_WIDTH    ,
+            I_REG_ADDR_BITS => ADDR_REGS_BITS  ,
+            I_REQ_SIZE_VALID=> 1               ,
+            I_REQ_SIZE_BITS => SIZE_REGS_BITS  ,
+            I_REG_SIZE_BITS => SIZE_REGS_BITS  ,
+            I_REG_MODE_BITS => 16              ,
+            I_REG_STAT_BITS => 6               ,
+            O_REQ_ADDR_VALID=> 1               ,
+            O_REQ_ADDR_BITS => O_ADDR_WIDTH    ,
+            O_REG_ADDR_BITS => ADDR_REGS_BITS  ,
+            O_REQ_SIZE_VALID=> 1               ,
+            O_REQ_SIZE_BITS => SIZE_REGS_BITS  ,
+            O_REG_SIZE_BITS => SIZE_REGS_BITS  ,
+            O_REG_MODE_BITS => 16              ,
+            O_REG_STAT_BITS => 6               ,
+            BUF_DEPTH       => BUF_DEPTH       ,
+            I_THRESHOLD     => 2**BUF_DEPTH-MAX_XFER_BYTES,
+            O_THRESHOLD     => MAX_XFER_BYTES
         )
         port map (
+        -------------------------------------------------------------------------------
+        -- Clock & Reset Signals.
+        -------------------------------------------------------------------------------
             CLK             => ACLK            ,
             RST             => RST             ,
             CLR             => CLR             ,
-            REGS_WEN        => regs_wen (I_ADDR_REGS_HI downto I_ADDR_REGS_LO),
-            REGS_WDATA      => regs_wbit(I_ADDR_REGS_HI downto I_ADDR_REGS_LO),
-            REGS_RDATA      => regs_rbit(I_ADDR_REGS_HI downto I_ADDR_REGS_LO),
-            UP_ENA          => i_running       ,
-            UP_VAL          => i_ack_valid     ,
-            UP_BEN          => i_addr_up_ben   ,
-            UP_SIZE         => i_ack_size      ,
-            COUNTER         => i_req_addr
-       );
-    i_addr_up_ben <= (others => '1') when (I_BURST_TYPE = AXI4_ABURST_INCR) else (others => '0');
-    ------------------------------------------------------------------------------
-    -- 
-    ------------------------------------------------------------------------------
-    I_SIZE_REGS: PUMP_COUNT_DOWN_REGISTER
-        generic map (
-            VALID           => 1               ,
-            BITS            => SIZE_REGS_BITS  ,
-            REGS_BITS       => SIZE_REGS_BITS  
-        )
-        port map (
-            CLK             => ACLK            ,
-            RST             => RST             ,
-            CLR             => CLR             ,
-            REGS_WEN        => regs_wen (I_SIZE_REGS_HI downto I_SIZE_REGS_LO),
-            REGS_WDATA      => regs_wbit(I_SIZE_REGS_HI downto I_SIZE_REGS_LO),
-            REGS_RDATA      => regs_rbit(I_SIZE_REGS_HI downto I_SIZE_REGS_LO),
-            DN_ENA          => i_running       ,
-            DN_VAL          => i_ack_valid     ,
-            DN_SIZE         => i_ack_size      ,
-            COUNTER         => i_req_size      ,
-            ZERO            => open            ,
-            NEG             => open
-       );
-    ------------------------------------------------------------------------------
-    -- 
-    ------------------------------------------------------------------------------
-    I_BUF_PTR: PUMP_COUNT_UP_REGISTER
-        generic map (
-            VALID           => 1               ,
-            BITS            => BUF_DEPTH       ,
-            REGS_BITS       => BUF_DEPTH
-        )
-        port map (
-            CLK             => ACLK            ,
-            RST             => RST             ,
-            CLR             => CLR             ,
-            REGS_WEN        => i_buf_ptr_init  ,
-            REGS_WDATA      => BUF_INIT_PTR    ,
-            REGS_RDATA      => open            ,
-            UP_ENA          => i_running       ,
-            UP_VAL          => i_ack_valid     ,
-            UP_BEN          => BUF_UP_BEN      ,
-            UP_SIZE         => i_ack_size      ,
-            COUNTER         => i_req_buf_ptr
-       );
-    i_buf_ptr_init <= (others => '1') when (i_open = '0') else (others => '0');
-    ------------------------------------------------------------------------------
-    -- 
-    ------------------------------------------------------------------------------
-    I_CTRL_REGS: PUMP_CONTROL_REGISTER
-        generic map (
-            MODE_BITS               => 18              ,
-            STAT_BITS               =>  6              
-        )
-        port map (
-            CLK                     => ACLK            ,
-            RST                     => RST             ,
-            CLR                     => CLR             ,
-            RESET_WRITE             => regs_wen (I_CTRL_RESET_POS),
-            RESET_WDATA             => regs_wbit(I_CTRL_RESET_POS),
-            RESET_RDATA             => regs_rbit(I_CTRL_RESET_POS),
-            START_WRITE             => regs_wen (I_CTRL_START_POS),
-            START_WDATA             => regs_wbit(I_CTRL_START_POS),
-            START_RDATA             => regs_rbit(I_CTRL_START_POS),
-            STOP_WRITE              => regs_wen (I_CTRL_STOP_POS ),
-            STOP_WDATA              => regs_wbit(I_CTRL_STOP_POS ),
-            STOP_RDATA              => regs_rbit(I_CTRL_STOP_POS ),
-            PAUSE_WRITE             => regs_wen (I_CTRL_PAUSE_POS),
-            PAUSE_WDATA             => regs_wbit(I_CTRL_PAUSE_POS),
-            PAUSE_RDATA             => regs_rbit(I_CTRL_PAUSE_POS),
-            FIRST_WRITE             => regs_wen (I_CTRL_FIRST_POS),
-            FIRST_WDATA             => regs_wbit(I_CTRL_FIRST_POS),
-            FIRST_RDATA             => regs_rbit(I_CTRL_FIRST_POS),
-            LAST_WRITE              => regs_wen (I_CTRL_LAST_POS ),
-            LAST_WDATA              => regs_wbit(I_CTRL_LAST_POS ),
-            LAST_RDATA              => regs_rbit(I_CTRL_LAST_POS ),
-            DONE_WRITE              => regs_wen (I_CTRL_DONE_POS ),
-            DONE_WDATA              => regs_wbit(I_CTRL_DONE_POS ),
-            DONE_RDATA              => regs_rbit(I_CTRL_DONE_POS ),
-            ERROR_WRITE             => regs_wen (I_CTRL_ERROR_POS),
-            ERROR_WDATA             => regs_wbit(I_CTRL_ERROR_POS),
-            ERROR_RDATA             => regs_rbit(I_CTRL_ERROR_POS),
-            MODE_WRITE(15 downto  0)=> regs_wen (I_CTRL_MODE_HI downto I_CTRL_MODE_LO),
-            MODE_WRITE(16)          => regs_wen (I_CTRL_EVREQ_POS),
-            MODE_WRITE(17)          => regs_wen (I_CTRL_RESV_POS ),
-            MODE_WDATA(15 downto  0)=> regs_wbit(I_CTRL_MODE_HI downto I_CTRL_MODE_LO),
-            MODE_WDATA(16)          => regs_wbit(I_CTRL_EVREQ_POS),
-            MODE_WDATA(17)          => regs_wbit(I_CTRL_RESV_POS ),
-            MODE_RDATA(15 downto  0)=> regs_rbit(I_CTRL_MODE_HI downto I_CTRL_MODE_LO),
-            MODE_RDATA(16)          => regs_rbit(I_CTRL_EVREQ_POS),
-            MODE_RDATA(17)          => regs_rbit(I_CTRL_RESV_POS ),
-            STAT_WRITE( 5 downto  0)=> regs_wen (I_CTRL_STAT_HI downto I_CTRL_STAT_LO),
-            STAT_WDATA( 5 downto  0)=> regs_wbit(I_CTRL_STAT_HI downto I_CTRL_STAT_LO),
-            STAT_RDATA( 5 downto  0)=> regs_rbit(I_CTRL_STAT_HI downto I_CTRL_STAT_LO),
-            STAT                    => i_stat_in       ,
-            REQ_VALID               => i_req_valid     ,
-            REQ_FIRST               => i_req_first     ,
-            REQ_LAST                => i_req_last      ,
-            REQ_READY               => i_req_ready     ,
-            ACK_VALID               => i_ack_valid     ,
-            ACK_ERROR               => i_ack_error     ,
-            ACK_NEXT                => i_ack_next      ,
-            ACK_LAST                => i_ack_last      ,
-            ACK_STOP                => i_ack_stop      ,
-            ACK_NONE                => i_ack_none      ,
-            VALVE_OPEN              => i_open          ,
-            XFER_DONE               => i_done          ,
-            XFER_RUNNING            => i_running       
+        -------------------------------------------------------------------------------
+        -- Intake Control Register Interface.
+        -------------------------------------------------------------------------------
+            I_ADDR_L        => regs_wen (I_ADDR_REGS_HI downto I_ADDR_REGS_LO),
+            I_ADDR_D        => regs_wbit(I_ADDR_REGS_HI downto I_ADDR_REGS_LO),
+            I_ADDR_Q        => regs_rbit(I_ADDR_REGS_HI downto I_ADDR_REGS_LO),
+            I_SIZE_L        => regs_wen (I_SIZE_REGS_HI downto I_SIZE_REGS_LO),
+            I_SIZE_D        => regs_wbit(I_SIZE_REGS_HI downto I_SIZE_REGS_LO),
+            I_SIZE_Q        => regs_rbit(I_SIZE_REGS_HI downto I_SIZE_REGS_LO),
+            I_MODE_L        => regs_wen (I_CTRL_MODE_HI downto I_CTRL_MODE_LO),
+            I_MODE_D        => regs_wbit(I_CTRL_MODE_HI downto I_CTRL_MODE_LO),
+            I_MODE_Q        => regs_rbit(I_CTRL_MODE_HI downto I_CTRL_MODE_LO),
+            I_STAT_L        => regs_wen (I_CTRL_STAT_HI downto I_CTRL_STAT_LO),
+            I_STAT_D        => regs_wbit(I_CTRL_STAT_HI downto I_CTRL_STAT_LO),
+            I_STAT_Q        => regs_rbit(I_CTRL_STAT_HI downto I_CTRL_STAT_LO),
+            I_STAT_I        => i_stat_in ,
+            I_RESET_L       => regs_wen (I_CTRL_RESET_POS),
+            I_RESET_D       => regs_wbit(I_CTRL_RESET_POS),
+            I_RESET_Q       => regs_rbit(I_CTRL_RESET_POS),
+            I_START_L       => regs_wen (I_CTRL_START_POS),
+            I_START_D       => regs_wbit(I_CTRL_START_POS),
+            I_START_Q       => regs_rbit(I_CTRL_START_POS),
+            I_STOP_L        => regs_wen (I_CTRL_STOP_POS ),
+            I_STOP_D        => regs_wbit(I_CTRL_STOP_POS ),
+            I_STOP_Q        => regs_rbit(I_CTRL_STOP_POS ),
+            I_PAUSE_L       => regs_wen (I_CTRL_PAUSE_POS),
+            I_PAUSE_D       => regs_wbit(I_CTRL_PAUSE_POS),
+            I_PAUSE_Q       => regs_rbit(I_CTRL_PAUSE_POS),
+            I_FIRST_L       => regs_wen (I_CTRL_FIRST_POS),
+            I_FIRST_D       => regs_wbit(I_CTRL_FIRST_POS),
+            I_FIRST_Q       => regs_rbit(I_CTRL_FIRST_POS),
+            I_LAST_L        => regs_wen (I_CTRL_LAST_POS ),
+            I_LAST_D        => regs_wbit(I_CTRL_LAST_POS ),
+            I_LAST_Q        => regs_rbit(I_CTRL_LAST_POS ),
+            I_DONE_EN_L     => regs_wen (I_CTRL_DONE_EN_POS ),
+            I_DONE_EN_D     => regs_wbit(I_CTRL_DONE_EN_POS ),
+            I_DONE_EN_Q     => regs_rbit(I_CTRL_DONE_EN_POS ),
+            I_DONE_ST_L     => regs_wen (I_CTRL_DONE_POS ),
+            I_DONE_ST_D     => regs_wbit(I_CTRL_DONE_POS ),
+            I_DONE_ST_Q     => regs_rbit(I_CTRL_DONE_POS ),
+            I_ERR_ST_L      => regs_wen (I_CTRL_ERROR_POS),
+            I_ERR_ST_D      => regs_wbit(I_CTRL_ERROR_POS),
+            I_ERR_ST_Q      => regs_rbit(I_CTRL_ERROR_POS),
+        -------------------------------------------------------------------------------
+        -- Outlet Control Register Interface.
+        -------------------------------------------------------------------------------
+            O_ADDR_L        => regs_wen (O_ADDR_REGS_HI downto O_ADDR_REGS_LO),
+            O_ADDR_D        => regs_wbit(O_ADDR_REGS_HI downto O_ADDR_REGS_LO),
+            O_ADDR_Q        => regs_rbit(O_ADDR_REGS_HI downto O_ADDR_REGS_LO),
+            O_SIZE_L        => regs_wen (O_SIZE_REGS_HI downto O_SIZE_REGS_LO),
+            O_SIZE_D        => regs_wbit(O_SIZE_REGS_HI downto O_SIZE_REGS_LO),
+            O_SIZE_Q        => regs_rbit(O_SIZE_REGS_HI downto O_SIZE_REGS_LO),
+            O_MODE_L        => regs_wen (O_CTRL_MODE_HI downto O_CTRL_MODE_LO),
+            O_MODE_D        => regs_wbit(O_CTRL_MODE_HI downto O_CTRL_MODE_LO),
+            O_MODE_Q        => regs_rbit(O_CTRL_MODE_HI downto O_CTRL_MODE_LO),
+            O_STAT_L        => regs_wen (O_CTRL_STAT_HI downto O_CTRL_STAT_LO),
+            O_STAT_D        => regs_wbit(O_CTRL_STAT_HI downto O_CTRL_STAT_LO),
+            O_STAT_Q        => regs_rbit(O_CTRL_STAT_HI downto O_CTRL_STAT_LO),
+            O_STAT_I        => o_stat_in ,
+            O_RESET_L       => regs_wen (O_CTRL_RESET_POS),
+            O_RESET_D       => regs_wbit(O_CTRL_RESET_POS),
+            O_RESET_Q       => regs_rbit(O_CTRL_RESET_POS),
+            O_START_L       => regs_wen (O_CTRL_START_POS),
+            O_START_D       => regs_wbit(O_CTRL_START_POS),
+            O_START_Q       => regs_rbit(O_CTRL_START_POS),
+            O_STOP_L        => regs_wen (O_CTRL_STOP_POS ),
+            O_STOP_D        => regs_wbit(O_CTRL_STOP_POS ),
+            O_STOP_Q        => regs_rbit(O_CTRL_STOP_POS ),
+            O_PAUSE_L       => regs_wen (O_CTRL_PAUSE_POS),
+            O_PAUSE_D       => regs_wbit(O_CTRL_PAUSE_POS),
+            O_PAUSE_Q       => regs_rbit(O_CTRL_PAUSE_POS),
+            O_FIRST_L       => regs_wen (O_CTRL_FIRST_POS),
+            O_FIRST_D       => regs_wbit(O_CTRL_FIRST_POS),
+            O_FIRST_Q       => regs_rbit(O_CTRL_FIRST_POS),
+            O_LAST_L        => regs_wen (O_CTRL_LAST_POS ),
+            O_LAST_D        => regs_wbit(O_CTRL_LAST_POS ),
+            O_LAST_Q        => regs_rbit(O_CTRL_LAST_POS ),
+            O_DONE_EN_L     => regs_wen (O_CTRL_DONE_EN_POS ),
+            O_DONE_EN_D     => regs_wbit(O_CTRL_DONE_EN_POS ),
+            O_DONE_EN_Q     => regs_rbit(O_CTRL_DONE_EN_POS ),
+            O_DONE_ST_L     => regs_wen (O_CTRL_DONE_POS ),
+            O_DONE_ST_D     => regs_wbit(O_CTRL_DONE_POS ),
+            O_DONE_ST_Q     => regs_rbit(O_CTRL_DONE_POS ),
+            O_ERR_ST_L      => regs_wen (O_CTRL_ERROR_POS),
+            O_ERR_ST_D      => regs_wbit(O_CTRL_ERROR_POS),
+            O_ERR_ST_Q      => regs_rbit(O_CTRL_ERROR_POS),
+        -------------------------------------------------------------------------------
+        -- Intake Transaction Command Request Signals.
+        -------------------------------------------------------------------------------
+            I_REQ_VALID     => i_req_valid     ,
+            I_REQ_ADDR      => i_req_addr      ,
+            I_REQ_SIZE      => i_req_size      ,
+            I_REQ_BUF_PTR   => i_req_buf_ptr   ,
+            I_REQ_FIRST     => i_req_first     ,
+            I_REQ_LAST      => i_req_last      ,
+            I_REQ_READY     => i_req_ready     ,
+        -------------------------------------------------------------------------------
+        -- Intake Transaction Command Acknowledge Signals.
+        -------------------------------------------------------------------------------
+            I_ACK_VALID     => i_ack_valid     ,
+            I_ACK_SIZE      => i_ack_size      ,
+            I_ACK_ERROR     => i_ack_error     ,
+            I_ACK_NEXT      => i_ack_next      ,
+            I_ACK_LAST      => i_ack_last      ,
+            I_ACK_STOP      => i_ack_stop      ,
+            I_ACK_NONE      => i_ack_none      ,
+        -------------------------------------------------------------------------------
+        -- Intake Flow Control Signals.
+        -------------------------------------------------------------------------------
+            I_FLOW_PAUSE    => i_flow_pause    ,
+            I_FLOW_STOP     => i_flow_stop     ,
+            I_FLOW_LAST     => i_flow_last     ,
+            I_FLOW_SIZE     => i_flow_size     ,
+            I_PUSH_VALID    => push_valid      ,
+            I_PUSH_LAST     => push_last       ,
+            I_PUSH_ERROR    => push_error      ,
+            I_PUSH_SIZE     => push_size       ,
+        -------------------------------------------------------------------------------
+        -- Intake Status.
+        -------------------------------------------------------------------------------
+            I_OPEN          => i_open          ,
+            I_RUNNING       => i_running       ,
+            I_DONE          => i_done          ,
+        -------------------------------------------------------------------------------
+        -- Outlet Transaction Command Request Signals.
+        -------------------------------------------------------------------------------
+            O_REQ_VALID     => o_req_valid     ,
+            O_REQ_ADDR      => o_req_addr      ,
+            O_REQ_SIZE      => o_req_size      ,
+            O_REQ_BUF_PTR   => o_req_buf_ptr   ,
+            O_REQ_FIRST     => o_req_first     ,
+            O_REQ_LAST      => o_req_last      ,
+            O_REQ_READY     => o_req_ready     ,
+        -------------------------------------------------------------------------------
+        -- Outlet Transaction Command Response Signals.
+        -------------------------------------------------------------------------------
+            O_ACK_VALID     => o_ack_valid     ,
+            O_ACK_SIZE      => o_ack_size      ,
+            O_ACK_ERROR     => o_ack_error     ,
+            O_ACK_NEXT      => o_ack_next      ,
+            O_ACK_LAST      => o_ack_last      ,
+            O_ACK_STOP      => o_ack_stop      ,
+            O_ACK_NONE      => o_ack_none      ,
+        -------------------------------------------------------------------------------
+        -- Outlet Flow Control Signals.
+        -------------------------------------------------------------------------------
+            O_FLOW_PAUSE    => o_flow_pause    ,
+            O_FLOW_STOP     => o_flow_stop     ,
+            O_FLOW_LAST     => o_flow_last     ,
+            O_FLOW_SIZE     => o_flow_size     ,
+            O_PULL_VALID    => pull_valid      ,
+            O_PULL_LAST     => pull_last       ,
+            O_PULL_ERROR    => pull_error      ,
+            O_PULL_SIZE     => pull_size       ,
+        -------------------------------------------------------------------------------
+        -- Outlet Status.
+        -------------------------------------------------------------------------------
+            O_OPEN          => o_open          ,
+            O_RUNNING       => o_running       ,
+            O_DONE          => o_done          
         );
+    regs_rbit(I_CTRL_RESV_POS) <= '0';
+    regs_rbit(O_CTRL_RESV_POS) <= '0';
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
-    I_VALVE: PUMP_INTAKE_VALVE 
-        generic map (
-            COUNT_BITS              => SIZE_BITS       ,
-            SIZE_BITS               => SIZE_BITS       
-        )
-        port map (
-            CLK                     => ACLK            ,
-            RST                     => RST             ,
-            CLR                     => CLR             ,
-            BUFFER_SIZE             => BUF_BYTES       ,
-            THRESHOLD_SIZE          => I_THRESHOLD_SIZE,
-            I_OPEN                  => i_open          ,
-            O_OPEN                  => o_open          ,
-            RESET                   => regs_rbit(I_CTRL_RESET_POS),
-            PAUSE                   => regs_rbit(I_CTRL_PAUSE_POS),
-            STOP                    => regs_rbit(I_CTRL_STOP_POS ),
-            PUSH_VAL                => i_ack_valid     ,
-            PUSH_LAST               => i_ack_last      ,
-            PUSH_SIZE               => i_ack_size      ,
-            PULL_VAL                => pull_valid      ,
-            PULL_LAST               => pull_last       ,
-            PULL_SIZE               => pull_size       ,
-            FLOW_PAUSE              => i_flow_pause    ,
-            FLOW_STOP               => i_flow_stop     ,
-            FLOW_LAST               => i_flow_last     ,
-            FLOW_SIZE               => i_flow_size     ,
-            FLOW_COUNT              => open            ,
-            FLOW_NEG                => open            ,
-            PAUSED                  => open            
-        );
-    ------------------------------------------------------------------------------
-    -- 
-    ------------------------------------------------------------------------------
-    i_stat_in(0) <= '1' when (i_done = '1' and regs_rbit(I_CTRL_EVREQ_POS) = '1') else '0';
+    i_stat_in(0) <= '0';
     i_stat_in(1) <= '0';
     i_stat_in(2) <= '0';
     i_stat_in(3) <= '0';
@@ -988,8 +993,7 @@ begin
                 I_IRQ <= '0';
         elsif (ACLK'event and ACLK = '1') then
             if (regs_rbit(I_CTRL_MODE_LO+0) = '1' and regs_rbit(I_CTRL_DONE_POS  ) = '1') or
-               (regs_rbit(I_CTRL_MODE_LO+1) = '1' and regs_rbit(I_CTRL_ERROR_POS ) = '1') or
-               (regs_rbit(I_CTRL_MODE_LO+2) = '1' and regs_rbit(I_CTRL_STAT_LO +0) = '1') then
+               (regs_rbit(I_CTRL_MODE_LO+1) = '1' and regs_rbit(I_CTRL_ERROR_POS ) = '1') then
                 I_IRQ <= '1';
             else
                 I_IRQ <= '0';
@@ -999,171 +1003,7 @@ begin
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
-    O_ADDR_REGS: PUMP_COUNT_UP_REGISTER
-        generic map (
-            VALID           => 1               ,
-            BITS            => O_ADDR_WIDTH    ,
-            REGS_BITS       => ADDR_REGS_BITS
-        )
-        port map (
-            CLK             => ACLK            ,
-            RST             => RST             ,
-            CLR             => CLR             ,
-            REGS_WEN        => regs_wen (O_ADDR_REGS_HI downto O_ADDR_REGS_LO),
-            REGS_WDATA      => regs_wbit(O_ADDR_REGS_HI downto O_ADDR_REGS_LO),
-            REGS_RDATA      => regs_rbit(O_ADDR_REGS_HI downto O_ADDR_REGS_LO),
-            UP_ENA          => o_running       ,
-            UP_VAL          => o_ack_valid     ,
-            UP_BEN          => o_addr_up_ben   ,
-            UP_SIZE         => o_ack_size      ,
-            COUNTER         => o_req_addr
-       );
-    o_addr_up_ben <= (others => '1') when (O_BURST_TYPE = AXI4_ABURST_INCR) else (others => '0');
-    ------------------------------------------------------------------------------
-    -- 
-    ------------------------------------------------------------------------------
-    O_SIZE_REGS: PUMP_COUNT_DOWN_REGISTER
-        generic map (
-            VALID           => 1               ,
-            BITS            => SIZE_REGS_BITS  ,
-            REGS_BITS       => SIZE_REGS_BITS
-        )
-        port map (
-            CLK             => ACLK            ,
-            RST             => RST             ,
-            CLR             => CLR             ,
-            REGS_WEN        => regs_wen (O_SIZE_REGS_HI downto O_SIZE_REGS_LO),
-            REGS_WDATA      => regs_wbit(O_SIZE_REGS_HI downto O_SIZE_REGS_LO),
-            REGS_RDATA      => regs_rbit(O_SIZE_REGS_HI downto O_SIZE_REGS_LO),
-            DN_ENA          => o_running       ,
-            DN_VAL          => o_ack_valid     ,
-            DN_SIZE         => o_ack_size      ,
-            COUNTER         => o_req_size      ,
-            ZERO            => open            ,
-            NEG             => open
-       );
-    ------------------------------------------------------------------------------
-    -- 
-    ------------------------------------------------------------------------------
-    O_BUF_PTR: PUMP_COUNT_UP_REGISTER
-        generic map (
-            VALID           => 1               ,
-            BITS            => BUF_DEPTH       ,
-            REGS_BITS       => BUF_DEPTH
-        )
-        port map (
-            CLK             => ACLK            ,
-            RST             => RST             ,
-            CLR             => CLR             ,
-            REGS_WEN        => o_buf_ptr_init  ,
-            REGS_WDATA      => BUF_INIT_PTR    ,
-            REGS_RDATA      => open            ,
-            UP_ENA          => o_running       ,
-            UP_VAL          => o_ack_valid     ,
-            UP_BEN          => BUF_UP_BEN      ,
-            UP_SIZE         => o_ack_size      ,
-            COUNTER         => o_req_buf_ptr
-       );
-    o_buf_ptr_init <= (others => '1') when (o_open = '0') else (others => '0');
-    ------------------------------------------------------------------------------
-    -- 
-    ------------------------------------------------------------------------------
-    O_CTRL_REGS: PUMP_CONTROL_REGISTER
-        generic map (
-            MODE_BITS               => 18              ,
-            STAT_BITS               =>  6              
-        )
-        port map (
-            CLK                     => ACLK            ,
-            RST                     => RST             ,
-            CLR                     => CLR             ,
-            RESET_WRITE             => regs_wen (O_CTRL_RESET_POS),
-            RESET_WDATA             => regs_wbit(O_CTRL_RESET_POS),
-            RESET_RDATA             => regs_rbit(O_CTRL_RESET_POS),
-            START_WRITE             => regs_wen (O_CTRL_START_POS),
-            START_WDATA             => regs_wbit(O_CTRL_START_POS),
-            START_RDATA             => regs_rbit(O_CTRL_START_POS),
-            STOP_WRITE              => regs_wen (O_CTRL_STOP_POS ),
-            STOP_WDATA              => regs_wbit(O_CTRL_STOP_POS ),
-            STOP_RDATA              => regs_rbit(O_CTRL_STOP_POS ),
-            PAUSE_WRITE             => regs_wen (O_CTRL_PAUSE_POS),
-            PAUSE_WDATA             => regs_wbit(O_CTRL_PAUSE_POS),
-            PAUSE_RDATA             => regs_rbit(O_CTRL_PAUSE_POS),
-            FIRST_WRITE             => regs_wen (O_CTRL_FIRST_POS),
-            FIRST_WDATA             => regs_wbit(O_CTRL_FIRST_POS),
-            FIRST_RDATA             => regs_rbit(O_CTRL_FIRST_POS),
-            LAST_WRITE              => regs_wen (O_CTRL_LAST_POS ),
-            LAST_WDATA              => regs_wbit(O_CTRL_LAST_POS ),
-            LAST_RDATA              => regs_rbit(O_CTRL_LAST_POS ),
-            DONE_WRITE              => regs_wen (O_CTRL_DONE_POS ),
-            DONE_WDATA              => regs_wbit(O_CTRL_DONE_POS ),
-            DONE_RDATA              => regs_rbit(O_CTRL_DONE_POS ),
-            ERROR_WRITE             => regs_wen (O_CTRL_ERROR_POS),
-            ERROR_WDATA             => regs_wbit(O_CTRL_ERROR_POS),
-            ERROR_RDATA             => regs_rbit(O_CTRL_ERROR_POS),
-            MODE_WRITE(15 downto  0)=> regs_wen (O_CTRL_MODE_HI downto O_CTRL_MODE_LO),
-            MODE_WRITE(16)          => regs_wen (O_CTRL_EVREQ_POS),
-            MODE_WRITE(17)          => regs_wen (O_CTRL_RESV_POS ),
-            MODE_WDATA(15 downto  0)=> regs_wbit(O_CTRL_MODE_HI downto O_CTRL_MODE_LO),
-            MODE_WDATA(16)          => regs_wbit(O_CTRL_EVREQ_POS),
-            MODE_WDATA(17)          => regs_wbit(O_CTRL_RESV_POS ),
-            MODE_RDATA(15 downto  0)=> regs_rbit(O_CTRL_MODE_HI downto O_CTRL_MODE_LO),
-            MODE_RDATA(16)          => regs_rbit(O_CTRL_EVREQ_POS),
-            MODE_RDATA(17)          => regs_rbit(O_CTRL_RESV_POS ),
-            STAT_WRITE( 5 downto  0)=> regs_wen (O_CTRL_STAT_HI downto O_CTRL_STAT_LO),
-            STAT_WDATA( 5 downto  0)=> regs_wbit(O_CTRL_STAT_HI downto O_CTRL_STAT_LO),
-            STAT_RDATA( 5 downto  0)=> regs_rbit(O_CTRL_STAT_HI downto O_CTRL_STAT_LO),
-            STAT                    => o_stat_in       ,
-            REQ_VALID               => o_req_valid     ,
-            REQ_FIRST               => o_req_first     ,
-            REQ_LAST                => o_req_last      ,
-            REQ_READY               => o_req_ready     ,
-            ACK_VALID               => o_ack_valid     ,
-            ACK_ERROR               => o_ack_error     ,
-            ACK_NEXT                => o_ack_next      ,
-            ACK_LAST                => o_ack_last      ,
-            ACK_STOP                => o_ack_stop      ,
-            ACK_NONE                => o_ack_none      ,
-            VALVE_OPEN              => o_open          ,
-            XFER_DONE               => o_done          ,
-            XFER_RUNNING            => o_running       
-        );
-    ------------------------------------------------------------------------------
-    -- 
-    ------------------------------------------------------------------------------
-    O_VALVE: PUMP_OUTLET_VALVE 
-        generic map (
-            COUNT_BITS              => SIZE_BITS       ,
-            SIZE_BITS               => SIZE_BITS       
-        )
-        port map (
-            CLK                     => ACLK            ,
-            RST                     => RST             ,
-            CLR                     => CLR             ,
-            THRESHOLD_SIZE          => I_THRESHOLD_SIZE,
-            I_OPEN                  => i_open          ,
-            O_OPEN                  => o_open          ,
-            RESET                   => regs_rbit(O_CTRL_RESET_POS),
-            PAUSE                   => regs_rbit(O_CTRL_PAUSE_POS),
-            STOP                    => regs_rbit(O_CTRL_STOP_POS ),
-            PUSH_VAL                => push_valid      ,
-            PUSH_LAST               => push_last       ,
-            PUSH_SIZE               => push_size       ,
-            PULL_VAL                => o_ack_valid     ,
-            PULL_LAST               => o_ack_last      ,
-            PULL_SIZE               => o_ack_size      ,
-            FLOW_PAUSE              => o_flow_pause    ,
-            FLOW_STOP               => o_flow_stop     ,
-            FLOW_LAST               => o_flow_last     ,
-            FLOW_SIZE               => o_flow_size     ,
-            FLOW_COUNT              => open            ,
-            FLOW_NEG                => open            ,
-            PAUSED                  => open            
-        );
-    ------------------------------------------------------------------------------
-    -- 
-    ------------------------------------------------------------------------------
-    o_stat_in(0) <= '1' when (o_done = '1' and regs_rbit(O_CTRL_EVREQ_POS) = '1') else '0';
+    o_stat_in(0) <= '0';
     o_stat_in(1) <= '0';
     o_stat_in(2) <= '0';
     o_stat_in(3) <= '0';
@@ -1177,8 +1017,7 @@ begin
                 O_IRQ <= '0';
         elsif (ACLK'event and ACLK = '1') then
             if (regs_rbit(O_CTRL_MODE_LO+0) = '1' and regs_rbit(O_CTRL_DONE_POS  ) = '1') or
-               (regs_rbit(O_CTRL_MODE_LO+1) = '1' and regs_rbit(O_CTRL_ERROR_POS ) = '1') or
-               (regs_rbit(O_CTRL_MODE_LO+2) = '1' and regs_rbit(O_CTRL_STAT_LO +0) = '1') then
+               (regs_rbit(O_CTRL_MODE_LO+1) = '1' and regs_rbit(O_CTRL_ERROR_POS ) = '1') then
                 O_IRQ <= '1';
             else
                 O_IRQ <= '0';

@@ -55,11 +55,11 @@ class ScenarioGenerater
     io.print "      DATA : - ", sprintf("0x%08X", o_address)     , " # O_ADDR[31:00]\n"
     io.print "             - 0x00000000"                         , " # O_ADDR[63:32]\n"                  
     io.print "             - ", sprintf("0x%08X", o_size)        , " # O_SIZE[31:00]\n"
-    io.print "             - 0x07000007"                         , " # O_CTRL[31:00]\n"
+    io.print "             - 0x0F000007"                         , " # O_CTRL[31:00]\n"
     io.print "             - ", sprintf("0x%08X", i_address)     , " # I_ADDR[31:00]\n"
     io.print "             - 0x00000000"                         , " # I_ADDR[63:32]\n"
     io.print "             - ", sprintf("0x%08X", i_size)        , " # I_SIZE[31:00]\n"
-    io.print "             - 0x07000007"                         , " # I_CTRL[31:00]\n"
+    io.print "             - 0x0F000007"                         , " # I_CTRL[31:00]\n"
     io.print "      RESP : OKAY\n"
     io.print "  - WAIT  : {GPI(0) : 1, GPI(1) : 1, TIMEOUT: 10000}\n"
     io.print "  - SYNC  : {PORT : LOCAL}\n"
@@ -69,11 +69,11 @@ class ScenarioGenerater
     io.print "      DATA : - ", sprintf("0x%08X", o_address+size), " # O_ADDR[31:00]\n"
     io.print "             - 0x00000000"                         , " # O_ADDR[63:32]\n"                  
     io.print "             - ", sprintf("0x%08X", o_size-size   ), " # O_SIZE[31:00]\n"
-    io.print "             - 0x06010007"                         , " # O_CTRL[31:00]\n"
+    io.print "             - 0x0E010007"                         , " # O_CTRL[31:00]\n"
     io.print "             - ", sprintf("0x%08X", i_address+size), " # I_ADDR[31:00]\n"
     io.print "             - 0x00000000"                         , " # I_ADDR[63:32]\n"                  
     io.print "             - ", sprintf("0x%08X", i_size-size   ), " # I_SIZE[31:00]\n"
-    io.print "             - 0x06010007"                         , " # I_CTRL[31:00]\n"
+    io.print "             - 0x0E010007"                         , " # I_CTRL[31:00]\n"
     io.print "      RESP : OKAY\n"
     io.print "  - SYNC  : {PORT : LOCAL}\n"
     io.print "  - WRITE : \n"
@@ -135,7 +135,7 @@ class ScenarioGenerater
       io.print "      DATA : - ", sprintf("0x%08X", o_address)     , " # O_ADDR[31:00]\n"
       io.print "             - 0x00000000"                         , " # O_ADDR[63:32]\n"                  
       io.print "             - ", sprintf("0x%08X", o_size   )     , " # O_SIZE[31:00]\n"
-      io.print "             - 0x07000007"                         , " # O_CTRL[31:00]\n"
+      io.print "             - 0x0F000007"                         , " # O_CTRL[31:00]\n"
       io.print "      RESP : OKAY\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
       count = 0
@@ -148,7 +148,7 @@ class ScenarioGenerater
           i_size = size-count
           last   = 1
         end
-        command = (last << 2) | (first << 1) | 0x01
+        command = (last << 2) | (first << 1) | 0x09
         io.print "- CSR : \n"
         io.print "  - WRITE : \n"
         io.print "      ADDR : 0x00000010\n"
@@ -202,7 +202,7 @@ class ScenarioGenerater
       io.print "      DATA : - ", sprintf("0x%08X", i_address)     , " # I_ADDR[31:00]\n"
       io.print "             - 0x00000000"                         , " # I_ADDR[63:32]\n"                  
       io.print "             - ", sprintf("0x%08X", i_size   )     , " # I_SIZE[31:00]\n"
-      io.print "             - 0x07000007"                         , " # I_CTRL[31:00]\n"
+      io.print "             - 0x0F000007"                         , " # I_CTRL[31:00]\n"
       io.print "      RESP : OKAY\n"
       @i_gen.generate(io, i_address, data, "OKAY")
       count = 0
@@ -215,7 +215,7 @@ class ScenarioGenerater
           o_size = size-count
           last   = 1
         end
-        command = (last << 2) | (first << 1) | 0x01
+        command = (last << 2) | (first << 1) | 0x09
         io.print "- CSR : \n"
         io.print "  - WRITE : \n"
         io.print "      ADDR : 0x00000000\n"
