@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_core.vhd
 --!     @brief   Pump Core Module (AXI4 to AXI4)
---!     @version 0.0.8
---!     @date    2013/1/21
+--!     @version 0.0.9
+--!     @date    2013/1/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -56,6 +56,8 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         I_REG_SIZE_BITS : integer                                := 32;
         I_REG_MODE_BITS : integer                                := 32;
         I_REG_STAT_BITS : integer                                := 32;
+        I_MAX_XFER_SIZE : integer                                :=  8;
+        I_RES_QUEUE     : integer                                :=  1;
         O_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
         O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
         O_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
@@ -67,8 +69,9 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         O_REG_SIZE_BITS : integer                                := 32;
         O_REG_MODE_BITS : integer                                := 32;
         O_REG_STAT_BITS : integer                                := 32;
-        BUF_DEPTH       : integer                                := 12;
-        MAX_XFER_SIZE   : integer                                :=  8
+        O_MAX_XFER_SIZE : integer                                :=  8;
+        O_RES_QUEUE     : integer                                :=  2;
+        BUF_DEPTH       : integer                                := 12
     );
     -------------------------------------------------------------------------------
     -- 入出力ポートの定義.
@@ -264,7 +267,8 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     ------------------------------------------------------------------------------
     -- 最大転送バイト数.
     ------------------------------------------------------------------------------
-    constant MAX_XFER_BYTES     : integer := 2**MAX_XFER_SIZE;
+    constant I_MAX_XFER_BYTES   : integer := 2**I_MAX_XFER_SIZE;
+    constant O_MAX_XFER_BYTES   : integer := 2**O_MAX_XFER_SIZE;
     ------------------------------------------------------------------------------
     -- バッファデータのビット幅.
     ------------------------------------------------------------------------------
@@ -301,7 +305,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     constant I_PROT             : AXI4_APROT_TYPE  := (others => '0');
     constant I_QOS              : AXI4_AQOS_TYPE   := (others => '0');
     constant I_REGION           : AXI4_AREGION_TYPE:= (others => '0');
-    constant I_XFER_SIZE_SEL    : std_logic_vector(MAX_XFER_SIZE downto MAX_XFER_SIZE) := "1";
+    constant I_XFER_SIZE_SEL    : std_logic_vector(I_MAX_XFER_SIZE downto I_MAX_XFER_SIZE) := "1";
     ------------------------------------------------------------------------------
     -- 入力側の各種信号群.
     ------------------------------------------------------------------------------
@@ -335,7 +339,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     constant O_PROT             : AXI4_APROT_TYPE  := (others => '0');
     constant O_QOS              : AXI4_AQOS_TYPE   := (others => '0');
     constant O_REGION           : AXI4_AREGION_TYPE:= (others => '0');
-    constant O_XFER_SIZE_SEL    : std_logic_vector(MAX_XFER_SIZE downto MAX_XFER_SIZE) := "1";
+    constant O_XFER_SIZE_SEL    : std_logic_vector(O_MAX_XFER_SIZE downto O_MAX_XFER_SIZE) := "1";
     ------------------------------------------------------------------------------
     -- 出力側の各種信号群.
     ------------------------------------------------------------------------------
@@ -397,9 +401,9 @@ begin
             FLOW_VALID      => 1               ,
             BUF_DATA_WIDTH  => BUF_DATA_WIDTH  ,
             BUF_PTR_BITS    => BUF_DEPTH       ,
-            XFER_MIN_SIZE   => MAX_XFER_SIZE   ,
-            XFER_MAX_SIZE   => MAX_XFER_SIZE   ,
-            QUEUE_SIZE      => 2
+            XFER_MIN_SIZE   => I_MAX_XFER_SIZE ,
+            XFER_MAX_SIZE   => I_MAX_XFER_SIZE ,
+            QUEUE_SIZE      => I_RES_QUEUE
         )
         port map (
             ----------------------------------------------------------------------
@@ -509,9 +513,9 @@ begin
             FLOW_VALID      => 1               ,
             BUF_DATA_WIDTH  => BUF_DATA_WIDTH  ,
             BUF_PTR_BITS    => BUF_DEPTH       ,
-            XFER_MIN_SIZE   => MAX_XFER_SIZE   ,
-            XFER_MAX_SIZE   => MAX_XFER_SIZE   ,
-            QUEUE_SIZE      => 1
+            XFER_MIN_SIZE   => O_MAX_XFER_SIZE ,
+            XFER_MAX_SIZE   => O_MAX_XFER_SIZE ,
+            QUEUE_SIZE      => O_RES_QUEUE
         )
         port map (
             ----------------------------------------------------------------------
@@ -635,8 +639,8 @@ begin
             O_REG_MODE_BITS => O_REG_MODE_BITS ,
             O_REG_STAT_BITS => O_REG_STAT_BITS ,
             BUF_DEPTH       => BUF_DEPTH       ,
-            I_THRESHOLD     => 2**BUF_DEPTH-MAX_XFER_BYTES,
-            O_THRESHOLD     => MAX_XFER_BYTES
+            I_THRESHOLD     => 2**BUF_DEPTH-I_MAX_XFER_BYTES,
+            O_THRESHOLD     => O_MAX_XFER_BYTES
         )
         port map (
         -------------------------------------------------------------------------------

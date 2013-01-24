@@ -313,6 +313,7 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             I_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
             I_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
             I_RUSER_WIDTH   : integer range 1 to 32                  :=  4;
+            I_MAX_XFER_SIZE : integer                                :=  8;
             O_AXI_ID        : integer                                :=  2;
             O_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
             O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
@@ -320,8 +321,8 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             O_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
             O_WUSER_WIDTH   : integer range 1 to 32                  :=  4;
             O_BUSER_WIDTH   : integer range 1 to 32                  :=  4;
-            BUF_DEPTH       : integer                                := 12;
-            MAX_XFER_SIZE   : integer                                :=  8
+            O_MAX_XFER_SIZE : integer                                :=  8;
+            BUF_DEPTH       : integer                                := 12
         );
         ---------------------------------------------------------------------------
         -- 入出力ポートの定義.
@@ -461,6 +462,7 @@ begin
             I_ID_WIDTH      => I_WIDTH.ID         ,
             I_AUSER_WIDTH   => I_WIDTH.ARUSER     ,
             I_RUSER_WIDTH   => I_WIDTH.RUSER      ,
+            I_MAX_XFER_SIZE => MAX_XFER_SIZE      ,
             O_AXI_ID        => O_AXI_ID           ,
             O_ADDR_WIDTH    => O_WIDTH.AWADDR     ,
             O_DATA_WIDTH    => O_WIDTH.WDATA      ,
@@ -468,8 +470,8 @@ begin
             O_AUSER_WIDTH   => O_WIDTH.AWUSER     ,
             O_WUSER_WIDTH   => O_WIDTH.WUSER      ,
             O_BUSER_WIDTH   => O_WIDTH.BUSER      ,
-            BUF_DEPTH       => BUF_DEPTH          ,
-            MAX_XFER_SIZE   => MAX_XFER_SIZE
+            O_MAX_XFER_SIZE => MAX_XFER_SIZE      ,
+            BUF_DEPTH       => BUF_DEPTH          
         )
         ---------------------------------------------------------------------------
         -- 入出力ポートの定義.

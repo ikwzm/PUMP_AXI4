@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
---!     @version 0.0.8
---!     @date    2013/1/15
+--!     @version 0.0.9
+--!     @date    2013/1/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -49,21 +49,22 @@ entity  PUMP_AXI4_TO_AXI4 is
         C_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
         C_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
         C_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
+        I_AXI_ID        : integer                                :=  1;
         I_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
         I_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
         I_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
         I_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
         I_RUSER_WIDTH   : integer range 1 to 32                  :=  4;
+        I_MAX_XFER_SIZE : integer                                :=  8;
+        O_AXI_ID        : integer                                :=  2;
         O_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
         O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
         O_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
         O_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
         O_WUSER_WIDTH   : integer range 1 to 32                  :=  4;
         O_BUSER_WIDTH   : integer range 1 to 32                  :=  4;
-        I_AXI_ID        : integer                                :=  1;
-        O_AXI_ID        : integer                                :=  2;
-        BUF_DEPTH       : integer                                := 12;
-        MAX_XFER_SIZE   : integer                                :=  8
+        O_MAX_XFER_SIZE : integer                                :=  8;
+        BUF_DEPTH       : integer                                := 12
     );
     -------------------------------------------------------------------------------
     -- 入出力ポートの定義.
@@ -222,6 +223,8 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_REG_SIZE_BITS : integer                                := 32;
             I_REG_MODE_BITS : integer                                := 32;
             I_REG_STAT_BITS : integer                                := 32;
+            I_MAX_XFER_SIZE : integer                                :=  8;
+            I_RES_QUEUE     : integer                                :=  1;
             O_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
             O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
             O_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
@@ -233,8 +236,9 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             O_REG_SIZE_BITS : integer                                := 32;
             O_REG_MODE_BITS : integer                                := 32;
             O_REG_STAT_BITS : integer                                := 32;
-            BUF_DEPTH       : integer                                := 12;
-            MAX_XFER_SIZE   : integer                                :=  8
+            O_MAX_XFER_SIZE : integer                                :=  1;
+            O_RES_QUEUE     : integer                                :=  2;
+            BUF_DEPTH       : integer                                := 12
         );
         ---------------------------------------------------------------------------
         -- 入出力ポートの定義.
@@ -684,6 +688,8 @@ begin
             I_REG_SIZE_BITS => SIZE_REGS_BITS  ,
             I_REG_MODE_BITS => 16              ,
             I_REG_STAT_BITS => 6               ,
+            I_MAX_XFER_SIZE => I_MAX_XFER_SIZE ,
+            I_RES_QUEUE     => 1               ,
             O_ADDR_WIDTH    => O_ADDR_WIDTH    ,
             O_DATA_WIDTH    => O_DATA_WIDTH    ,
             O_ID_WIDTH      => O_ID_WIDTH      ,
@@ -695,8 +701,9 @@ begin
             O_REG_SIZE_BITS => SIZE_REGS_BITS  ,
             O_REG_MODE_BITS => 16              ,
             O_REG_STAT_BITS => 6               ,
-            BUF_DEPTH       => BUF_DEPTH       ,
-            MAX_XFER_SIZE   => MAX_XFER_SIZE
+            O_MAX_XFER_SIZE => O_MAX_XFER_SIZE ,
+            O_RES_QUEUE     => 2               ,
+            BUF_DEPTH       => BUF_DEPTH       
         )
         port map (
         -------------------------------------------------------------------------------
