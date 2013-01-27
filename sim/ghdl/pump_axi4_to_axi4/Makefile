@@ -11,6 +11,8 @@ PIPEWORK_COMPONENTS = pump_axi4_to_axi4_core    \
                       $(END_LIST)
 
 TEST_BENCH = pump_axi4_to_axi4_test_bench_32_32 \
+             pump_axi4_to_axi4_test_bench_32_64 \
+             pump_axi4_to_axi4_test_bench_64_32 \
              $(END_LIST)
 
 all: DUT $(TEST_BENCH)
@@ -36,6 +38,30 @@ pump_axi4_to_axi4_test_bench.o           : $(SRC_PATH)/test/vhdl/pump_axi4_to_ax
 pump_axi4_to_axi4_test_bench_32_32.o     : $(SRC_PATH)/test/vhdl/pump_axi4_to_axi4_test_bench_32_32.vhd pump_axi4_to_axi4_test_bench.o
 	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
 
+pump_axi4_to_axi4_test_bench_32_64.o     : $(SRC_PATH)/test/vhdl/pump_axi4_to_axi4_test_bench_32_64.vhd pump_axi4_to_axi4_test_bench.o
+	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
+
+pump_axi4_to_axi4_test_bench_64_32.o     : $(SRC_PATH)/test/vhdl/pump_axi4_to_axi4_test_bench_64_32.vhd pump_axi4_to_axi4_test_bench.o
+	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
+
 pump_axi4_to_axi4_test_bench_32_32.snr   : $(SRC_PATH)/test/scenarios/make_scenario.rb
-	 $(SRC_PATH)/test/scenarios/make_scenario.rb
+	 $(SRC_PATH)/test/scenarios/make_scenario.rb \
+             --name    PUMP_AXI4_TO_AXI4_TEST_32_32  \
+             --i_width 32 \
+             --o_width 32 \
+             --output  pump_axi4_to_axi4_test_bench_32_32.snr
+
+pump_axi4_to_axi4_test_bench_32_64.snr   : $(SRC_PATH)/test/scenarios/make_scenario.rb
+	 $(SRC_PATH)/test/scenarios/make_scenario.rb \
+             --name    PUMP_AXI4_TO_AXI4_TEST_32_64  \
+             --i_width 32 \
+             --o_width 64 \
+             --output  pump_axi4_to_axi4_test_bench_32_64.snr
+
+pump_axi4_to_axi4_test_bench_64_32.snr   : $(SRC_PATH)/test/scenarios/make_scenario.rb
+	 $(SRC_PATH)/test/scenarios/make_scenario.rb \
+             --name    PUMP_AXI4_TO_AXI4_TEST_64_32  \
+             --i_width 64 \
+             --o_width 32 \
+             --output  pump_axi4_to_axi4_test_bench_64_32.snr
 

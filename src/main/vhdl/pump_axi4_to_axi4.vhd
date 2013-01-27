@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
---!     @version 0.0.9
---!     @date    2013/1/23
+--!     @version 0.0.10
+--!     @date    2013/1/27
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -70,14 +70,14 @@ entity  PUMP_AXI4_TO_AXI4 is
     -- 入出力ポートの定義.
     -------------------------------------------------------------------------------
     port(
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Clock and Reset Signals.
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         ACLK            : in    std_logic;
         ARESETn         : in    std_logic;
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Control Status Register I/F AXI4 Read Address Channel Signals.
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         C_ARID          : in    std_logic_vector(C_ID_WIDTH    -1 downto 0);
         C_ARADDR        : in    std_logic_vector(C_ADDR_WIDTH  -1 downto 0);
         C_ARLEN         : in    AXI4_ALEN_TYPE;
@@ -85,18 +85,18 @@ entity  PUMP_AXI4_TO_AXI4 is
         C_ARBURST       : in    AXI4_ABURST_TYPE;
         C_ARVALID       : in    std_logic;
         C_ARREADY       : out   std_logic;
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Control Status Register I/F AXI4 Read Data Channel Signals.
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         C_RID           : out   std_logic_vector(C_ID_WIDTH    -1 downto 0);
         C_RDATA         : out   std_logic_vector(C_DATA_WIDTH  -1 downto 0);
         C_RRESP         : out   AXI4_RESP_TYPE;
         C_RLAST         : out   std_logic;
         C_RVALID        : out   std_logic;
         C_RREADY        : in    std_logic;
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Control Status Register I/F AXI4 Write Address Channel Signals.
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         C_AWID          : in    std_logic_vector(C_ID_WIDTH    -1 downto 0);
         C_AWADDR        : in    std_logic_vector(C_ADDR_WIDTH  -1 downto 0);
         C_AWLEN         : in    AXI4_ALEN_TYPE;
@@ -104,24 +104,24 @@ entity  PUMP_AXI4_TO_AXI4 is
         C_AWBURST       : in    AXI4_ABURST_TYPE;
         C_AWVALID       : in    std_logic;
         C_AWREADY       : out   std_logic;
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Control Status Register I/F AXI4 Write Data Channel Signals.
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         C_WDATA         : in    std_logic_vector(C_DATA_WIDTH  -1 downto 0);
         C_WSTRB         : in    std_logic_vector(C_DATA_WIDTH/8-1 downto 0);
         C_WLAST         : in    std_logic;
         C_WVALID        : in    std_logic;
         C_WREADY        : out   std_logic;
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Control Status Register I/F AXI4 Write Response Channel Signals.
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         C_BID           : out   std_logic_vector(C_ID_WIDTH    -1 downto 0);
         C_BRESP         : out   AXI4_RESP_TYPE;
         C_BVALID        : out   std_logic;
         C_BREADY        : in    std_logic;
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Input AXI4 Read Address Channel Signals.
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         I_ARID          : out   std_logic_vector(I_ID_WIDTH    -1 downto 0);
         I_ARADDR        : out   std_logic_vector(I_ADDR_WIDTH  -1 downto 0);
         I_ARLEN         : out   AXI4_ALEN_TYPE;
@@ -135,9 +135,9 @@ entity  PUMP_AXI4_TO_AXI4 is
         I_ARUSER        : out   std_logic_vector(I_AUSER_WIDTH -1 downto 0);
         I_ARVALID       : out   std_logic;
         I_ARREADY       : in    std_logic;
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Input AXI4 Read Data Channel Signals.
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         I_RID           : in    std_logic_vector(I_ID_WIDTH    -1 downto 0);
         I_RDATA         : in    std_logic_vector(I_DATA_WIDTH  -1 downto 0);
         I_RRESP         : in    AXI4_RESP_TYPE;
@@ -145,9 +145,9 @@ entity  PUMP_AXI4_TO_AXI4 is
         I_RUSER         : in    std_logic_vector(I_RUSER_WIDTH -1 downto 0);
         I_RVALID        : in    std_logic;
         I_RREADY        : out   std_logic;
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Output AXI4 Write Address Channel Signals.
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         O_AWID          : out   std_logic_vector(O_ID_WIDTH    -1 downto 0);
         O_AWADDR        : out   std_logic_vector(O_ADDR_WIDTH  -1 downto 0);
         O_AWLEN         : out   AXI4_ALEN_TYPE;
@@ -161,9 +161,9 @@ entity  PUMP_AXI4_TO_AXI4 is
         O_AWUSER        : out   std_logic_vector(O_AUSER_WIDTH -1 downto 0);
         O_AWVALID       : out   std_logic;
         O_AWREADY       : in    std_logic;
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Output AXI4 Write Data Channel Signals.
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         O_WID           : out   std_logic_vector(O_ID_WIDTH    -1 downto 0);
         O_WDATA         : out   std_logic_vector(O_DATA_WIDTH  -1 downto 0);
         O_WSTRB         : out   std_logic_vector(O_DATA_WIDTH/8-1 downto 0);
@@ -171,17 +171,17 @@ entity  PUMP_AXI4_TO_AXI4 is
         O_WLAST         : out   std_logic;
         O_WVALID        : out   std_logic;
         O_WREADY        : in    std_logic;
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Output AXI4 Write Response Channel Signals.
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         O_BID           : in    std_logic_vector(O_ID_WIDTH    -1 downto 0);
         O_BRESP         : in    AXI4_RESP_TYPE;
         O_BUSER         : in    std_logic_vector(O_BUSER_WIDTH -1 downto 0);
         O_BVALID        : in    std_logic;
         O_BREADY        : out   std_logic;
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- 
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         I_IRQ           : out   std_logic;
         O_IRQ           : out   std_logic
     );
@@ -200,18 +200,18 @@ use     PIPEWORK.AXI4_COMPONENTS.AXI4_REGISTER_INTERFACE;
 use     PIPEWORK.COMPONENTS.SDPRAM;
 use     PIPEWORK.PUMP_COMPONENTS.PUMP_CONTROLLER;
 architecture RTL of PUMP_AXI4_TO_AXI4 is
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- リセット信号.
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     signal   RST                : std_logic;
     constant CLR                : std_logic := '0';
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- PUMP_AXI4_TO_AXI4_CORE のコンポーネント宣言.
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     component PUMP_AXI4_TO_AXI4_CORE
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- 
-        --------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         generic (
             I_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
             I_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
@@ -293,6 +293,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_ERR_ST_L      : in  std_logic;
             I_ERR_ST_D      : in  std_logic;
             I_ERR_ST_Q      : out std_logic;
+            I_ADDR_FIX      : in  std_logic;
             I_SPECULATIVE   : in  std_logic;
             I_SAFETY        : in  std_logic;
             -----------------------------------------------------------------------
@@ -338,6 +339,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             O_ERR_ST_L      : in  std_logic;
             O_ERR_ST_D      : in  std_logic;
             O_ERR_ST_Q      : out std_logic;
+            O_ADDR_FIX      : in  std_logic;
             O_SPECULATIVE   : in  std_logic;
             O_SAFETY        : in  std_logic;
             ----------------------------------------------------------------------
@@ -356,9 +358,9 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_ARUSER        : out std_logic_vector(I_AUSER_WIDTH -1 downto 0);
             I_ARVALID       : out std_logic;
             I_ARREADY       : in  std_logic;
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             -- Input AXI4 Read Data Channel Signals.
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             I_RID           : in  std_logic_vector(I_ID_WIDTH    -1 downto 0);
             I_RDATA         : in  std_logic_vector(I_DATA_WIDTH  -1 downto 0);
             I_RRESP         : in  AXI4_RESP_TYPE;
@@ -366,9 +368,9 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_RUSER         : in  std_logic_vector(I_RUSER_WIDTH -1 downto 0);
             I_RVALID        : in  std_logic;
             I_RREADY        : out std_logic;
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             -- Output AXI4 Write Address Channel Signals.
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             O_AWID          : out std_logic_vector(O_ID_WIDTH    -1 downto 0);
             O_AWADDR        : out std_logic_vector(O_ADDR_WIDTH  -1 downto 0);
             O_AWLEN         : out AXI4_ALEN_TYPE;
@@ -382,9 +384,9 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             O_AWUSER        : out std_logic_vector(O_AUSER_WIDTH -1 downto 0);
             O_AWVALID       : out std_logic;
             O_AWREADY       : in  std_logic;
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             -- Output AXI4 Write Data Channel Signals.
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             O_WID           : out std_logic_vector(O_ID_WIDTH    -1 downto 0);
             O_WDATA         : out std_logic_vector(O_DATA_WIDTH  -1 downto 0);
             O_WSTRB         : out std_logic_vector(O_DATA_WIDTH/8-1 downto 0);
@@ -392,51 +394,51 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             O_WLAST         : out std_logic;
             O_WVALID        : out std_logic;
             O_WREADY        : in  std_logic;
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             -- Output AXI4 Write Response Channel Signals.
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             O_BID           : in  std_logic_vector(O_ID_WIDTH    -1 downto 0);
             O_BRESP         : in  AXI4_RESP_TYPE;
             O_BUSER         : in  std_logic_vector(O_BUSER_WIDTH -1 downto 0);
             O_BVALID        : in  std_logic;
             O_BREADY        : out std_logic;
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             -- Intake Status.
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             I_OPEN          : out std_logic;
             I_RUNNING       : out std_logic;
             I_DONE          : out std_logic;
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             -- Outlet Status.
-            ----------------------------------------------------------------------
+            -----------------------------------------------------------------------
             O_OPEN          : out std_logic;
             O_RUNNING       : out std_logic;
             O_DONE          : out std_logic
         );
     end component;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- アドレスレジスタのビット数.
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant ADDR_REGS_BITS     : integer := 64;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- サイズレジスタのビット数.
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant SIZE_REGS_BITS     : integer := 32;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- レジスタアクセスインターフェースのアドレスのビット数.
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant REGS_ADDR_WIDTH    : integer := 5;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- レジスタアクセスインターフェースのデータのビット数.
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant REGS_DATA_WIDTH    : integer := 32;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- 全レジスタのビット数.
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant REGS_DATA_BITS     : integer := (2**REGS_ADDR_WIDTH)*8;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- レジスタアクセス用の信号群.
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     signal   regs_req           : std_logic;
     signal   regs_write         : std_logic;
     signal   regs_ack           : std_logic;
@@ -456,41 +458,42 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     signal   o_open             : std_logic;
     signal   o_running          : std_logic;
     signal   o_done             : std_logic;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- レジスタのアドレスマップ.
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- Outlet Address Register
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant O_ADDR_REGS_ADDR   : integer := 16#00#;
     constant O_ADDR_REGS_LO     : integer := 8*O_ADDR_REGS_ADDR;
     constant O_ADDR_REGS_HI     : integer := 8*O_ADDR_REGS_ADDR + ADDR_REGS_BITS-1;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- Outlet Size Register
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant O_SIZE_REGS_ADDR   : integer := 16#08#;
     constant O_SIZE_REGS_LO     : integer := 8*O_SIZE_REGS_ADDR;
     constant O_SIZE_REGS_HI     : integer := 8*O_SIZE_REGS_ADDR + SIZE_REGS_BITS-1;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- Outlet Mode Register
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant O_MODE_REGS_ADDR   : integer := 16#0C#;
     constant O_MODE_REGS_LO     : integer := 8*O_MODE_REGS_ADDR +  0;
     constant O_MODE_REGS_HI     : integer := 8*O_MODE_REGS_ADDR + 15;
     constant O_MODE_DONE_IE_POS : integer := 8*O_MODE_REGS_ADDR +  0;
     constant O_MODE_ERROR_IE_POS: integer := 8*O_MODE_REGS_ADDR +  1;
+    constant O_MODE_ADDR_FIX_POS: integer := 8*O_MODE_REGS_ADDR + 13;
     constant O_MODE_SPECUL_POS  : integer := 8*O_MODE_REGS_ADDR + 14;
     constant O_MODE_SAFETY_POS  : integer := 8*O_MODE_REGS_ADDR + 15;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- Outlet Status Register
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant O_STAT_REGS_ADDR   : integer := 16#0E#;
     constant O_STAT_DONE_POS    : integer := 8*O_STAT_REGS_ADDR +  0;
     constant O_STAT_ERROR_POS   : integer := 8*O_STAT_REGS_ADDR +  1;
     constant O_STAT_RESV_LO     : integer := 8*O_STAT_REGS_ADDR +  2;
     constant O_STAT_RESV_HI     : integer := 8*O_STAT_REGS_ADDR +  7;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- Outlet Control Register
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant O_CTRL_REGS_ADDR   : integer := 16#0F#;
     constant O_CTRL_START_POS   : integer := 8*O_CTRL_REGS_ADDR +  0;
     constant O_CTRL_FIRST_POS   : integer := 8*O_CTRL_REGS_ADDR +  1;
@@ -500,39 +503,40 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant O_CTRL_STOP_POS    : integer := 8*O_CTRL_REGS_ADDR +  5;
     constant O_CTRL_PAUSE_POS   : integer := 8*O_CTRL_REGS_ADDR +  6;
     constant O_CTRL_RESET_POS   : integer := 8*O_CTRL_REGS_ADDR +  7;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- Intake Address Register
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant I_ADDR_REGS_ADDR   : integer := 16#10#;
     constant I_ADDR_REGS_LO     : integer := 8*I_ADDR_REGS_ADDR;
     constant I_ADDR_REGS_HI     : integer := 8*I_ADDR_REGS_ADDR + ADDR_REGS_BITS-1;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- Intake Size Register
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant I_SIZE_REGS_ADDR   : integer := 16#18#;
     constant I_SIZE_REGS_LO     : integer := 8*I_SIZE_REGS_ADDR;
     constant I_SIZE_REGS_HI     : integer := 8*I_SIZE_REGS_ADDR + SIZE_REGS_BITS-1;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- Intake Mode Register
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant I_MODE_REGS_ADDR   : integer := 16#1C#;
     constant I_MODE_REGS_LO     : integer := 8*I_MODE_REGS_ADDR +  0;
     constant I_MODE_DONE_IE_POS : integer := 8*I_MODE_REGS_ADDR +  0;
     constant I_MODE_ERROR_IE_POS: integer := 8*I_MODE_REGS_ADDR +  1;
+    constant I_MODE_ADDR_FIX_POS: integer := 8*O_MODE_REGS_ADDR + 13;
     constant I_MODE_SPECUL_POS  : integer := 8*I_MODE_REGS_ADDR + 14;
     constant I_MODE_SAFETY_POS  : integer := 8*I_MODE_REGS_ADDR + 15;
     constant I_MODE_REGS_HI     : integer := 8*I_MODE_REGS_ADDR + 15;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- Intake Status Register
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant I_STAT_REGS_ADDR   : integer := 16#1E#;
     constant I_STAT_DONE_POS    : integer := 8*I_STAT_REGS_ADDR +  0;
     constant I_STAT_ERROR_POS   : integer := 8*I_STAT_REGS_ADDR +  1;
     constant I_STAT_RESV_LO     : integer := 8*I_STAT_REGS_ADDR +  2;
     constant I_STAT_RESV_HI     : integer := 8*I_STAT_REGS_ADDR +  7;
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- Intake Control Register
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     constant I_CTRL_REGS_ADDR   : integer := 16#1F#;
     constant I_CTRL_START_POS   : integer := 8*I_CTRL_REGS_ADDR +  0;
     constant I_CTRL_FIRST_POS   : integer := 8*I_CTRL_REGS_ADDR +  1;
@@ -543,13 +547,13 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant I_CTRL_PAUSE_POS   : integer := 8*I_CTRL_REGS_ADDR +  6;
     constant I_CTRL_RESET_POS   : integer := 8*I_CTRL_REGS_ADDR +  7;
 begin
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- 
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     RST <= '1' when (ARESETn = '0') else '0';
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     -- 
-    ------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
     C_IF: AXI4_REGISTER_INTERFACE
         generic map (
             AXI4_ADDR_WIDTH => C_ADDR_WIDTH,
@@ -559,15 +563,15 @@ begin
             REGS_DATA_WIDTH => REGS_DATA_WIDTH
         )
         port map (
-            ----------------------------------------------------------------------
-            -- Clock and Reset Signals.
-            ----------------------------------------------------------------------
+        ---------------------------------------------------------------------------
+        -- Clock and Reset Signals.
+        ---------------------------------------------------------------------------
             CLK             => ACLK            ,
             RST             => RST             ,
             CLR             => CLR             ,
-            ----------------------------------------------------------------------
-            -- AXI4 Read Address Channel Signals.
-            ----------------------------------------------------------------------
+        ---------------------------------------------------------------------------
+        -- AXI4 Read Address Channel Signals.
+        ---------------------------------------------------------------------------
             ARID            => C_ARID          ,
             ARADDR          => C_ARADDR        , -- In  :
             ARLEN           => C_ARLEN         , -- In  :
@@ -575,18 +579,18 @@ begin
             ARBURST         => C_ARBURST       , -- In  :
             ARVALID         => C_ARVALID       , -- In  :
             ARREADY         => C_ARREADY       , -- Out :
-            ----------------------------------------------------------------------
-            -- AXI4 Read Data Channel Signals.
-            ----------------------------------------------------------------------
+        ---------------------------------------------------------------------------
+        -- AXI4 Read Data Channel Signals.
+        ---------------------------------------------------------------------------
             RID             => C_RID           , -- Out :
             RDATA           => C_RDATA         , -- Out :
             RRESP           => C_RRESP         , -- Out :
             RLAST           => C_RLAST         , -- Out :
             RVALID          => C_RVALID        , -- Out :
             RREADY          => C_RREADY        , -- In  :
-            ----------------------------------------------------------------------
-            -- AXI4 Write Address Channel Signals.
-            ----------------------------------------------------------------------
+        ---------------------------------------------------------------------------
+        -- AXI4 Write Address Channel Signals.
+        ---------------------------------------------------------------------------
             AWID            => C_AWID          , -- In  :
             AWADDR          => C_AWADDR        , -- In  :
             AWLEN           => C_AWLEN         , -- In  :
@@ -594,24 +598,24 @@ begin
             AWBURST         => C_AWBURST       , -- In  :
             AWVALID         => C_AWVALID       , -- In  :
             AWREADY         => C_AWREADY       , -- Out :
-            ----------------------------------------------------------------------
-            -- AXI4 Write Data Channel Signals.
-            ----------------------------------------------------------------------
+        --------------------------------------------------------------------------
+        -- AXI4 Write Data Channel Signals.
+        --------------------------------------------------------------------------
             WDATA           => C_WDATA         , -- In  :
             WSTRB           => C_WSTRB         , -- In  :
             WLAST           => C_WLAST         , -- In  :
             WVALID          => C_WVALID        , -- In  :
             WREADY          => C_WREADY        , -- Out :
-            ----------------------------------------------------------------------
-            -- AXI4 Write Response Channel Signals.
-            ----------------------------------------------------------------------
+        --------------------------------------------------------------------------
+        -- AXI4 Write Response Channel Signals.
+        --------------------------------------------------------------------------
             BID             => C_BID           , -- Out :
             BRESP           => C_BRESP         , -- Out :
             BVALID          => C_BVALID        , -- Out :
             BREADY          => C_BREADY        , -- In  :
-            ----------------------------------------------------------------------
-            -- Register Interface.
-            ----------------------------------------------------------------------
+        --------------------------------------------------------------------------
+        -- Register Interface.
+        --------------------------------------------------------------------------
             REGS_REQ        => regs_req        , -- Out :
             REGS_WRITE      => regs_write      , -- Out :
             REGS_ACK        => regs_ack        , -- In  :
@@ -706,15 +710,15 @@ begin
             BUF_DEPTH       => BUF_DEPTH       
         )
         port map (
-        -------------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Clock & Reset Signals.
-        -------------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
             CLK             => ACLK            ,
             RST             => RST             ,
             CLR             => CLR             ,
-        -------------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
         -- Intake Control Register Interface.
-        -------------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
             I_ADDR_L        => regs_wen (I_ADDR_REGS_HI downto I_ADDR_REGS_LO),
             I_ADDR_D        => regs_wbit(I_ADDR_REGS_HI downto I_ADDR_REGS_LO),
             I_ADDR_Q        => regs_rbit(I_ADDR_REGS_HI downto I_ADDR_REGS_LO),
@@ -755,6 +759,7 @@ begin
             I_ERR_ST_L      => regs_wen (I_STAT_ERROR_POS),
             I_ERR_ST_D      => regs_wbit(I_STAT_ERROR_POS),
             I_ERR_ST_Q      => regs_rbit(I_STAT_ERROR_POS),
+            I_ADDR_FIX      => regs_rbit(I_MODE_ADDR_FIX_POS),
             I_SPECULATIVE   => regs_rbit(I_MODE_SPECUL_POS),
             I_SAFETY        => regs_rbit(I_MODE_SAFETY_POS),
         -------------------------------------------------------------------------------
@@ -800,6 +805,7 @@ begin
             O_ERR_ST_L      => regs_wen (O_STAT_ERROR_POS),
             O_ERR_ST_D      => regs_wbit(O_STAT_ERROR_POS),
             O_ERR_ST_Q      => regs_rbit(O_STAT_ERROR_POS),
+            O_ADDR_FIX      => regs_rbit(O_MODE_ADDR_FIX_POS),
             O_SPECULATIVE   => regs_rbit(O_MODE_SPECUL_POS),
             O_SAFETY        => regs_rbit(O_MODE_SAFETY_POS),
         --------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
 #---------------------------------------------------------------------------------
+require 'optparse'
 require 'pp'
-
 class ScenarioGenerater
   class IOScenarioGenerater
     def initialize(name, command, axi4_data_width, max_xfer_size, id)
@@ -34,12 +34,32 @@ class ScenarioGenerater
     end
   end
 
-  def initialize(name, i_axi4_data_width, o_axi4_data_width, max_xfer_size)
-    @name   = name
-    @i_gen  = IOScenarioGenerater.new("I", "READ" , i_axi4_data_width, max_xfer_size, 1)
-    @o_gen  = IOScenarioGenerater.new("O", "WRITE", o_axi4_data_width, max_xfer_size, 2)
-    @no     = 0
-    @id     = 10
+  def initialize
+    @program_name      = "make_scenario"
+    @program_version   = "0.0.3"
+    @i_gen             = nil
+    @o_gen             = nil
+    @no                = 0
+    @id                = 10
+    @i_axi4_data_width = 32
+    @o_axi4_data_width = 32
+    @name              = "PUMP_AXI4_TO_AXI4_TEST"
+    @file_name         = "pump_axi4_to_axi4_test_bench_32_32.snr"
+    @max_xfer_size     = 64
+    @opt               = OptionParser.new do |opt|
+      opt.program_name = @program_name
+      opt.version      = @program_version
+      opt.on("--verbose"             ){|val| @verbose           = true     }
+      opt.on("--name     STRING"     ){|val| @name              = val      }
+      opt.on("--output   FILE_NAME"  ){|val| @file_name         = val      }
+      opt.on("--i_width  INTEGER"    ){|val| @i_axi4_data_width = val.to_i }
+      opt.on("--o_width  INTEGER"    ){|val| @o_axi4_data_width = val.to_i }
+      opt.on("--max_size INTEGER"    ){|val| @max_xfer_size     = val.to_i }
+    end
+  end
+
+  def parse_options(argv)
+    @opt.parse(argv)
   end
 
   def gen_ctrl_regs(arg)
@@ -295,8 +315,21 @@ class ScenarioGenerater
     }
   end
 
-  def generate(file_name)
-    io = open(file_name, "w")
+  def generate
+    io = open(@file_name, "w")
+    if @i_gen == nil
+      @i_gen = IOScenarioGenerater.new("I", "READ" , @i_axi4_data_width, @max_xfer_size, 1)
+    end
+    if @o_gen == nil
+      @o_gen = IOScenarioGenerater.new("O", "WRITE", @o_axi4_data_width, @max_xfer_size, 2)
+    end
+    title     = @name.to_s + 
+                " I_DATA_WIDTH="  + @i_axi4_data_width.to_s + 
+                " O_DATA_WIDTH="  + @o_axi4_data_width.to_s +
+                " MAX_XFER_SIZE=" + @max_xfer_size.to_s
+    io.print "---\n"
+    io.print "- MARCHAL : \n"
+    io.print "  - SAY : ", title, "\n"
     test_1(io)
     test_2(io)
     test_3(io)
@@ -304,5 +337,7 @@ class ScenarioGenerater
   end
 end
 
-gen = ScenarioGenerater.new("PUMP_AXI4_TO_AXI4 TEST", 32, 32, 64)
-gen.generate("pump_axi4_to_axi4_test_bench_32_32.snr")
+
+gen = ScenarioGenerater.new
+gen.parse_options(ARGV)
+gen.generate
