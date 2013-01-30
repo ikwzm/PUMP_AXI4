@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_core.vhd
 --!     @brief   Pump Core Module (AXI4 to AXI4)
---!     @version 0.0.10
---!     @date    2013/1/27
+--!     @version 0.0.11
+--!     @date    2013/1/30
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -129,6 +129,11 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         I_ADDR_FIX      : in  std_logic;
         I_SPECULATIVE   : in  std_logic;
         I_SAFETY        : in  std_logic;
+        I_CACHE         : in  AXI4_ACACHE_TYPE;
+        I_LOCK          : in  AXI4_ALOCK_TYPE  ;
+        I_PROT          : in  AXI4_APROT_TYPE  ;
+        I_QOS           : in  AXI4_AQOS_TYPE   ;
+        I_REGION        : in  AXI4_AREGION_TYPE;
         ---------------------------------------------------------------------------
         -- Outlet Control Register Interface.
         ---------------------------------------------------------------------------
@@ -175,6 +180,11 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         O_ADDR_FIX      : in  std_logic;
         O_SPECULATIVE   : in  std_logic;
         O_SAFETY        : in  std_logic;
+        O_CACHE         : in  AXI4_ACACHE_TYPE ;
+        O_LOCK          : in  AXI4_ALOCK_TYPE  ;
+        O_PROT          : in  AXI4_APROT_TYPE  ;
+        O_QOS           : in  AXI4_AQOS_TYPE   ;
+        O_REGION        : in  AXI4_AREGION_TYPE;
         --------------------------------------------------------------------------
         -- Input AXI4 Read Address Channel Signals.
         --------------------------------------------------------------------------
@@ -302,11 +312,6 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     constant I_CKE              : std_logic := '1';
     constant I_ID               : std_logic_vector(I_ID_WIDTH -1 downto 0) :=
                                   std_logic_vector(to_unsigned(I_AXI_ID, I_ID_WIDTH));
-    constant I_LOCK             : AXI4_ALOCK_TYPE  := (others => '0');
-    constant I_CACHE            : AXI4_ACACHE_TYPE := (others => '0');
-    constant I_PROT             : AXI4_APROT_TYPE  := (others => '0');
-    constant I_QOS              : AXI4_AQOS_TYPE   := (others => '0');
-    constant I_REGION           : AXI4_AREGION_TYPE:= (others => '0');
     constant I_XFER_SIZE_SEL    : std_logic_vector(I_MAX_XFER_SIZE downto I_MAX_XFER_SIZE) := "1";
     ------------------------------------------------------------------------------
     -- 入力側の各種信号群.
@@ -338,11 +343,6 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     constant O_CKE              : std_logic := '1';
     constant O_ID               : std_logic_vector(O_ID_WIDTH -1 downto 0) := 
                                   std_logic_vector(to_unsigned(O_AXI_ID, O_ID_WIDTH));
-    constant O_LOCK             : AXI4_ALOCK_TYPE  := (others => '0');
-    constant O_CACHE            : AXI4_ACACHE_TYPE := (others => '0');
-    constant O_PROT             : AXI4_APROT_TYPE  := (others => '0');
-    constant O_QOS              : AXI4_AQOS_TYPE   := (others => '0');
-    constant O_REGION           : AXI4_AREGION_TYPE:= (others => '0');
     constant O_XFER_SIZE_SEL    : std_logic_vector(O_MAX_XFER_SIZE downto O_MAX_XFER_SIZE) := "1";
     ------------------------------------------------------------------------------
     -- 出力側の各種信号群.

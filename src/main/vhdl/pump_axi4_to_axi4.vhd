@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
---!     @version 0.0.10
---!     @date    2013/1/27
+--!     @version 0.0.11
+--!     @date    2013/1/30
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -296,6 +296,11 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_ADDR_FIX      : in  std_logic;
             I_SPECULATIVE   : in  std_logic;
             I_SAFETY        : in  std_logic;
+            I_CACHE         : in  AXI4_ACACHE_TYPE ;
+            I_LOCK          : in  AXI4_ALOCK_TYPE  ;
+            I_PROT          : in  AXI4_APROT_TYPE  ;
+            I_QOS           : in  AXI4_AQOS_TYPE   ;
+            I_REGION        : in  AXI4_AREGION_TYPE;
             -----------------------------------------------------------------------
             -- Outlet Control Register Interface.
             -----------------------------------------------------------------------
@@ -342,6 +347,11 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             O_ADDR_FIX      : in  std_logic;
             O_SPECULATIVE   : in  std_logic;
             O_SAFETY        : in  std_logic;
+            O_CACHE         : in  AXI4_ACACHE_TYPE ;
+            O_LOCK          : in  AXI4_ALOCK_TYPE  ;
+            O_PROT          : in  AXI4_APROT_TYPE  ;
+            O_QOS           : in  AXI4_AQOS_TYPE   ;
+            O_REGION        : in  AXI4_AREGION_TYPE;
             ----------------------------------------------------------------------
             -- Input AXI4 Read Address Channel Signals.
             ----------------------------------------------------------------------
@@ -437,6 +447,17 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     -------------------------------------------------------------------------------
     constant REGS_DATA_BITS     : integer := (2**REGS_ADDR_WIDTH)*8;
     -------------------------------------------------------------------------------
+    -- 定数
+    -------------------------------------------------------------------------------
+    constant I_LOCK             : AXI4_ALOCK_TYPE  := (others => '0');
+    constant I_PROT             : AXI4_APROT_TYPE  := (others => '0');
+    constant I_QOS              : AXI4_AQOS_TYPE   := (others => '0');
+    constant I_REGION           : AXI4_AREGION_TYPE:= (others => '0');
+    constant O_LOCK             : AXI4_ALOCK_TYPE  := (others => '0');
+    constant O_PROT             : AXI4_APROT_TYPE  := (others => '0');
+    constant O_QOS              : AXI4_AQOS_TYPE   := (others => '0');
+    constant O_REGION           : AXI4_AREGION_TYPE:= (others => '0');
+    -------------------------------------------------------------------------------
     -- レジスタアクセス用の信号群.
     -------------------------------------------------------------------------------
     signal   regs_req           : std_logic;
@@ -480,6 +501,8 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant O_MODE_REGS_HI     : integer := 8*O_MODE_REGS_ADDR + 15;
     constant O_MODE_DONE_IE_POS : integer := 8*O_MODE_REGS_ADDR +  0;
     constant O_MODE_ERROR_IE_POS: integer := 8*O_MODE_REGS_ADDR +  1;
+    constant O_MODE_CACHE_LO    : integer := 8*O_MODE_REGS_ADDR +  8;
+    constant O_MODE_CACHE_HI    : integer := 8*O_MODE_REGS_ADDR + 11;
     constant O_MODE_ADDR_FIX_POS: integer := 8*O_MODE_REGS_ADDR + 13;
     constant O_MODE_SPECUL_POS  : integer := 8*O_MODE_REGS_ADDR + 14;
     constant O_MODE_SAFETY_POS  : integer := 8*O_MODE_REGS_ADDR + 15;
@@ -522,7 +545,9 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant I_MODE_REGS_LO     : integer := 8*I_MODE_REGS_ADDR +  0;
     constant I_MODE_DONE_IE_POS : integer := 8*I_MODE_REGS_ADDR +  0;
     constant I_MODE_ERROR_IE_POS: integer := 8*I_MODE_REGS_ADDR +  1;
-    constant I_MODE_ADDR_FIX_POS: integer := 8*O_MODE_REGS_ADDR + 13;
+    constant I_MODE_CACHE_LO    : integer := 8*I_MODE_REGS_ADDR +  8;
+    constant I_MODE_CACHE_HI    : integer := 8*I_MODE_REGS_ADDR + 11;
+    constant I_MODE_ADDR_FIX_POS: integer := 8*I_MODE_REGS_ADDR + 13;
     constant I_MODE_SPECUL_POS  : integer := 8*I_MODE_REGS_ADDR + 14;
     constant I_MODE_SAFETY_POS  : integer := 8*I_MODE_REGS_ADDR + 15;
     constant I_MODE_REGS_HI     : integer := 8*I_MODE_REGS_ADDR + 15;
@@ -762,6 +787,11 @@ begin
             I_ADDR_FIX      => regs_rbit(I_MODE_ADDR_FIX_POS),
             I_SPECULATIVE   => regs_rbit(I_MODE_SPECUL_POS),
             I_SAFETY        => regs_rbit(I_MODE_SAFETY_POS),
+            I_CACHE         => regs_rbit(I_MODE_CACHE_HI downto I_MODE_CACHE_LO),
+            I_LOCK          => I_LOCK,
+            I_PROT          => I_PROT,
+            I_QOS           => I_QOS,
+            I_REGION        => I_REGION,
         -------------------------------------------------------------------------------
         -- Outlet Control Register Interface.
         -------------------------------------------------------------------------------
@@ -808,6 +838,11 @@ begin
             O_ADDR_FIX      => regs_rbit(O_MODE_ADDR_FIX_POS),
             O_SPECULATIVE   => regs_rbit(O_MODE_SPECUL_POS),
             O_SAFETY        => regs_rbit(O_MODE_SAFETY_POS),
+            O_CACHE         => regs_rbit(O_MODE_CACHE_HI downto O_MODE_CACHE_LO),
+            O_LOCK          => O_LOCK,
+            O_PROT          => O_PROT,
+            O_QOS           => O_QOS,
+            O_REGION        => O_REGION,
         --------------------------------------------------------------------------
         -- Input AXI4 Read Address Channel Signals.
         --------------------------------------------------------------------------
