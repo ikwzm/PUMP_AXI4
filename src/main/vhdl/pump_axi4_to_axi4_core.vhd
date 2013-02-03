@@ -251,12 +251,14 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         I_OPEN          : out std_logic;
         I_RUNNING       : out std_logic;
         I_DONE          : out std_logic;
+        I_ERROR         : out std_logic;
         ---------------------------------------------------------------------------
         -- Outlet Status.
         ---------------------------------------------------------------------------
         O_OPEN          : out std_logic;
         O_RUNNING       : out std_logic;
-        O_DONE          : out std_logic
+        O_DONE          : out std_logic;
+        O_ERROR         : out std_logic
     );
 end PUMP_AXI4_TO_AXI4_CORE;
 -----------------------------------------------------------------------------------
@@ -803,6 +805,7 @@ begin
             I_OPEN          => I_OPEN          , -- Out :
             I_RUNNING       => I_RUNNING       , -- Out :
             I_DONE          => I_DONE          , -- Out :
+            I_ERROR         => I_ERROR         , -- Out :
         ---------------------------------------------------------------------------
         -- Outlet Transaction Command Request Signals.
         ---------------------------------------------------------------------------
@@ -839,7 +842,8 @@ begin
         ---------------------------------------------------------------------------
             O_OPEN          => O_OPEN          , -- Out :
             O_RUNNING       => O_RUNNING       , -- Out :
-            O_DONE          => O_DONE            -- Out :
+            O_DONE          => O_DONE          , -- Out :
+            O_ERROR         => O_ERROR           -- Out :
         );
     -------------------------------------------------------------------------------
     -- 

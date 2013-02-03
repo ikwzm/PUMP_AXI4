@@ -418,12 +418,14 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_OPEN          : out std_logic;
             I_RUNNING       : out std_logic;
             I_DONE          : out std_logic;
+            I_ERROR         : out std_logic;
             -----------------------------------------------------------------------
             -- Outlet Status.
             -----------------------------------------------------------------------
             O_OPEN          : out std_logic;
             O_RUNNING       : out std_logic;
-            O_DONE          : out std_logic
+            O_DONE          : out std_logic;
+            O_ERROR         : out std_logic
         );
     end component;
     -------------------------------------------------------------------------------
@@ -475,10 +477,12 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     signal   i_open             : std_logic;
     signal   i_running          : std_logic;
     signal   i_done             : std_logic;
+    signal   i_error            : std_logic;
     signal   o_stat_in          : std_logic_vector(5 downto 0);
     signal   o_open             : std_logic;
     signal   o_running          : std_logic;
     signal   o_done             : std_logic;
+    signal   o_error            : std_logic;
     -------------------------------------------------------------------------------
     -- レジスタのアドレスマップ.
     -------------------------------------------------------------------------------
@@ -909,12 +913,14 @@ begin
             I_OPEN          => i_open          , -- Out :
             I_RUNNING       => i_running       , -- Out :
             I_DONE          => i_done          , -- Out :
+            I_ERROR         => i_error         , -- Out :
         -------------------------------------------------------------------------------
         -- Outlet Status.
         -------------------------------------------------------------------------------
             O_OPEN          => o_open          , -- Out :
             O_RUNNING       => o_running       , -- Out :
-            O_DONE          => o_done            -- Out :
+            O_DONE          => o_done          , -- Out :
+            O_ERROR         => o_error           -- Out :
         );
     regs_rbit(I_CTRL_RESV_POS) <= '0';
     regs_rbit(O_CTRL_RESV_POS) <= '0';
