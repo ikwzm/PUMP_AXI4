@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
---!     @version 0.0.11
---!     @date    2013/1/30
+--!     @version 0.0.12
+--!     @date    2013/2/3
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -518,11 +518,11 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     -- Outlet Control Register
     -------------------------------------------------------------------------------
     constant O_CTRL_REGS_ADDR   : integer := 16#0F#;
-    constant O_CTRL_START_POS   : integer := 8*O_CTRL_REGS_ADDR +  0;
+    constant O_CTRL_LAST_POS    : integer := 8*O_CTRL_REGS_ADDR +  0;
     constant O_CTRL_FIRST_POS   : integer := 8*O_CTRL_REGS_ADDR +  1;
-    constant O_CTRL_LAST_POS    : integer := 8*O_CTRL_REGS_ADDR +  2;
-    constant O_CTRL_DONE_EN_POS : integer := 8*O_CTRL_REGS_ADDR +  3;
-    constant O_CTRL_RESV_POS    : integer := 8*O_CTRL_REGS_ADDR +  4;
+    constant O_CTRL_DONE_EN_POS : integer := 8*O_CTRL_REGS_ADDR +  2;
+    constant O_CTRL_RESV_POS    : integer := 8*O_CTRL_REGS_ADDR +  3;
+    constant O_CTRL_START_POS   : integer := 8*O_CTRL_REGS_ADDR +  4;
     constant O_CTRL_STOP_POS    : integer := 8*O_CTRL_REGS_ADDR +  5;
     constant O_CTRL_PAUSE_POS   : integer := 8*O_CTRL_REGS_ADDR +  6;
     constant O_CTRL_RESET_POS   : integer := 8*O_CTRL_REGS_ADDR +  7;
@@ -563,11 +563,11 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     -- Intake Control Register
     -------------------------------------------------------------------------------
     constant I_CTRL_REGS_ADDR   : integer := 16#1F#;
-    constant I_CTRL_START_POS   : integer := 8*I_CTRL_REGS_ADDR +  0;
+    constant I_CTRL_LAST_POS    : integer := 8*I_CTRL_REGS_ADDR +  0;
     constant I_CTRL_FIRST_POS   : integer := 8*I_CTRL_REGS_ADDR +  1;
-    constant I_CTRL_LAST_POS    : integer := 8*I_CTRL_REGS_ADDR +  2;
-    constant I_CTRL_DONE_EN_POS : integer := 8*I_CTRL_REGS_ADDR +  3;
-    constant I_CTRL_RESV_POS    : integer := 8*I_CTRL_REGS_ADDR +  4;
+    constant I_CTRL_DONE_EN_POS : integer := 8*I_CTRL_REGS_ADDR +  2;
+    constant I_CTRL_RESV_POS    : integer := 8*I_CTRL_REGS_ADDR +  3;
+    constant I_CTRL_START_POS   : integer := 8*I_CTRL_REGS_ADDR +  4;
     constant I_CTRL_STOP_POS    : integer := 8*I_CTRL_REGS_ADDR +  5;
     constant I_CTRL_PAUSE_POS   : integer := 8*I_CTRL_REGS_ADDR +  6;
     constant I_CTRL_RESET_POS   : integer := 8*I_CTRL_REGS_ADDR +  7;
