@@ -32,6 +32,9 @@ pump_axi4_to_axi4.o                      : $(SRC_PATH)/main/vhdl/pump_axi4_to_ax
 pump_axi4_to_axi4_core.o                 : $(SRC_PATH)/main/vhdl/pump_axi4_to_axi4_core.vhd 
 	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
 
+pump_axi4_to_axi4_sg.o                   : $(SRC_PATH)/main/vhdl/pump_axi4_to_axi4_sg.vhd 
+	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
+
 pump_axi4_to_axi4_test_bench.o           : $(SRC_PATH)/test/vhdl/pump_axi4_to_axi4_test_bench.vhd 
 	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
 
