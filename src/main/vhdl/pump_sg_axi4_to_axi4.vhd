@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------------
---!     @file    pump_axi4_to_axi4_sg.vhd
+--!     @file    pump_sg_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
 --!     @version 0.0.12
 --!     @date    2013/2/3
@@ -41,7 +41,7 @@ use     PipeWork.AXI4_TYPES.all;
 -----------------------------------------------------------------------------------
 --! @brief 
 -----------------------------------------------------------------------------------
-entity  PUMP_AXI4_TO_AXI4_SG is
+entity  PUMP_SG_AXI4_TO_AXI4 is
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ entity  PUMP_AXI4_TO_AXI4_SG is
         I_IRQ           : out   std_logic;
         O_IRQ           : out   std_logic
     );
-end PUMP_AXI4_TO_AXI4_SG;
+end PUMP_SG_AXI4_TO_AXI4;
 -----------------------------------------------------------------------------------
 -- アーキテクチャ本体
 -----------------------------------------------------------------------------------
@@ -260,8 +260,8 @@ use     PIPEWORK.AXI4_COMPONENTS.AXI4_MASTER_WRITE_INTERFACE;
 use     PIPEWORK.AXI4_COMPONENTS.AXI4_REGISTER_INTERFACE;
 use     PIPEWORK.COMPONENTS.QUEUE_ARBITER;
 use     PIPEWORK.PUMP_COMPONENTS.PUMP_CONTROLLER;
-use     PIPEWORK.PUMP_COMPONENTS.PUMP_SEQUENCER;
-architecture RTL of PUMP_AXI4_TO_AXI4_SG is
+use     PIPEWORK.PUMP_COMPONENTS.PUMP_OPERATION_PROCESSOR;
+architecture RTL of PUMP_SG_AXI4_TO_AXI4 is
     -------------------------------------------------------------------------------
     -- リセット信号.
     -------------------------------------------------------------------------------
@@ -613,30 +613,6 @@ architecture RTL of PUMP_AXI4_TO_AXI4_SG is
     signal   mw_buf_rptr        : std_logic_vector(MW_BUF_SIZE   -1 downto 0);
     constant mw_buf_rready      : std_logic := '0';
     -------------------------------------------------------------------------------
-    -- 
-    -------------------------------------------------------------------------------
-    signal   im_req_addr        : std_logic_vector(M_ADDR_WIDTH  -1 downto 0);
-    signal   im_req_size        : std_logic_vector(MR_SIZE_BITS  -1 downto 0);
-    signal   im_req_ptr         : std_logic_vector(MR_BUF_SIZE   -1 downto 0);
-    signal   im_req_first       : std_logic;
-    signal   im_req_last        : std_logic;
-    signal   im_req_valid       : std_logic;
-    signal   im_ack_valid       : std_logic;
-    signal   im_buf_wen         : std_logic;
-    signal   im_buf_wrdy        : std_logic;
-    -------------------------------------------------------------------------------
-    -- 
-    -------------------------------------------------------------------------------
-    signal   om_req_addr        : std_logic_vector(M_ADDR_WIDTH  -1 downto 0);
-    signal   om_req_size        : std_logic_vector(MR_SIZE_BITS  -1 downto 0);
-    signal   om_req_ptr         : std_logic_vector(MR_BUF_SIZE   -1 downto 0);
-    signal   om_req_first       : std_logic;
-    signal   om_req_last        : std_logic;
-    signal   om_req_valid       : std_logic;
-    signal   om_ack_valid       : std_logic;
-    signal   om_buf_wen         : std_logic;
-    signal   om_buf_wrdy        : std_logic;
-    -------------------------------------------------------------------------------
     -- レジスタアクセス用の信号群.
     -------------------------------------------------------------------------------
     signal   regs_req           : std_logic;
@@ -650,24 +626,16 @@ architecture RTL of PUMP_AXI4_TO_AXI4_SG is
     signal   regs_load          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
     signal   regs_wbit          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
     signal   regs_rbit          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
-    signal   im_stat_i          : std_logic_vector(5 downto 0);
-    signal   im_enter           : std_logic;
-    signal   im_done            : std_logic;
-    signal   im_error           : std_logic_vector(2 downto 0);
-    signal   om_stat_i          : std_logic_vector(5 downto 0);
-    signal   om_enter           : std_logic;
-    signal   om_done            : std_logic;
-    signal   om_error           : std_logic_vector(2 downto 0);
     -------------------------------------------------------------------------------
     -- レジスタのアドレスマップ.
     -------------------------------------------------------------------------------
-    -- Outlet Transfer Request Block Address Register
+    -- Outlet Operation Code Fetch Address Register
     -------------------------------------------------------------------------------
     constant OM_ADDR_REGS_ADDR  : integer := 16#00#;
     constant OM_ADDR_REGS_LO    : integer := 8*OM_ADDR_REGS_ADDR;
     constant OM_ADDR_REGS_HI    : integer := 8*OM_ADDR_REGS_ADDR + M_ADDR_REGS_BITS-1;
     -------------------------------------------------------------------------------
-    -- Outlet Transfer Request Block Mode Register
+    -- Outlet Operation Code Fetch Mode Register
     -------------------------------------------------------------------------------
     constant OM_MODE_REGS_ADDR  : integer := 16#08#;
     constant OM_MODE_REGS_LO    : integer := 8*OM_MODE_REGS_ADDR +  0;
@@ -675,13 +643,13 @@ architecture RTL of PUMP_AXI4_TO_AXI4_SG is
     constant OM_MODE_CACHE_LO   : integer := 8*OM_MODE_REGS_ADDR + 40;
     constant OM_MODE_CACHE_HI   : integer := 8*OM_MODE_REGS_ADDR + 43;
     -------------------------------------------------------------------------------
-    -- Outlet Transfer Request Block Status Register
+    -- Outlet Operation Code Fetch Status Register
     -------------------------------------------------------------------------------
     constant OM_STAT_REGS_ADDR  : integer := 16#0E#;
     constant OM_STAT_REGS_LO    : integer := 8*OM_STAT_REGS_ADDR +  0;
     constant OM_STAT_REGS_HI    : integer := 8*OM_STAT_REGS_ADDR +  7;
     -------------------------------------------------------------------------------
-    -- Outlet Transfer Request Block Control Register
+    -- Outlet Operation Code Fetch Control Register
     -------------------------------------------------------------------------------
     constant OM_CTRL_REGS_ADDR  : integer := 16#0F#;
     constant OM_CTRL_START_POS  : integer := 8*OM_CTRL_REGS_ADDR +  4;
@@ -689,13 +657,13 @@ architecture RTL of PUMP_AXI4_TO_AXI4_SG is
     constant OM_CTRL_PAUSE_POS  : integer := 8*OM_CTRL_REGS_ADDR +  6;
     constant OM_CTRL_RESET_POS  : integer := 8*OM_CTRL_REGS_ADDR +  7;
     -------------------------------------------------------------------------------
-    -- Intake Transfer Request Block Address Register
+    -- Intake Operation Code Fetch Address Register
     -------------------------------------------------------------------------------
     constant IM_ADDR_REGS_ADDR  : integer := 16#10#;
     constant IM_ADDR_REGS_LO    : integer := 8*IM_ADDR_REGS_ADDR;
     constant IM_ADDR_REGS_HI    : integer := 8*IM_ADDR_REGS_ADDR + M_ADDR_REGS_BITS-1;
     -------------------------------------------------------------------------------
-    -- Intake Transfer Request Block Mode Register
+    -- Intake Operation Code Fetch Mode Register
     -------------------------------------------------------------------------------
     constant IM_MODE_REGS_ADDR  : integer := 16#08#;
     constant IM_MODE_REGS_LO    : integer := 8*IM_MODE_REGS_ADDR +  0;
@@ -703,13 +671,13 @@ architecture RTL of PUMP_AXI4_TO_AXI4_SG is
     constant IM_MODE_CACHE_LO   : integer := 8*IM_MODE_REGS_ADDR + 40;
     constant IM_MODE_CACHE_HI   : integer := 8*IM_MODE_REGS_ADDR + 43;
     -------------------------------------------------------------------------------
-    -- Intake Transfer Request Block Status Register
+    -- Intake Operation Code Fetch Status Register
     -------------------------------------------------------------------------------
     constant IM_STAT_REGS_ADDR  : integer := 16#1E#;
     constant IM_STAT_REGS_LO    : integer := 8*IM_STAT_REGS_ADDR +  0;
     constant IM_STAT_REGS_HI    : integer := 8*IM_STAT_REGS_ADDR +  7;
     -------------------------------------------------------------------------------
-    -- Intake Transfer Request Block Control Register
+    -- Intake Operation Code Fetch Control Register
     -------------------------------------------------------------------------------
     constant IM_CTRL_REGS_ADDR  : integer := 16#1F#;
     constant IM_CTRL_START_POS  : integer := 8*IM_CTRL_REGS_ADDR +  4;
@@ -717,81 +685,138 @@ architecture RTL of PUMP_AXI4_TO_AXI4_SG is
     constant IM_CTRL_PAUSE_POS  : integer := 8*IM_CTRL_REGS_ADDR +  6;
     constant IM_CTRL_RESET_POS  : integer := 8*IM_CTRL_REGS_ADDR +  7;
     -------------------------------------------------------------------------------
-    -- TRB(Transfer Request Block)のフォーマット
+    -- Operation Code の基本フォーマット
     -------------------------------------------------------------------------------
-    constant TRB_BITS           : integer := 128;
-    constant TRB_PUMP_BITS      : integer := 124;
-    constant TRB_PUMP_LO        : integer :=   0;
-    constant TRB_PUMP_HI        : integer := TRB_PUMP_LO + TRB_PUMP_BITS-1;
-    constant TRB_ADDR_BITS      : integer :=  64;
-    constant TRB_SIZE_BITS      : integer :=  32;
-    constant TRB_MODE_BITS      : integer :=  16;
-    constant TRB_STAT_BITS      : integer :=   6;
-    constant TRB_ADDR_LO        : integer :=   0;
-    constant TRB_ADDR_HI        : integer := TRB_ADDR_LO + TRB_ADDR_BITS - 1;
-    constant TRB_SIZE_LO        : integer :=  64;
-    constant TRB_SIZE_HI        : integer := TRB_SIZE_LO + TRB_SIZE_BITS - 1;
-    constant TRB_MODE_LO        : integer :=  96;
-    constant TRB_MODE_HI        : integer := TRB_MODE_LO + TRB_MODE_BITS - 1;
-    constant TRB_DONE_ST_POS    : integer := 112;
-    constant TRB_ERR_ST_POS     : integer := 113;
-    constant TRB_STAT_LO        : integer := 114;
-    constant TRB_STAT_HI        : integer := TRB_STAT_LO + TRB_STAT_BITS - 1;
-    constant TRB_LAST_POS       : integer := 120;
-    constant TRB_FIRST_POS      : integer := 121;
-    constant TRB_DONE_EN_POS    : integer := 122;
-    constant TRB_RESV_POS       : integer := 123;
-    constant TRB_CACHE_LO       : integer := TRB_MODE_LO +  8;
-    constant TRB_CACHE_HI       : integer := TRB_MODE_LO + 11;
-    constant TRB_ADDR_FIX_POS   : integer := TRB_MODE_LO + 13;
-    constant TRB_SPECUL_POS     : integer := TRB_MODE_LO + 14;
-    constant TRB_SAFETY_POS     : integer := TRB_MODE_LO + 15;
+    constant OP_BITS            : integer := 128;
+    constant OP_TYPE_HI         : integer := 127;
+    constant OP_TYPE_LO         : integer := 124;
+    constant OP_END_POS         : integer := 123;
+    constant OP_FETCH_POS       : integer := 122;
+    constant OP_NONE_CODE       : integer :=   0;
+    constant OP_XFER_CODE       : integer :=  12;
+    constant OP_LINK_CODE       : integer :=  13;
+    -------------------------------------------------------------------------------
+    -- Operation Code(Transfer Type) のフォーマット
+    -------------------------------------------------------------------------------
+    constant OP_XFER_HI         : integer := 123;
+    constant OP_XFER_LO         : integer :=   0;
+    constant OP_XFER_RESV_POS   : integer := 123;
+    constant OP_XFER_DONE_EN_POS: integer := 122;
+    constant OP_XFER_FIRST_POS  : integer := 121;
+    constant OP_XFER_LAST_POS   : integer := 120;
+    constant OP_XFER_STAT_HI    : integer := 119;
+    constant OP_XFER_STAT_LO    : integer := 114;
+    constant OP_XFER_ERR_ST_POS : integer := 113;
+    constant OP_XFER_DONE_ST_POS: integer := 112;
+    constant OP_XFER_MODE_HI    : integer := 111;
+    constant OP_XFER_MODE_LO    : integer :=  96;
+    constant OP_XFER_SIZE_HI    : integer :=  95;
+    constant OP_XFER_SIZE_LO    : integer :=  64;
+    constant OP_XFER_ADDR_HI    : integer :=  63;
+    constant OP_XFER_ADDR_LO    : integer :=   0;
+    constant OP_CACHE_LO        : integer := OP_XFER_MODE_LO +  8;
+    constant OP_CACHE_HI        : integer := OP_XFER_MODE_LO + 11;
+    constant OP_ADDR_FIX_POS    : integer := OP_XFER_MODE_LO + 13;
+    constant OP_SPECUL_POS      : integer := OP_XFER_MODE_LO + 14;
+    constant OP_SAFETY_POS      : integer := OP_XFER_MODE_LO + 15;
+    -------------------------------------------------------------------------------
+    -- Operation Code(Link Type)のフォーマット
+    -------------------------------------------------------------------------------
+    constant OP_LINK_STAT_HI    : integer := 119;
+    constant OP_LINK_STAT_LO    : integer := 112;
+    constant OP_LINK_MODE_HI    : integer := 111;
+    constant OP_LINK_MODE_LO    : integer :=  64;
+    constant OP_LINK_ADDR_HI    : integer :=  63;
+    constant OP_LINK_ADDR_LO    : integer :=   0;
+    -------------------------------------------------------------------------------
+    -- Operation Codeの各フィールドの長さ
+    -------------------------------------------------------------------------------
+    constant OP_LINK_STAT_BITS  : integer := OP_LINK_STAT_HI - OP_LINK_STAT_LO + 1;
+    constant OP_LINK_MODE_BITS  : integer := OP_LINK_MODE_HI - OP_LINK_MODE_LO + 1;
+    constant OP_LINK_ADDR_BITS  : integer := OP_LINK_ADDR_HI - OP_LINK_ADDR_LO + 1;
+    constant OP_XFER_BITS       : integer := OP_XFER_HI      - OP_XFER_LO      + 1;
+    constant OP_XFER_ADDR_BITS  : integer := OP_XFER_ADDR_HI - OP_XFER_ADDR_LO + 1;
+    constant OP_XFER_SIZE_BITS  : integer := OP_XFER_SIZE_HI - OP_XFER_SIZE_LO + 1;
+    constant OP_XFER_MODE_BITS  : integer := OP_XFER_MODE_HI - OP_XFER_MODE_LO + 1;
+    constant OP_XFER_STAT_BITS  : integer := OP_XFER_STAT_HI - OP_XFER_STAT_LO + 1;
     -------------------------------------------------------------------------------
     -- Outlet Transfer Request Block
     -------------------------------------------------------------------------------
-    signal   op_trb_load        : std_logic_vector(TRB_PUMP_BITS-1 downto 0);
-    signal   op_trb_wbit        : std_logic_vector(TRB_PUMP_BITS-1 downto 0);
-    signal   op_trb_rbit        : std_logic_vector(TRB_PUMP_BITS-1 downto 0);
-    signal   op_reset_load      : std_logic;
-    signal   op_reset_wbit      : std_logic;
-    signal   op_reset_rbit      : std_logic;
-    signal   op_start_load      : std_logic;
-    signal   op_start_wbit      : std_logic;
-    signal   op_start_rbit      : std_logic;
-    signal   op_stop_load       : std_logic;
-    signal   op_stop_wbit       : std_logic;
-    signal   op_stop_rbit       : std_logic;
-    signal   op_pause_load      : std_logic;
-    signal   op_pause_wbit      : std_logic;
-    signal   op_pause_rbit      : std_logic;
-    signal   op_open            : std_logic;
-    signal   op_run             : std_logic;
-    signal   op_done            : std_logic;
-    signal   op_error           : std_logic;
-    signal   op_stat_in         : std_logic_vector(TRB_STAT_BITS-1 downto 0);
+    signal   o_xfer_load        : std_logic_vector(OP_XFER_BITS-1 downto 0);
+    signal   o_xfer_wbit        : std_logic_vector(OP_XFER_BITS-1 downto 0);
+    signal   o_xfer_rbit        : std_logic_vector(OP_XFER_BITS-1 downto 0);
+    signal   o_xfer_reset_load  : std_logic;
+    signal   o_xfer_reset_wbit  : std_logic;
+    signal   o_xfer_reset_rbit  : std_logic;
+    signal   o_xfer_start_load  : std_logic;
+    signal   o_xfer_start_wbit  : std_logic;
+    signal   o_xfer_start_rbit  : std_logic;
+    signal   o_xfer_stop_load   : std_logic;
+    signal   o_xfer_stop_wbit   : std_logic;
+    signal   o_xfer_stop_rbit   : std_logic;
+    signal   o_xfer_pause_load  : std_logic;
+    signal   o_xfer_pause_wbit  : std_logic;
+    signal   o_xfer_pause_rbit  : std_logic;
+    signal   o_xfer_open        : std_logic;
+    signal   o_xfer_run         : std_logic;
+    signal   o_xfer_done        : std_logic;
+    signal   o_xfer_error       : std_logic;
+    signal   o_xfer_stat_i      : std_logic_vector(OP_XFER_STAT_BITS-1 downto 0);
     -------------------------------------------------------------------------------
     -- Intake Transfer Request Block
     -------------------------------------------------------------------------------
-    signal   ip_trb_load        : std_logic_vector(TRB_PUMP_BITS-1 downto 0);
-    signal   ip_trb_wbit        : std_logic_vector(TRB_PUMP_BITS-1 downto 0);
-    signal   ip_trb_rbit        : std_logic_vector(TRB_PUMP_BITS-1 downto 0);
-    signal   ip_reset_load      : std_logic;
-    signal   ip_reset_wbit      : std_logic;
-    signal   ip_reset_rbit      : std_logic;
-    signal   ip_start_load      : std_logic;
-    signal   ip_start_wbit      : std_logic;
-    signal   ip_start_rbit      : std_logic;
-    signal   ip_stop_load       : std_logic;
-    signal   ip_stop_wbit       : std_logic;
-    signal   ip_stop_rbit       : std_logic;
-    signal   ip_pause_load      : std_logic;
-    signal   ip_pause_wbit      : std_logic;
-    signal   ip_pause_rbit      : std_logic;
-    signal   ip_open            : std_logic;
-    signal   ip_run             : std_logic;
-    signal   ip_done            : std_logic;
-    signal   ip_error           : std_logic;
-    signal   ip_stat_in         : std_logic_vector(TRB_STAT_BITS-1 downto 0);
+    signal   i_xfer_load        : std_logic_vector(OP_XFER_BITS-1 downto 0);
+    signal   i_xfer_wbit        : std_logic_vector(OP_XFER_BITS-1 downto 0);
+    signal   i_xfer_rbit        : std_logic_vector(OP_XFER_BITS-1 downto 0);
+    signal   i_xfer_reset_load  : std_logic;
+    signal   i_xfer_reset_wbit  : std_logic;
+    signal   i_xfer_reset_rbit  : std_logic;
+    signal   i_xfer_start_load  : std_logic;
+    signal   i_xfer_start_wbit  : std_logic;
+    signal   i_xfer_start_rbit  : std_logic;
+    signal   i_xfer_stop_load   : std_logic;
+    signal   i_xfer_stop_wbit   : std_logic;
+    signal   i_xfer_stop_rbit   : std_logic;
+    signal   i_xfer_pause_load  : std_logic;
+    signal   i_xfer_pause_wbit  : std_logic;
+    signal   i_xfer_pause_rbit  : std_logic;
+    signal   i_xfer_open        : std_logic;
+    signal   i_xfer_run         : std_logic;
+    signal   i_xfer_done        : std_logic;
+    signal   i_xfer_error       : std_logic;
+    signal   i_xfer_stat_i      : std_logic_vector(OP_XFER_STAT_BITS-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+    signal   om_req_addr        : std_logic_vector(M_ADDR_WIDTH  -1 downto 0);
+    signal   om_req_size        : std_logic_vector(MR_SIZE_BITS  -1 downto 0);
+    signal   om_req_ptr         : std_logic_vector(MR_BUF_SIZE   -1 downto 0);
+    signal   om_req_first       : std_logic;
+    signal   om_req_last        : std_logic;
+    signal   om_req_valid       : std_logic;
+    signal   om_ack_valid       : std_logic;
+    signal   om_buf_wen         : std_logic;
+    signal   om_buf_wrdy        : std_logic;
+    signal   om_stat_i          : std_logic_vector(OP_LINK_STAT_BITS-1 downto 0);
+    signal   om_fetch           : std_logic;
+    signal   om_end             : std_logic;
+    signal   om_error           : std_logic_vector(2 downto 0);
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+    signal   im_req_addr        : std_logic_vector(M_ADDR_WIDTH  -1 downto 0);
+    signal   im_req_size        : std_logic_vector(MR_SIZE_BITS  -1 downto 0);
+    signal   im_req_ptr         : std_logic_vector(MR_BUF_SIZE   -1 downto 0);
+    signal   im_req_first       : std_logic;
+    signal   im_req_last        : std_logic;
+    signal   im_req_valid       : std_logic;
+    signal   im_ack_valid       : std_logic;
+    signal   im_buf_wen         : std_logic;
+    signal   im_buf_wrdy        : std_logic;
+    signal   im_stat_i          : std_logic_vector(OP_LINK_STAT_BITS-1 downto 0);
+    signal   im_fetch           : std_logic;
+    signal   im_end             : std_logic;
+    signal   im_error           : std_logic_vector(2 downto 0);
 begin
     -------------------------------------------------------------------------------
     -- 
@@ -802,74 +827,74 @@ begin
     -------------------------------------------------------------------------------
     C_IF: AXI4_REGISTER_INTERFACE
         generic map (
-            AXI4_ADDR_WIDTH => C_ADDR_WIDTH,
-            AXI4_DATA_WIDTH => C_DATA_WIDTH,
-            AXI4_ID_WIDTH   => C_ID_WIDTH,
-            REGS_ADDR_WIDTH => REGS_ADDR_WIDTH,
-            REGS_DATA_WIDTH => REGS_DATA_WIDTH
+            AXI4_ADDR_WIDTH => C_ADDR_WIDTH      , --
+            AXI4_DATA_WIDTH => C_DATA_WIDTH      , --
+            AXI4_ID_WIDTH   => C_ID_WIDTH        , --
+            REGS_ADDR_WIDTH => REGS_ADDR_WIDTH   , --
+            REGS_DATA_WIDTH => REGS_DATA_WIDTH     --
         )
         port map (
         ---------------------------------------------------------------------------
         -- Clock and Reset Signals.
         ---------------------------------------------------------------------------
-            CLK             => ACLK            ,
-            RST             => RST             ,
-            CLR             => CLR             ,
+            CLK             => ACLK              , -- In  :
+            RST             => RST               , -- In  :
+            CLR             => CLR               , -- In  :
         ---------------------------------------------------------------------------
         -- AXI4 Read Address Channel Signals.
         ---------------------------------------------------------------------------
-            ARID            => C_ARID          ,
-            ARADDR          => C_ARADDR        , -- In  :
-            ARLEN           => C_ARLEN         , -- In  :
-            ARSIZE          => C_ARSIZE        , -- In  :
-            ARBURST         => C_ARBURST       , -- In  :
-            ARVALID         => C_ARVALID       , -- In  :
-            ARREADY         => C_ARREADY       , -- Out :
+            ARID            => C_ARID            , -- In  :
+            ARADDR          => C_ARADDR          , -- In  :
+            ARLEN           => C_ARLEN           , -- In  :
+            ARSIZE          => C_ARSIZE          , -- In  :
+            ARBURST         => C_ARBURST         , -- In  :
+            ARVALID         => C_ARVALID         , -- In  :
+            ARREADY         => C_ARREADY         , -- Out :
         ---------------------------------------------------------------------------
         -- AXI4 Read Data Channel Signals.
         ---------------------------------------------------------------------------
-            RID             => C_RID           , -- Out :
-            RDATA           => C_RDATA         , -- Out :
-            RRESP           => C_RRESP         , -- Out :
-            RLAST           => C_RLAST         , -- Out :
-            RVALID          => C_RVALID        , -- Out :
-            RREADY          => C_RREADY        , -- In  :
+            RID             => C_RID             , -- Out :
+            RDATA           => C_RDATA           , -- Out :
+            RRESP           => C_RRESP           , -- Out :
+            RLAST           => C_RLAST           , -- Out :
+            RVALID          => C_RVALID          , -- Out :
+            RREADY          => C_RREADY          , -- In  :
         ---------------------------------------------------------------------------
         -- AXI4 Write Address Channel Signals.
         ---------------------------------------------------------------------------
-            AWID            => C_AWID          , -- In  :
-            AWADDR          => C_AWADDR        , -- In  :
-            AWLEN           => C_AWLEN         , -- In  :
-            AWSIZE          => C_AWSIZE        , -- In  :
-            AWBURST         => C_AWBURST       , -- In  :
-            AWVALID         => C_AWVALID       , -- In  :
-            AWREADY         => C_AWREADY       , -- Out :
+            AWID            => C_AWID            , -- In  :
+            AWADDR          => C_AWADDR          , -- In  :
+            AWLEN           => C_AWLEN           , -- In  :
+            AWSIZE          => C_AWSIZE          , -- In  :
+            AWBURST         => C_AWBURST         , -- In  :
+            AWVALID         => C_AWVALID         , -- In  :
+            AWREADY         => C_AWREADY         , -- Out :
         --------------------------------------------------------------------------
         -- AXI4 Write Data Channel Signals.
         --------------------------------------------------------------------------
-            WDATA           => C_WDATA         , -- In  :
-            WSTRB           => C_WSTRB         , -- In  :
-            WLAST           => C_WLAST         , -- In  :
-            WVALID          => C_WVALID        , -- In  :
-            WREADY          => C_WREADY        , -- Out :
+            WDATA           => C_WDATA           , -- In  :
+            WSTRB           => C_WSTRB           , -- In  :
+            WLAST           => C_WLAST           , -- In  :
+            WVALID          => C_WVALID          , -- In  :
+            WREADY          => C_WREADY          , -- Out :
         --------------------------------------------------------------------------
         -- AXI4 Write Response Channel Signals.
         --------------------------------------------------------------------------
-            BID             => C_BID           , -- Out :
-            BRESP           => C_BRESP         , -- Out :
-            BVALID          => C_BVALID        , -- Out :
-            BREADY          => C_BREADY        , -- In  :
+            BID             => C_BID             , -- Out :
+            BRESP           => C_BRESP           , -- Out :
+            BVALID          => C_BVALID          , -- Out :
+            BREADY          => C_BREADY          , -- In  :
         --------------------------------------------------------------------------
         -- Register Interface.
         --------------------------------------------------------------------------
-            REGS_REQ        => regs_req        , -- Out :
-            REGS_WRITE      => regs_write      , -- Out :
-            REGS_ACK        => regs_ack        , -- In  :
-            REGS_ERR        => regs_err        , -- In  :
-            REGS_ADDR       => regs_addr       , -- Out :
-            REGS_BEN        => regs_ben        , -- Out :
-            REGS_WDATA      => regs_wdata      , -- Out :
-            REGS_RDATA      => regs_rdata        -- In  :
+            REGS_REQ        => regs_req          , -- Out :
+            REGS_WRITE      => regs_write        , -- Out :
+            REGS_ACK        => regs_ack          , -- In  :
+            REGS_ERR        => regs_err          , -- In  :
+            REGS_ADDR       => regs_addr         , -- Out :
+            REGS_BEN        => regs_ben          , -- Out :
+            REGS_WDATA      => regs_wdata        , -- Out :
+            REGS_RDATA      => regs_rdata          -- In  :
         );
     ------------------------------------------------------------------------------
     -- 
@@ -928,111 +953,111 @@ begin
     ------------------------------------------------------------------------------
     MR_IF: AXI4_MASTER_READ_INTERFACE
         generic map (
-            AXI4_ADDR_WIDTH => M_ADDR_WIDTH    ,
-            AXI4_DATA_WIDTH => M_DATA_WIDTH    ,
-            AXI4_ID_WIDTH   => M_ID_WIDTH      ,
-            VAL_BITS        => 2               ,
-            SIZE_BITS       => MR_SIZE_BITS    ,
-            REQ_SIZE_BITS   => MR_SIZE_BITS    ,
-            REQ_SIZE_VALID  => 1               ,
-            FLOW_VALID      => 0               ,
-            BUF_DATA_WIDTH  => MR_BUF_WIDTH    ,
-            BUF_PTR_BITS    => MR_BUF_SIZE     ,
-            XFER_MIN_SIZE   => MR_MAX_XFER_SIZE,
-            XFER_MAX_SIZE   => MR_MAX_XFER_SIZE,
-            QUEUE_SIZE      => MR_RES_QUEUE
+            AXI4_ADDR_WIDTH => M_ADDR_WIDTH      , -- 
+            AXI4_DATA_WIDTH => M_DATA_WIDTH      , -- 
+            AXI4_ID_WIDTH   => M_ID_WIDTH        , -- 
+            VAL_BITS        => 2                 , -- 
+            SIZE_BITS       => MR_SIZE_BITS      , -- 
+            REQ_SIZE_BITS   => MR_SIZE_BITS      , -- 
+            REQ_SIZE_VALID  => 1                 , -- 
+            FLOW_VALID      => 0                 , -- 
+            BUF_DATA_WIDTH  => MR_BUF_WIDTH      , -- 
+            BUF_PTR_BITS    => MR_BUF_SIZE       , -- 
+            XFER_MIN_SIZE   => MR_MAX_XFER_SIZE  , -- 
+            XFER_MAX_SIZE   => MR_MAX_XFER_SIZE  , -- 
+            QUEUE_SIZE      => MR_RES_QUEUE        -- 
         )
         port map (
         --------------------------------------------------------------------------
         -- Clock and Reset Signals.
         --------------------------------------------------------------------------
-            CLK             => ACLK            ,
-            RST             => RST             ,
-            CLR             => CLR             ,
+            CLK             => ACLK              , -- In  :
+            RST             => RST               , -- In  :
+            CLR             => CLR               , -- In  :
         --------------------------------------------------------------------------
         -- AXI4 Read Address Channel Signals.
         --------------------------------------------------------------------------
-            ARID            => M_ARID          , -- Out :
-            ARADDR          => M_ARADDR        , -- Out :
-            ARLEN           => M_ARLEN         , -- Out :
-            ARSIZE          => M_ARSIZE        , -- Out :
-            ARBURST         => M_ARBURST       , -- Out :
-            ARLOCK          => M_ARLOCK        , -- Out :
-            ARCACHE         => M_ARCACHE       , -- Out :
-            ARPROT          => M_ARPROT        , -- Out :
-            ARQOS           => M_ARQOS         , -- Out :
-            ARREGION        => M_ARREGION      , -- Out :
-            ARVALID         => M_ARVALID       , -- Out :
-            ARREADY         => M_ARREADY       , -- In  :
+            ARID            => M_ARID            , -- Out :
+            ARADDR          => M_ARADDR          , -- Out :
+            ARLEN           => M_ARLEN           , -- Out :
+            ARSIZE          => M_ARSIZE          , -- Out :
+            ARBURST         => M_ARBURST         , -- Out :
+            ARLOCK          => M_ARLOCK          , -- Out :
+            ARCACHE         => M_ARCACHE         , -- Out :
+            ARPROT          => M_ARPROT          , -- Out :
+            ARQOS           => M_ARQOS           , -- Out :
+            ARREGION        => M_ARREGION        , -- Out :
+            ARVALID         => M_ARVALID         , -- Out :
+            ARREADY         => M_ARREADY         , -- In  :
         --------------------------------------------------------------------------
         -- AXI4 Read Data Channel Signals.
         --------------------------------------------------------------------------
-            RID             => M_RID           , -- In  :
-            RDATA           => M_RDATA         , -- In  :
-            RRESP           => M_RRESP         , -- In  :
-            RLAST           => M_RLAST         , -- In  :
-            RVALID          => M_RVALID        , -- In  :
-            RREADY          => M_RREADY        , -- Out :
+            RID             => M_RID             , -- In  :
+            RDATA           => M_RDATA           , -- In  :
+            RRESP           => M_RRESP           , -- In  :
+            RLAST           => M_RLAST           , -- In  :
+            RVALID          => M_RVALID          , -- In  :
+            RREADY          => M_RREADY          , -- Out :
         ---------------------------------------------------------------------------
         -- Command Request Signals.
         ---------------------------------------------------------------------------
-            REQ_ADDR        => mr_req_addr     , -- In  :
-            REQ_SIZE        => mr_req_size     , -- In  :
-            REQ_ID          => MR_ID           , -- In  :
-            REQ_BURST       => AXI4_ABURST_INCR, -- In  :
-            REQ_LOCK        => MR_LOCK         , -- In  :
-            REQ_CACHE       => mr_cache        , -- In  :
-            REQ_PROT        => MR_PROT         , -- In  :
-            REQ_QOS         => MR_QOS          , -- In  :
-            REQ_REGION      => MR_REGION       , -- In  :
-            REQ_BUF_PTR     => mr_req_ptr      , -- In  :
-            REQ_FIRST       => mr_req_first    , -- In  :
-            REQ_LAST        => mr_req_last     , -- In  :
-            REQ_SPECULATIVE => MR_SPECULATIVE  , -- In  :
-            REQ_SAFETY      => MR_SAFETY       , -- In  :
-            REQ_VAL         => mr_req_valid    , -- In  :
-            REQ_RDY         => mr_req_ready    , -- Out :
-            XFER_SIZE_SEL   => MR_XFER_SIZE_SEL, -- In  :
-            XFER_BUSY       => mr_xfer_busy    , -- Out :
+            REQ_ADDR        => mr_req_addr       , -- In  :
+            REQ_SIZE        => mr_req_size       , -- In  :
+            REQ_ID          => MR_ID             , -- In  :
+            REQ_BURST       => AXI4_ABURST_INCR  , -- In  :
+            REQ_LOCK        => MR_LOCK           , -- In  :
+            REQ_CACHE       => mr_cache          , -- In  :
+            REQ_PROT        => MR_PROT           , -- In  :
+            REQ_QOS         => MR_QOS            , -- In  :
+            REQ_REGION      => MR_REGION         , -- In  :
+            REQ_BUF_PTR     => mr_req_ptr        , -- In  :
+            REQ_FIRST       => mr_req_first      , -- In  :
+            REQ_LAST        => mr_req_last       , -- In  :
+            REQ_SPECULATIVE => MR_SPECULATIVE    , -- In  :
+            REQ_SAFETY      => MR_SAFETY         , -- In  :
+            REQ_VAL         => mr_req_valid      , -- In  :
+            REQ_RDY         => mr_req_ready      , -- Out :
+            XFER_SIZE_SEL   => MR_XFER_SIZE_SEL  , -- In  :
+            XFER_BUSY       => mr_xfer_busy      , -- Out :
         ---------------------------------------------------------------------------
         -- Response Signals.
         ---------------------------------------------------------------------------
-            ACK_VAL         => mr_ack_valid    , -- Out :
-            ACK_ERROR       => mr_ack_error    , -- Out :
-            ACK_NEXT        => mr_ack_next     , -- Out :
-            ACK_LAST        => mr_ack_last     , -- Out :
-            ACK_STOP        => mr_ack_stop     , -- Out :
-            ACK_NONE        => mr_ack_none     , -- Out :
-            ACK_SIZE        => mr_ack_size     , -- Out :
+            ACK_VAL         => mr_ack_valid      , -- Out :
+            ACK_ERROR       => mr_ack_error      , -- Out :
+            ACK_NEXT        => mr_ack_next       , -- Out :
+            ACK_LAST        => mr_ack_last       , -- Out :
+            ACK_STOP        => mr_ack_stop       , -- Out :
+            ACK_NONE        => mr_ack_none       , -- Out :
+            ACK_SIZE        => mr_ack_size       , -- Out :
         ---------------------------------------------------------------------------
         -- Flow Control Signals.
         ---------------------------------------------------------------------------
-            FLOW_PAUSE      => mr_flow_pause   , -- In  :
-            FLOW_STOP       => mr_flow_stop    , -- In  :
-            FLOW_LAST       => mr_flow_last    , -- In  :
-            FLOW_SIZE       => mr_flow_size    , -- In  :
+            FLOW_PAUSE      => mr_flow_pause     , -- In  :
+            FLOW_STOP       => mr_flow_stop      , -- In  :
+            FLOW_LAST       => mr_flow_last      , -- In  :
+            FLOW_SIZE       => mr_flow_size      , -- In  :
         ---------------------------------------------------------------------------
         -- Reserve Size Signals.
         ---------------------------------------------------------------------------
-            RESV_VAL        => open            , -- Out :
-            RESV_SIZE       => open            , -- Out :
-            RESV_LAST       => open            , -- Out :
-            RESV_ERROR      => open            , -- Out :
+            RESV_VAL        => open              , -- Out :
+            RESV_SIZE       => open              , -- Out :
+            RESV_LAST       => open              , -- Out :
+            RESV_ERROR      => open              , -- Out :
         ---------------------------------------------------------------------------
         -- Push Size Signals.
         ---------------------------------------------------------------------------
-            PUSH_VAL        => mr_push_valid   , -- Out :
-            PUSH_SIZE       => mr_push_size    , -- Out :
-            PUSH_LAST       => mr_push_last    , -- Out :
-            PUSH_ERROR      => mr_push_error   , -- Out :
+            PUSH_VAL        => mr_push_valid     , -- Out :
+            PUSH_SIZE       => mr_push_size      , -- Out :
+            PUSH_LAST       => mr_push_last      , -- Out :
+            PUSH_ERROR      => mr_push_error     , -- Out :
         ---------------------------------------------------------------------------
         -- Read Buffer Interface Signals.
         ---------------------------------------------------------------------------
-            BUF_WEN         => mr_buf_wen      , -- Out :
-            BUF_BEN         => mr_buf_ben      , -- Out :
-            BUF_DATA        => mr_buf_wdata    , -- Out :
-            BUF_PTR         => mr_buf_wptr     , -- Out :
-            BUF_RDY         => mr_buf_wready     -- In  :
+            BUF_WEN         => mr_buf_wen        , -- Out :
+            BUF_BEN         => mr_buf_ben        , -- Out :
+            BUF_DATA        => mr_buf_wdata      , -- Out :
+            BUF_PTR         => mr_buf_wptr       , -- Out :
+            BUF_RDY         => mr_buf_wready       -- In  :
         );
     M_ARUSER <= MR_AUSER;
     ------------------------------------------------------------------------------
@@ -1040,117 +1065,117 @@ begin
     ------------------------------------------------------------------------------
     MW_IF: AXI4_MASTER_WRITE_INTERFACE
         generic map (
-            AXI4_ADDR_WIDTH => M_ADDR_WIDTH    ,
-            AXI4_DATA_WIDTH => M_DATA_WIDTH    ,
-            AXI4_ID_WIDTH   => M_ID_WIDTH      ,
-            VAL_BITS        => 2               ,
-            SIZE_BITS       => MW_SIZE_BITS    ,
-            REQ_SIZE_BITS   => MW_SIZE_BITS    ,
-            REQ_SIZE_VALID  => 1               ,
-            FLOW_VALID      => 0               ,
-            BUF_DATA_WIDTH  => MW_BUF_WIDTH    ,
-            BUF_PTR_BITS    => MW_BUF_SIZE     ,
-            XFER_MIN_SIZE   => MW_MAX_XFER_SIZE,
-            XFER_MAX_SIZE   => MW_MAX_XFER_SIZE,
-            QUEUE_SIZE      => MW_RES_QUEUE
+            AXI4_ADDR_WIDTH => M_ADDR_WIDTH      , --
+            AXI4_DATA_WIDTH => M_DATA_WIDTH      , -- 
+            AXI4_ID_WIDTH   => M_ID_WIDTH        , -- 
+            VAL_BITS        => 2                 , -- 
+            SIZE_BITS       => MW_SIZE_BITS      , -- 
+            REQ_SIZE_BITS   => MW_SIZE_BITS      , -- 
+            REQ_SIZE_VALID  => 1                 , -- 
+            FLOW_VALID      => 0                 , -- 
+            BUF_DATA_WIDTH  => MW_BUF_WIDTH      , -- 
+            BUF_PTR_BITS    => MW_BUF_SIZE       , -- 
+            XFER_MIN_SIZE   => MW_MAX_XFER_SIZE  , -- 
+            XFER_MAX_SIZE   => MW_MAX_XFER_SIZE  , -- 
+            QUEUE_SIZE      => MW_RES_QUEUE        -- 
         )
         port map (
         --------------------------------------------------------------------------
         -- Clock and Reset Signals.
         --------------------------------------------------------------------------
-            CLK             => ACLK            ,
-            RST             => RST             ,
-            CLR             => CLR             ,
+            CLK             => ACLK              , -- In  :
+            RST             => RST               , -- In  :
+            CLR             => CLR               , -- In  :
         --------------------------------------------------------------------------
         -- AXI4 Write Address Channel Signals.
         --------------------------------------------------------------------------
-            AWID            => M_AWID          , -- Out :
-            AWADDR          => M_AWADDR        , -- Out :
-            AWLEN           => M_AWLEN         , -- Out :
-            AWSIZE          => M_AWSIZE        , -- Out :
-            AWBURST         => M_AWBURST       , -- Out :
-            AWLOCK          => M_AWLOCK        , -- Out :
-            AWCACHE         => M_AWCACHE       , -- Out :
-            AWPROT          => M_AWPROT        , -- Out :
-            AWQOS           => M_AWQOS         , -- Out :
-            AWREGION        => M_AWREGION      , -- Out :
-            AWVALID         => M_AWVALID       , -- Out :
-            AWREADY         => M_AWREADY       , -- In  :
+            AWID            => M_AWID            , -- Out :
+            AWADDR          => M_AWADDR          , -- Out :
+            AWLEN           => M_AWLEN           , -- Out :
+            AWSIZE          => M_AWSIZE          , -- Out :
+            AWBURST         => M_AWBURST         , -- Out :
+            AWLOCK          => M_AWLOCK          , -- Out :
+            AWCACHE         => M_AWCACHE         , -- Out :
+            AWPROT          => M_AWPROT          , -- Out :
+            AWQOS           => M_AWQOS           , -- Out :
+            AWREGION        => M_AWREGION        , -- Out :
+            AWVALID         => M_AWVALID         , -- Out :
+            AWREADY         => M_AWREADY         , -- In  :
         --------------------------------------------------------------------------
         -- AXI4 Write Data Channel Signals.
         --------------------------------------------------------------------------
-            WID             => open            , -- Out :
-            WDATA           => M_WDATA         , -- Out :
-            WSTRB           => M_WSTRB         , -- Out :
-            WLAST           => M_WLAST         , -- Out :
-            WVALID          => M_WVALID        , -- Out :
-            WREADY          => M_WREADY        , -- In  :
+            WID             => open              , -- Out :
+            WDATA           => M_WDATA           , -- Out :
+            WSTRB           => M_WSTRB           , -- Out :
+            WLAST           => M_WLAST           , -- Out :
+            WVALID          => M_WVALID          , -- Out :
+            WREADY          => M_WREADY          , -- In  :
         --------------------------------------------------------------------------
         -- AXI4 Write Response Channel Signals.
         --------------------------------------------------------------------------
-            BID             => M_BID           , -- In  :
-            BRESP           => M_BRESP         , -- In  :
-            BVALID          => M_BVALID        , -- In  :
-            BREADY          => M_BREADY        , -- Out :
+            BID             => M_BID             , -- In  :
+            BRESP           => M_BRESP           , -- In  :
+            BVALID          => M_BVALID          , -- In  :
+            BREADY          => M_BREADY          , -- Out :
         ---------------------------------------------------------------------------
         -- Command Request Signals.
         ---------------------------------------------------------------------------
-            REQ_ADDR        => mw_req_addr     , -- In  :
-            REQ_SIZE        => mw_req_size     , -- In  :
-            REQ_ID          => MW_ID           , -- In  :
-            REQ_BURST       => AXI4_ABURST_INCR, -- In  :
-            REQ_LOCK        => MW_LOCK         , -- In  :
-            REQ_CACHE       => MW_CACHE        , -- In  :
-            REQ_PROT        => MW_PROT         , -- In  :
-            REQ_QOS         => MW_QOS          , -- In  :
-            REQ_REGION      => MW_REGION       , -- In  :
-            REQ_BUF_PTR     => mw_req_ptr      , -- In  :
-            REQ_FIRST       => mw_req_first    , -- In  :
-            REQ_LAST        => mw_req_last     , -- In  :
-            REQ_SPECULATIVE => MW_SPECULATIVE  , -- In  :
-            REQ_SAFETY      => MW_SAFETY       , -- In  :
-            REQ_VAL         => mw_req_valid    , -- In  :
-            REQ_RDY         => mw_req_ready    , -- Out :
-            XFER_SIZE_SEL   => MW_XFER_SIZE_SEL, -- In  :
-            XFER_BUSY       => mw_xfer_busy    , -- Out :
+            REQ_ADDR        => mw_req_addr       , -- In  :
+            REQ_SIZE        => mw_req_size       , -- In  :
+            REQ_ID          => MW_ID             , -- In  :
+            REQ_BURST       => AXI4_ABURST_INCR  , -- In  :
+            REQ_LOCK        => MW_LOCK           , -- In  :
+            REQ_CACHE       => MW_CACHE          , -- In  :
+            REQ_PROT        => MW_PROT           , -- In  :
+            REQ_QOS         => MW_QOS            , -- In  :
+            REQ_REGION      => MW_REGION         , -- In  :
+            REQ_BUF_PTR     => mw_req_ptr        , -- In  :
+            REQ_FIRST       => mw_req_first      , -- In  :
+            REQ_LAST        => mw_req_last       , -- In  :
+            REQ_SPECULATIVE => MW_SPECULATIVE    , -- In  :
+            REQ_SAFETY      => MW_SAFETY         , -- In  :
+            REQ_VAL         => mw_req_valid      , -- In  :
+            REQ_RDY         => mw_req_ready      , -- Out :
+            XFER_SIZE_SEL   => MW_XFER_SIZE_SEL  , -- In  :
+            XFER_BUSY       => mw_xfer_busy      , -- Out :
         ---------------------------------------------------------------------------
         -- Response Signals.
         ---------------------------------------------------------------------------
-            ACK_VAL         => mw_ack_valid    , -- Out :
-            ACK_ERROR       => mw_ack_error    , -- Out :
-            ACK_NEXT        => mw_ack_next     , -- Out :
-            ACK_LAST        => mw_ack_last     , -- Out :
-            ACK_STOP        => mw_ack_stop     , -- Out :
-            ACK_NONE        => mw_ack_none     , -- Out :
-            ACK_SIZE        => mw_ack_size     , -- Out :
+            ACK_VAL         => mw_ack_valid      , -- Out :
+            ACK_ERROR       => mw_ack_error      , -- Out :
+            ACK_NEXT        => mw_ack_next       , -- Out :
+            ACK_LAST        => mw_ack_last       , -- Out :
+            ACK_STOP        => mw_ack_stop       , -- Out :
+            ACK_NONE        => mw_ack_none       , -- Out :
+            ACK_SIZE        => mw_ack_size       , -- Out :
         ---------------------------------------------------------------------------
         -- Flow Control Signals.
         ---------------------------------------------------------------------------
-            FLOW_PAUSE      => mw_flow_pause   , -- In  :
-            FLOW_STOP       => mw_flow_stop    , -- In  :
-            FLOW_LAST       => mw_flow_last    , -- In  :
-            FLOW_SIZE       => mw_flow_size    , -- In  :
+            FLOW_PAUSE      => mw_flow_pause     , -- In  :
+            FLOW_STOP       => mw_flow_stop      , -- In  :
+            FLOW_LAST       => mw_flow_last      , -- In  :
+            FLOW_SIZE       => mw_flow_size      , -- In  :
         ---------------------------------------------------------------------------
         -- Reserve Size Signals.
         ---------------------------------------------------------------------------
-            RESV_VAL        => open            , -- Out :
-            RESV_SIZE       => open            , -- Out :
-            RESV_LAST       => open            , -- Out :
-            RESV_ERROR      => open            , -- Out :
+            RESV_VAL        => open              , -- Out :
+            RESV_SIZE       => open              , -- Out :
+            RESV_LAST       => open              , -- Out :
+            RESV_ERROR      => open              , -- Out :
         ---------------------------------------------------------------------------
         -- Pull Size Signals.
         ---------------------------------------------------------------------------
-            PULL_VAL        => mw_pull_valid   , -- Out :
-            PULL_SIZE       => mw_pull_size    , -- Out :
-            PULL_LAST       => mw_pull_last    , -- Out :
-            PULL_ERROR      => mw_pull_error   , -- Out :
+            PULL_VAL        => mw_pull_valid     , -- Out :
+            PULL_SIZE       => mw_pull_size      , -- Out :
+            PULL_LAST       => mw_pull_last      , -- Out :
+            PULL_ERROR      => mw_pull_error     , -- Out :
         ---------------------------------------------------------------------------
         -- Read Buffer Interface Signals.
         ---------------------------------------------------------------------------
-            BUF_REN         => open            , -- Out :
-            BUF_DATA        => mw_buf_rdata    , -- In  :
-            BUF_PTR         => mw_buf_rptr     , -- Out :
-            BUF_RDY         => mw_buf_rready
+            BUF_REN         => open              , -- Out :
+            BUF_DATA        => mw_buf_rdata      , -- In  :
+            BUF_PTR         => mw_buf_rptr       , -- Out :
+            BUF_RDY         => mw_buf_rready       -- In  :
         );
     M_AWUSER <= MW_AUSER;
     ------------------------------------------------------------------------------
@@ -1163,23 +1188,24 @@ begin
         signal   grant   : std_logic_vector(0 to 1);
         signal   valid   : std_logic;
         signal   shift   : std_logic;
+        constant ALL0    : std_logic_vector(0 to 1) := (others => '0');
     begin
         QUEUE: QUEUE_ARBITER 
             generic map (
-                MIN_NUM     => 0,
-                MAX_NUM     => 1
-            )
-            port map (
-                CLK         => ACLK           ,  -- In  :
-                RST         => RST            ,  -- In  :
-                CLR         => CLR            ,  -- In  :
-                ENABLE      => ENABLE         ,  -- In  :
-                REQUEST     => request        ,  -- In  :
-                GRANT       => grant          ,  -- Out :
-                GRANT_NUM   => num            ,  -- Out :
-                REQUEST_O   => open           ,  -- Out :
-                VALID       => valid          ,  -- Out :
-                SHIFT       => shift             -- In  :
+                MIN_NUM     => 0            ,  -- 
+                MAX_NUM     => 1               -- 
+            )                                  --
+            port map (                         -- 
+                CLK         => ACLK         ,  -- In  :
+                RST         => RST          ,  -- In  :
+                CLR         => CLR          ,  -- In  :
+                ENABLE      => ENABLE       ,  -- In  :
+                REQUEST     => request      ,  -- In  :
+                GRANT       => grant        ,  -- Out :
+                GRANT_NUM   => num          ,  -- Out :
+                REQUEST_O   => open         ,  -- Out :
+                VALID       => valid        ,  -- Out :
+                SHIFT       => shift           -- In  :
             );
         request(0)      <= om_req_valid;
         mr_req_valid(0) <= grant(0) and om_req_valid;
@@ -1197,57 +1223,65 @@ begin
         mr_buf_wready   <= im_buf_wrdy  when (num = 1) else om_buf_wrdy;
         mr_cache        <= regs_rbit(IM_MODE_CACHE_HI downto IM_MODE_CACHE_LO) when (num = 1) else
                            regs_rbit(OM_MODE_CACHE_HI downto OM_MODE_CACHE_LO);
+        shift <= '1' when (mr_ack_valid /= ALL0) else '0';
     end block;
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
-    OM: PUMP_SEQUENCER
+    OM: PUMP_OPERATION_PROCESSOR
         generic map (
-            M_ADDR_BITS     => M_ADDR_WIDTH    , -- 
-            M_BUF_SIZE      => MR_BUF_SIZE     , -- 
-            M_BUF_WIDTH     => MR_BUF_WIDTH    , -- 
-            TRB_BITS        => TRB_BITS        , -- 
-            TRB_PUMP_LO     => TRB_PUMP_LO     , -- 
-            TRB_PUMP_HI     => TRB_PUMP_HI     , -- 
-            TRB_ADDR_LO     => 0               , -- 
-            TRB_ADDR_HI     => 63              , -- 
-            TRB_MODE_LO     => 64              , -- 
-            TRB_MODE_HI     => 64+47           , -- 
-            TRB_STAT_LO     => 64+48           , -- 
-            TRB_STAT_HI     => 64+48+7           -- 
+            M_ADDR_BITS     => M_ADDR_WIDTH      , -- 
+            M_BUF_SIZE      => MR_BUF_SIZE       , -- 
+            M_BUF_WIDTH     => MR_BUF_WIDTH      , -- 
+            OP_BITS         => OP_BITS           , -- 
+            OP_XFER_LO      => OP_XFER_LO        , -- 
+            OP_XFER_HI      => OP_XFER_HI        , -- 
+            OP_ADDR_LO      => OP_LINK_ADDR_LO   , -- 
+            OP_ADDR_HI      => OP_LINK_ADDR_HI   , -- 
+            OP_MODE_LO      => OP_LINK_MODE_LO   , -- 
+            OP_MODE_HI      => OP_LINK_MODE_HI   , -- 
+            OP_STAT_LO      => OP_LINK_STAT_LO   , -- 
+            OP_STAT_HI      => OP_LINK_STAT_HI   , --
+            OP_FETCH_POS    => OP_FETCH_POS      , --
+            OP_END_POS      => OP_END_POS        , --
+            OP_TYPE_LO      => OP_TYPE_LO        , --
+            OP_TYPE_HI      => OP_TYPE_HI        , --
+            OP_NONE_CODE    => OP_NONE_CODE      , --
+            OP_XFER_CODE    => OP_XFER_CODE      , --
+            OP_LINK_CODE    => OP_LINK_CODE        -- 
         )
         port map (
         ---------------------------------------------------------------------------
         -- Clock & Reset Signals.
         ---------------------------------------------------------------------------
-            CLK             => ACLK            , -- In  :
-            RST             => RST             , -- In  :
-            CLR             => CLR             , -- In  :
-        -------------------------------------------------------------------------------
+            CLK             => ACLK              , -- In  :
+            RST             => RST               , -- In  :
+            CLR             => CLR               , -- In  :
+        ---------------------------------------------------------------------------
         -- Transfer Request Block Read Signals.
-        -------------------------------------------------------------------------------
-            M_REQ_VALID     => om_req_valid    , -- Out :
-            M_REQ_ADDR      => om_req_addr     , -- Out :
-            M_REQ_SIZE      => om_req_size     , -- Out :
-            M_REQ_PTR       => om_req_ptr      , -- Out :
-            M_REQ_FIRST     => om_req_first    , -- Out :
-            M_REQ_LAST      => om_req_last     , -- Out :
-            M_REQ_READY     => mr_req_ready    , -- In  :
-            M_ACK_VALID     => om_ack_valid    , -- In  :
-            M_ACK_ERROR     => mr_ack_error    , -- In  :
-            M_ACK_NEXT      => mr_ack_next     , -- In  :
-            M_ACK_LAST      => mr_ack_last     , -- In  :
-            M_ACK_STOP      => mr_ack_stop     , -- In  :
-            M_ACK_NONE      => mr_ack_none     , -- In  :
-            M_ACK_SIZE      => mr_ack_size     , -- In  :
-            M_BUF_WE        => om_buf_wen      , -- In  :
-            M_BUF_BEN       => mr_buf_ben      , -- In  :
-            M_BUF_DATA      => mr_buf_wdata    , -- In  :
-            M_BUF_PTR       => mr_buf_wptr     , -- In  :
-            M_BUF_RDY       => om_buf_wrdy     , -- Out :
-        -------------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
+            M_REQ_VALID     => om_req_valid      , -- Out :
+            M_REQ_ADDR      => om_req_addr       , -- Out :
+            M_REQ_SIZE      => om_req_size       , -- Out :
+            M_REQ_PTR       => om_req_ptr        , -- Out :
+            M_REQ_FIRST     => om_req_first      , -- Out :
+            M_REQ_LAST      => om_req_last       , -- Out :
+            M_REQ_READY     => mr_req_ready      , -- In  :
+            M_ACK_VALID     => om_ack_valid      , -- In  :
+            M_ACK_ERROR     => mr_ack_error      , -- In  :
+            M_ACK_NEXT      => mr_ack_next       , -- In  :
+            M_ACK_LAST      => mr_ack_last       , -- In  :
+            M_ACK_STOP      => mr_ack_stop       , -- In  :
+            M_ACK_NONE      => mr_ack_none       , -- In  :
+            M_ACK_SIZE      => mr_ack_size       , -- In  :
+            M_BUF_WE        => om_buf_wen        , -- In  :
+            M_BUF_BEN       => mr_buf_ben        , -- In  :
+            M_BUF_DATA      => mr_buf_wdata      , -- In  :
+            M_BUF_PTR       => mr_buf_wptr       , -- In  :
+            M_BUF_RDY       => om_buf_wrdy       , -- Out :
+        ---------------------------------------------------------------------------
         -- Control Status Register Interface Signals.
-        -------------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
             T_ADDR_L        => regs_load(OM_ADDR_REGS_HI downto OM_ADDR_REGS_LO),
             T_ADDR_D        => regs_wbit(OM_ADDR_REGS_HI downto OM_ADDR_REGS_LO),
             T_ADDR_Q        => regs_rbit(OM_ADDR_REGS_HI downto OM_ADDR_REGS_LO),
@@ -1257,7 +1291,7 @@ begin
             T_STAT_L        => regs_load(OM_STAT_REGS_HI downto OM_STAT_REGS_LO),
             T_STAT_D        => regs_wbit(OM_STAT_REGS_HI downto OM_STAT_REGS_LO),
             T_STAT_Q        => regs_rbit(OM_STAT_REGS_HI downto OM_STAT_REGS_LO),
-            T_STAT_I        => om_stat_i       , -- In  :
+            T_STAT_I        => om_stat_i         , -- In  :
             T_RESET_L       => regs_load(OM_CTRL_RESET_POS),
             T_RESET_D       => regs_wbit(OM_CTRL_RESET_POS),
             T_RESET_Q       => regs_rbit(OM_CTRL_RESET_POS),
@@ -1270,81 +1304,88 @@ begin
             T_PAUSE_L       => regs_load(OM_CTRL_PAUSE_POS),
             T_PAUSE_D       => regs_wbit(OM_CTRL_PAUSE_POS),
             T_PAUSE_Q       => regs_rbit(OM_CTRL_PAUSE_POS),
-            T_ERROR         => om_error        , -- Out :
-            T_DONE          => om_done         , -- Out :
-            T_ENTER         => om_enter        , -- Out :
-        -------------------------------------------------------------------------------
+            T_ERROR         => om_error          , -- Out :
+            T_END           => om_end            , -- Out :
+            T_FETCH         => om_fetch          , -- Out :
+        ---------------------------------------------------------------------------
         -- Pump Control Register Interface Signals.
-        -------------------------------------------------------------------------------
-            P_RESET_L       => op_reset_load   , -- Out :
-            P_RESET_D       => op_reset_wbit   , -- Out :
-            P_RESET_Q       => op_reset_rbit   , -- In  :
-            P_START_L       => op_start_load   , -- Out :
-            P_START_D       => op_start_wbit   , -- Out :
-            P_START_Q       => op_start_rbit   , -- In  :
-            P_STOP_L        => op_stop_load    , -- Out :
-            P_STOP_D        => op_stop_wbit    , -- Out :
-            P_STOP_Q        => op_stop_rbit    , -- In  :
-            P_PAUSE_L       => op_pause_load   , -- Out :
-            P_PAUSE_D       => op_pause_wbit   , -- Out :
-            P_PAUSE_Q       => op_pause_rbit   , -- In  :
-            P_OPERAND_L     => op_trb_load     , -- Out :
-            P_OPERAND_D     => op_trb_wbit     , -- Out :
-            P_OPERAND_Q     => op_trb_rbit     , -- In  :
-            P_RUN           => op_run          , -- In  :
-            P_DONE          => op_done         , -- In  :
-            P_ERROR         => op_error          -- In  :
+        ---------------------------------------------------------------------------
+            X_RESET_L       => o_xfer_reset_load , -- Out :
+            X_RESET_D       => o_xfer_reset_wbit , -- Out :
+            X_RESET_Q       => o_xfer_reset_rbit , -- In  :
+            X_START_L       => o_xfer_start_load , -- Out :
+            X_START_D       => o_xfer_start_wbit , -- Out :
+            X_START_Q       => o_xfer_start_rbit , -- In  :
+            X_STOP_L        => o_xfer_stop_load  , -- Out :
+            X_STOP_D        => o_xfer_stop_wbit  , -- Out :
+            X_STOP_Q        => o_xfer_stop_rbit  , -- In  :
+            X_PAUSE_L       => o_xfer_pause_load , -- Out :
+            X_PAUSE_D       => o_xfer_pause_wbit , -- Out :
+            X_PAUSE_Q       => o_xfer_pause_rbit , -- In  :
+            X_OPERAND_L     => o_xfer_load       , -- Out :
+            X_OPERAND_D     => o_xfer_wbit       , -- Out :
+            X_OPERAND_Q     => o_xfer_rbit       , -- In  :
+            X_RUN           => o_xfer_run        , -- In  :
+            X_DONE          => o_xfer_done       , -- In  :
+            X_ERROR         => o_xfer_error        -- In  :
         );
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
-    IM: PUMP_SEQUENCER
+    IM: PUMP_OPERATION_PROCESSOR
         generic map (
-            M_ADDR_BITS     => M_ADDR_WIDTH    , -- 
-            M_BUF_SIZE      => MR_BUF_SIZE     , -- 
-            M_BUF_WIDTH     => MR_BUF_WIDTH    , -- 
-            TRB_BITS        => TRB_BITS        , -- 
-            TRB_PUMP_LO     => TRB_PUMP_LO     , -- 
-            TRB_PUMP_HI     => TRB_PUMP_HI     , -- 
-            TRB_ADDR_LO     => 0               , -- 
-            TRB_ADDR_HI     => 63              , -- 
-            TRB_MODE_LO     => 64              , -- 
-            TRB_MODE_HI     => 64+47           , -- 
-            TRB_STAT_LO     => 64+48           , -- 
-            TRB_STAT_HI     => 64+48+7           -- 
+            M_ADDR_BITS     => M_ADDR_WIDTH      , -- 
+            M_BUF_SIZE      => MR_BUF_SIZE       , -- 
+            M_BUF_WIDTH     => MR_BUF_WIDTH      , -- 
+            OP_BITS         => OP_BITS           , -- 
+            OP_XFER_LO      => OP_XFER_LO        , -- 
+            OP_XFER_HI      => OP_XFER_HI        , -- 
+            OP_ADDR_LO      => OP_LINK_ADDR_LO   , -- 
+            OP_ADDR_HI      => OP_LINK_ADDR_HI   , -- 
+            OP_MODE_LO      => OP_LINK_MODE_LO   , -- 
+            OP_MODE_HI      => OP_LINK_MODE_HI   , -- 
+            OP_STAT_LO      => OP_LINK_STAT_LO   , -- 
+            OP_STAT_HI      => OP_LINK_STAT_HI   , --
+            OP_FETCH_POS    => OP_FETCH_POS      , --
+            OP_END_POS      => OP_END_POS        , --
+            OP_TYPE_LO      => OP_TYPE_LO        , --
+            OP_TYPE_HI      => OP_TYPE_HI        , --
+            OP_NONE_CODE    => OP_NONE_CODE      , --
+            OP_XFER_CODE    => OP_XFER_CODE      , --
+            OP_LINK_CODE    => OP_LINK_CODE        -- 
         )
         port map (
         ---------------------------------------------------------------------------
         -- Clock & Reset Signals.
         ---------------------------------------------------------------------------
-            CLK             => ACLK            , -- In  :
-            RST             => RST             , -- In  :
-            CLR             => CLR             , -- In  :
-        -------------------------------------------------------------------------------
+            CLK             => ACLK              , -- In  :
+            RST             => RST               , -- In  :
+            CLR             => CLR               , -- In  :
+        ---------------------------------------------------------------------------
         -- Transfer Request Block Read Signals.
-        -------------------------------------------------------------------------------
-            M_REQ_VALID     => im_req_valid    , -- Out :
-            M_REQ_ADDR      => im_req_addr     , -- Out :
-            M_REQ_SIZE      => im_req_size     , -- Out :
-            M_REQ_PTR       => im_req_ptr      , -- Out :
-            M_REQ_FIRST     => im_req_first    , -- Out :
-            M_REQ_LAST      => im_req_last     , -- Out :
-            M_REQ_READY     => mr_req_ready    , -- In  :
-            M_ACK_VALID     => im_ack_valid    , -- In  :
-            M_ACK_ERROR     => mr_ack_error    , -- In  :
-            M_ACK_NEXT      => mr_ack_next     , -- In  :
-            M_ACK_LAST      => mr_ack_last     , -- In  :
-            M_ACK_STOP      => mr_ack_stop     , -- In  :
-            M_ACK_NONE      => mr_ack_none     , -- In  :
-            M_ACK_SIZE      => mr_ack_size     , -- In  :
-            M_BUF_WE        => im_buf_wen      , -- In  :
-            M_BUF_BEN       => mr_buf_ben      , -- In  :
-            M_BUF_DATA      => mr_buf_wdata    , -- In  :
-            M_BUF_PTR       => mr_buf_wptr     , -- In  :
-            M_BUF_RDY       => im_buf_wrdy     , -- Out :
-        -------------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
+            M_REQ_VALID     => im_req_valid      , -- Out :
+            M_REQ_ADDR      => im_req_addr       , -- Out :
+            M_REQ_SIZE      => im_req_size       , -- Out :
+            M_REQ_PTR       => im_req_ptr        , -- Out :
+            M_REQ_FIRST     => im_req_first      , -- Out :
+            M_REQ_LAST      => im_req_last       , -- Out :
+            M_REQ_READY     => mr_req_ready      , -- In  :
+            M_ACK_VALID     => im_ack_valid      , -- In  :
+            M_ACK_ERROR     => mr_ack_error      , -- In  :
+            M_ACK_NEXT      => mr_ack_next       , -- In  :
+            M_ACK_LAST      => mr_ack_last       , -- In  :
+            M_ACK_STOP      => mr_ack_stop       , -- In  :
+            M_ACK_NONE      => mr_ack_none       , -- In  :
+            M_ACK_SIZE      => mr_ack_size       , -- In  :
+            M_BUF_WE        => im_buf_wen        , -- In  :
+            M_BUF_BEN       => mr_buf_ben        , -- In  :
+            M_BUF_DATA      => mr_buf_wdata      , -- In  :
+            M_BUF_PTR       => mr_buf_wptr       , -- In  :
+            M_BUF_RDY       => im_buf_wrdy       , -- Out :
+        ---------------------------------------------------------------------------
         -- Control Status Register Interface Signals.
-        -------------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
             T_ADDR_L        => regs_load(IM_ADDR_REGS_HI downto IM_ADDR_REGS_LO),
             T_ADDR_D        => regs_wbit(IM_ADDR_REGS_HI downto IM_ADDR_REGS_LO),
             T_ADDR_Q        => regs_rbit(IM_ADDR_REGS_HI downto IM_ADDR_REGS_LO),
@@ -1354,7 +1395,7 @@ begin
             T_STAT_L        => regs_load(IM_STAT_REGS_HI downto IM_STAT_REGS_LO),
             T_STAT_D        => regs_wbit(IM_STAT_REGS_HI downto IM_STAT_REGS_LO),
             T_STAT_Q        => regs_rbit(IM_STAT_REGS_HI downto IM_STAT_REGS_LO),
-            T_STAT_I        => im_stat_i       , -- In  :
+            T_STAT_I        => im_stat_i         , -- In  :
             T_RESET_L       => regs_load(IM_CTRL_RESET_POS),
             T_RESET_D       => regs_wbit(IM_CTRL_RESET_POS),
             T_RESET_Q       => regs_rbit(IM_CTRL_RESET_POS),
@@ -1367,252 +1408,260 @@ begin
             T_PAUSE_L       => regs_load(IM_CTRL_PAUSE_POS),
             T_PAUSE_D       => regs_wbit(IM_CTRL_PAUSE_POS),
             T_PAUSE_Q       => regs_rbit(IM_CTRL_PAUSE_POS),
-            T_ERROR         => im_error        , -- Out :
-            T_DONE          => im_done         , -- Out :
-            T_ENTER         => im_enter        , -- Out :
+            T_ERROR         => im_error          , -- Out :
+            T_END           => im_end            , -- Out :
+            T_FETCH         => im_fetch          , -- Out :
         -------------------------------------------------------------------------------
         -- Pump Control Register Interface Signals.
         -------------------------------------------------------------------------------
-            P_RESET_L       => ip_reset_load   , -- Out :
-            P_RESET_D       => ip_reset_wbit   , -- Out :
-            P_RESET_Q       => ip_reset_rbit   , -- In  :
-            P_START_L       => ip_start_load   , -- Out :
-            P_START_D       => ip_start_wbit   , -- Out :
-            P_START_Q       => ip_start_rbit   , -- In  :
-            P_STOP_L        => ip_stop_load    , -- Out :
-            P_STOP_D        => ip_stop_wbit    , -- Out :
-            P_STOP_Q        => ip_stop_rbit    , -- In  :
-            P_PAUSE_L       => ip_pause_load   , -- Out :
-            P_PAUSE_D       => ip_pause_wbit   , -- Out :
-            P_PAUSE_Q       => ip_pause_rbit   , -- In  :
-            P_OPERAND_L     => ip_trb_load     , -- Out :
-            P_OPERAND_D     => ip_trb_wbit     , -- Out :
-            P_OPERAND_Q     => ip_trb_rbit     , -- In  :
-            P_RUN           => ip_run          , -- In  :
-            P_DONE          => ip_done         , -- In  :
-            P_ERROR         => ip_error          -- In  :
+            X_RESET_L       => i_xfer_reset_load , -- Out :
+            X_RESET_D       => i_xfer_reset_wbit , -- Out :
+            X_RESET_Q       => i_xfer_reset_rbit , -- In  :
+            X_START_L       => i_xfer_start_load , -- Out :
+            X_START_D       => i_xfer_start_wbit , -- Out :
+            X_START_Q       => i_xfer_start_rbit , -- In  :
+            X_STOP_L        => i_xfer_stop_load  , -- Out :
+            X_STOP_D        => i_xfer_stop_wbit  , -- Out :
+            X_STOP_Q        => i_xfer_stop_rbit  , -- In  :
+            X_PAUSE_L       => i_xfer_pause_load , -- Out :
+            X_PAUSE_D       => i_xfer_pause_wbit , -- Out :
+            X_PAUSE_Q       => i_xfer_pause_rbit , -- In  :
+            X_OPERAND_L     => i_xfer_load       , -- Out :
+            X_OPERAND_D     => i_xfer_wbit       , -- Out :
+            X_OPERAND_Q     => i_xfer_rbit       , -- In  :
+            X_RUN           => i_xfer_run        , -- In  :
+            X_DONE          => i_xfer_done       , -- In  :
+            X_ERROR         => i_xfer_error        -- In  :
         );
+    om_stat_i(0)          <= om_end;
+    om_stat_i(1)          <= om_fetch;
+    om_stat_i(4 downto 2) <= om_error(2 downto 0);
+    om_stat_i(7 downto 5) <= (7 downto 5 => '0');
+    im_stat_i(0)          <= im_end;
+    im_stat_i(1)          <= im_fetch;
+    im_stat_i(4 downto 2) <= im_error(2 downto 0);
+    im_stat_i(7 downto 5) <= (7 downto 5 => '0');
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
     CORE: PUMP_AXI4_TO_AXI4_CORE
         generic map (
-            I_ADDR_WIDTH    => I_ADDR_WIDTH    ,
-            I_DATA_WIDTH    => I_DATA_WIDTH    ,
-            I_ID_WIDTH      => I_ID_WIDTH      ,
-            I_AUSER_WIDTH   => I_AUSER_WIDTH   ,
-            I_RUSER_WIDTH   => I_RUSER_WIDTH   ,
-            I_AXI_ID        => I_AXI_ID        ,
-            I_REG_ADDR_BITS => TRB_ADDR_BITS   ,
-            I_REG_SIZE_BITS => TRB_SIZE_BITS   ,
-            I_REG_MODE_BITS => TRB_MODE_BITS   ,
-            I_REG_STAT_BITS => TRB_STAT_BITS   ,
-            I_MAX_XFER_SIZE => I_MAX_XFER_SIZE ,
-            I_RES_QUEUE     => 1               ,
-            O_ADDR_WIDTH    => O_ADDR_WIDTH    ,
-            O_DATA_WIDTH    => O_DATA_WIDTH    ,
-            O_ID_WIDTH      => O_ID_WIDTH      ,
-            O_AUSER_WIDTH   => O_AUSER_WIDTH   ,
-            O_WUSER_WIDTH   => O_WUSER_WIDTH   ,
-            O_BUSER_WIDTH   => O_BUSER_WIDTH   ,
-            O_AXI_ID        => O_AXI_ID        ,
-            O_REG_ADDR_BITS => TRB_ADDR_BITS   ,
-            O_REG_SIZE_BITS => TRB_SIZE_BITS   ,
-            O_REG_MODE_BITS => TRB_MODE_BITS   ,
-            O_REG_STAT_BITS => TRB_STAT_BITS   ,
-            O_MAX_XFER_SIZE => O_MAX_XFER_SIZE ,
-            O_RES_QUEUE     => 2               ,
+            I_ADDR_WIDTH    => I_ADDR_WIDTH      ,
+            I_DATA_WIDTH    => I_DATA_WIDTH      ,
+            I_ID_WIDTH      => I_ID_WIDTH        ,
+            I_AUSER_WIDTH   => I_AUSER_WIDTH     ,
+            I_RUSER_WIDTH   => I_RUSER_WIDTH     ,
+            I_AXI_ID        => I_AXI_ID          ,
+            I_REG_ADDR_BITS => OP_XFER_ADDR_BITS ,
+            I_REG_SIZE_BITS => OP_XFER_SIZE_BITS ,
+            I_REG_MODE_BITS => OP_XFER_MODE_BITS ,
+            I_REG_STAT_BITS => OP_XFER_STAT_BITS ,
+            I_MAX_XFER_SIZE => I_MAX_XFER_SIZE   ,
+            I_RES_QUEUE     => 1                 ,
+            O_ADDR_WIDTH    => O_ADDR_WIDTH      ,
+            O_DATA_WIDTH    => O_DATA_WIDTH      ,
+            O_ID_WIDTH      => O_ID_WIDTH        ,
+            O_AUSER_WIDTH   => O_AUSER_WIDTH     ,
+            O_WUSER_WIDTH   => O_WUSER_WIDTH     ,
+            O_BUSER_WIDTH   => O_BUSER_WIDTH     ,
+            O_AXI_ID        => O_AXI_ID          ,
+            O_REG_ADDR_BITS => OP_XFER_ADDR_BITS ,
+            O_REG_SIZE_BITS => OP_XFER_SIZE_BITS ,
+            O_REG_MODE_BITS => OP_XFER_MODE_BITS ,
+            O_REG_STAT_BITS => OP_XFER_STAT_BITS ,
+            O_MAX_XFER_SIZE => O_MAX_XFER_SIZE   ,
+            O_RES_QUEUE     => 2                 ,
             BUF_DEPTH       => BUF_DEPTH       
         )
         port map (
         ---------------------------------------------------------------------------
         -- Clock & Reset Signals.
         ---------------------------------------------------------------------------
-            CLK             => ACLK            ,
-            RST             => RST             ,
-            CLR             => CLR             ,
+            CLK             => ACLK              , -- In  :
+            RST             => RST               , -- In  :
+            CLR             => CLR               , -- In  :
         ---------------------------------------------------------------------------
         -- Intake Control Register Interface.
         ---------------------------------------------------------------------------
-            I_ADDR_L        => ip_trb_load(TRB_ADDR_HI downto TRB_ADDR_LO),
-            I_ADDR_D        => ip_trb_wbit(TRB_ADDR_HI downto TRB_ADDR_LO),
-            I_ADDR_Q        => ip_trb_rbit(TRB_ADDR_HI downto TRB_ADDR_LO),
-            I_SIZE_L        => ip_trb_load(TRB_SIZE_HI downto TRB_SIZE_LO),
-            I_SIZE_D        => ip_trb_wbit(TRB_SIZE_HI downto TRB_SIZE_LO),
-            I_SIZE_Q        => ip_trb_rbit(TRB_SIZE_HI downto TRB_SIZE_LO),
-            I_MODE_L        => ip_trb_load(TRB_MODE_HI downto TRB_MODE_LO),
-            I_MODE_D        => ip_trb_wbit(TRB_MODE_HI downto TRB_MODE_LO),
-            I_MODE_Q        => ip_trb_rbit(TRB_MODE_HI downto TRB_MODE_LO),
-            I_STAT_L        => ip_trb_load(TRB_STAT_HI downto TRB_STAT_LO),
-            I_STAT_D        => ip_trb_wbit(TRB_STAT_HI downto TRB_STAT_LO),
-            I_STAT_Q        => ip_trb_rbit(TRB_STAT_HI downto TRB_STAT_LO),
-            I_STAT_I        => ip_stat_in      ,
-            I_RESET_L       => ip_reset_load   ,
-            I_RESET_D       => ip_reset_wbit   ,
-            I_RESET_Q       => ip_reset_rbit   ,
-            I_START_L       => ip_start_load   ,
-            I_START_D       => ip_start_wbit   ,
-            I_START_Q       => ip_start_rbit   ,
-            I_STOP_L        => ip_stop_load    , 
-            I_STOP_D        => ip_stop_wbit    ,
-            I_STOP_Q        => ip_stop_rbit    ,
-            I_PAUSE_L       => ip_pause_load   ,
-            I_PAUSE_D       => ip_pause_wbit   ,
-            I_PAUSE_Q       => ip_pause_rbit   ,
-            I_FIRST_L       => ip_trb_load(TRB_FIRST_POS  ),
-            I_FIRST_D       => ip_trb_wbit(TRB_FIRST_POS  ),
-            I_FIRST_Q       => ip_trb_rbit(TRB_FIRST_POS  ),
-            I_LAST_L        => ip_trb_load(TRB_LAST_POS   ),
-            I_LAST_D        => ip_trb_wbit(TRB_LAST_POS   ),
-            I_LAST_Q        => ip_trb_rbit(TRB_LAST_POS   ),
-            I_DONE_EN_L     => ip_trb_load(TRB_DONE_EN_POS),
-            I_DONE_EN_D     => ip_trb_wbit(TRB_DONE_EN_POS),
-            I_DONE_EN_Q     => ip_trb_rbit(TRB_DONE_EN_POS),
-            I_DONE_ST_L     => ip_trb_load(TRB_DONE_ST_POS),
-            I_DONE_ST_D     => ip_trb_wbit(TRB_DONE_ST_POS),
-            I_DONE_ST_Q     => ip_trb_rbit(TRB_DONE_ST_POS),
-            I_ERR_ST_L      => ip_trb_load(TRB_ERR_ST_POS ),
-            I_ERR_ST_D      => ip_trb_wbit(TRB_ERR_ST_POS ),
-            I_ERR_ST_Q      => ip_trb_rbit(TRB_ERR_ST_POS ),
-            I_ADDR_FIX      => ip_trb_rbit(TRB_ADDR_FIX_POS),
-            I_SPECULATIVE   => ip_trb_rbit(TRB_SPECUL_POS ),
-            I_SAFETY        => ip_trb_rbit(TRB_SAFETY_POS ),
-            I_CACHE         => ip_trb_rbit(TRB_CACHE_HI downto TRB_CACHE_LO),
-            I_LOCK          => I_LOCK          ,
-            I_PROT          => I_PROT          ,
-            I_QOS           => I_QOS           ,
-            I_REGION        => I_REGION        ,
-        -------------------------------------------------------------------------------
+            I_ADDR_L        => i_xfer_load(OP_XFER_ADDR_HI downto OP_XFER_ADDR_LO),
+            I_ADDR_D        => i_xfer_wbit(OP_XFER_ADDR_HI downto OP_XFER_ADDR_LO),
+            I_ADDR_Q        => i_xfer_rbit(OP_XFER_ADDR_HI downto OP_XFER_ADDR_LO),
+            I_SIZE_L        => i_xfer_load(OP_XFER_SIZE_HI downto OP_XFER_SIZE_LO),
+            I_SIZE_D        => i_xfer_wbit(OP_XFER_SIZE_HI downto OP_XFER_SIZE_LO),
+            I_SIZE_Q        => i_xfer_rbit(OP_XFER_SIZE_HI downto OP_XFER_SIZE_LO),
+            I_MODE_L        => i_xfer_load(OP_XFER_MODE_HI downto OP_XFER_MODE_LO),
+            I_MODE_D        => i_xfer_wbit(OP_XFER_MODE_HI downto OP_XFER_MODE_LO),
+            I_MODE_Q        => i_xfer_rbit(OP_XFER_MODE_HI downto OP_XFER_MODE_LO),
+            I_STAT_L        => i_xfer_load(OP_XFER_STAT_HI downto OP_XFER_STAT_LO),
+            I_STAT_D        => i_xfer_wbit(OP_XFER_STAT_HI downto OP_XFER_STAT_LO),
+            I_STAT_Q        => i_xfer_rbit(OP_XFER_STAT_HI downto OP_XFER_STAT_LO),
+            I_STAT_I        => i_xfer_stat_i     ,
+            I_RESET_L       => i_xfer_reset_load ,
+            I_RESET_D       => i_xfer_reset_wbit ,
+            I_RESET_Q       => i_xfer_reset_rbit ,
+            I_START_L       => i_xfer_start_load ,
+            I_START_D       => i_xfer_start_wbit ,
+            I_START_Q       => i_xfer_start_rbit ,
+            I_STOP_L        => i_xfer_stop_load  , 
+            I_STOP_D        => i_xfer_stop_wbit  ,
+            I_STOP_Q        => i_xfer_stop_rbit  ,
+            I_PAUSE_L       => i_xfer_pause_load ,
+            I_PAUSE_D       => i_xfer_pause_wbit ,
+            I_PAUSE_Q       => i_xfer_pause_rbit ,
+            I_FIRST_L       => i_xfer_load(OP_XFER_FIRST_POS  ),
+            I_FIRST_D       => i_xfer_wbit(OP_XFER_FIRST_POS  ),
+            I_FIRST_Q       => i_xfer_rbit(OP_XFER_FIRST_POS  ),
+            I_LAST_L        => i_xfer_load(OP_XFER_LAST_POS   ),
+            I_LAST_D        => i_xfer_wbit(OP_XFER_LAST_POS   ),
+            I_LAST_Q        => i_xfer_rbit(OP_XFER_LAST_POS   ),
+            I_DONE_EN_L     => i_xfer_load(OP_XFER_DONE_EN_POS),
+            I_DONE_EN_D     => i_xfer_wbit(OP_XFER_DONE_EN_POS),
+            I_DONE_EN_Q     => i_xfer_rbit(OP_XFER_DONE_EN_POS),
+            I_DONE_ST_L     => i_xfer_load(OP_XFER_DONE_ST_POS),
+            I_DONE_ST_D     => i_xfer_wbit(OP_XFER_DONE_ST_POS),
+            I_DONE_ST_Q     => i_xfer_rbit(OP_XFER_DONE_ST_POS),
+            I_ERR_ST_L      => i_xfer_load(OP_XFER_ERR_ST_POS ),
+            I_ERR_ST_D      => i_xfer_wbit(OP_XFER_ERR_ST_POS ),
+            I_ERR_ST_Q      => i_xfer_rbit(OP_XFER_ERR_ST_POS ),
+            I_ADDR_FIX      => i_xfer_rbit(OP_ADDR_FIX_POS),
+            I_SPECULATIVE   => i_xfer_rbit(OP_SPECUL_POS ),
+            I_SAFETY        => i_xfer_rbit(OP_SAFETY_POS ),
+            I_CACHE         => i_xfer_rbit(OP_CACHE_HI downto OP_CACHE_LO),
+            I_LOCK          => I_LOCK            ,
+            I_PROT          => I_PROT            ,
+            I_QOS           => I_QOS             ,
+            I_REGION        => I_REGION          ,
+        ---------------------------------------------------------------------------
         -- Outlet Control Register Interface.
-        -------------------------------------------------------------------------------
-            O_ADDR_L        => op_trb_load(TRB_ADDR_HI downto TRB_ADDR_LO),
-            O_ADDR_D        => op_trb_wbit(TRB_ADDR_HI downto TRB_ADDR_LO),
-            O_ADDR_Q        => op_trb_rbit(TRB_ADDR_HI downto TRB_ADDR_LO),
-            O_SIZE_L        => op_trb_load(TRB_SIZE_HI downto TRB_SIZE_LO),
-            O_SIZE_D        => op_trb_wbit(TRB_SIZE_HI downto TRB_SIZE_LO),
-            O_SIZE_Q        => op_trb_rbit(TRB_SIZE_HI downto TRB_SIZE_LO),
-            O_MODE_L        => op_trb_load(TRB_MODE_HI downto TRB_MODE_LO),
-            O_MODE_D        => op_trb_wbit(TRB_MODE_HI downto TRB_MODE_LO),
-            O_MODE_Q        => op_trb_rbit(TRB_MODE_HI downto TRB_MODE_LO),
-            O_STAT_L        => op_trb_load(TRB_STAT_HI downto TRB_STAT_LO),
-            O_STAT_D        => op_trb_wbit(TRB_STAT_HI downto TRB_STAT_LO),
-            O_STAT_Q        => op_trb_rbit(TRB_STAT_HI downto TRB_STAT_LO),
-            O_STAT_I        => op_stat_in      ,
-            O_RESET_L       => op_reset_load   ,
-            O_RESET_D       => op_reset_wbit   ,
-            O_RESET_Q       => op_reset_rbit   ,
-            O_START_L       => op_start_load   ,
-            O_START_D       => op_start_wbit   ,
-            O_START_Q       => op_start_rbit   ,
-            O_STOP_L        => op_stop_load    , 
-            O_STOP_D        => op_stop_wbit    ,
-            O_STOP_Q        => op_stop_rbit    ,
-            O_PAUSE_L       => op_pause_load   ,
-            O_PAUSE_D       => op_pause_wbit   ,
-            O_PAUSE_Q       => op_pause_rbit   ,
-            O_FIRST_L       => op_trb_load(TRB_FIRST_POS  ),
-            O_FIRST_D       => op_trb_wbit(TRB_FIRST_POS  ),
-            O_FIRST_Q       => op_trb_rbit(TRB_FIRST_POS  ),
-            O_LAST_L        => op_trb_load(TRB_LAST_POS   ),
-            O_LAST_D        => op_trb_wbit(TRB_LAST_POS   ),
-            O_LAST_Q        => op_trb_rbit(TRB_LAST_POS   ),
-            O_DONE_EN_L     => op_trb_load(TRB_DONE_EN_POS),
-            O_DONE_EN_D     => op_trb_wbit(TRB_DONE_EN_POS),
-            O_DONE_EN_Q     => op_trb_rbit(TRB_DONE_EN_POS),
-            O_DONE_ST_L     => op_trb_load(TRB_DONE_ST_POS),
-            O_DONE_ST_D     => op_trb_wbit(TRB_DONE_ST_POS),
-            O_DONE_ST_Q     => op_trb_rbit(TRB_DONE_ST_POS),
-            O_ERR_ST_L      => op_trb_load(TRB_ERR_ST_POS ),
-            O_ERR_ST_D      => op_trb_wbit(TRB_ERR_ST_POS ),
-            O_ERR_ST_Q      => op_trb_rbit(TRB_ERR_ST_POS ),
-            O_ADDR_FIX      => op_trb_rbit(TRB_ADDR_FIX_POS),
-            O_SPECULATIVE   => op_trb_rbit(TRB_SPECUL_POS ),
-            O_SAFETY        => op_trb_rbit(TRB_SAFETY_POS ),
-            O_CACHE         => op_trb_rbit(TRB_CACHE_HI downto TRB_CACHE_LO),
-            O_LOCK          => O_LOCK          ,
-            O_PROT          => O_PROT          ,
-            O_QOS           => O_QOS           ,
-            O_REGION        => O_REGION        ,
+        ---------------------------------------------------------------------------
+            O_ADDR_L        => o_xfer_load(OP_XFER_ADDR_HI downto OP_XFER_ADDR_LO),
+            O_ADDR_D        => o_xfer_wbit(OP_XFER_ADDR_HI downto OP_XFER_ADDR_LO),
+            O_ADDR_Q        => o_xfer_rbit(OP_XFER_ADDR_HI downto OP_XFER_ADDR_LO),
+            O_SIZE_L        => o_xfer_load(OP_XFER_SIZE_HI downto OP_XFER_SIZE_LO),
+            O_SIZE_D        => o_xfer_wbit(OP_XFER_SIZE_HI downto OP_XFER_SIZE_LO),
+            O_SIZE_Q        => o_xfer_rbit(OP_XFER_SIZE_HI downto OP_XFER_SIZE_LO),
+            O_MODE_L        => o_xfer_load(OP_XFER_MODE_HI downto OP_XFER_MODE_LO),
+            O_MODE_D        => o_xfer_wbit(OP_XFER_MODE_HI downto OP_XFER_MODE_LO),
+            O_MODE_Q        => o_xfer_rbit(OP_XFER_MODE_HI downto OP_XFER_MODE_LO),
+            O_STAT_L        => o_xfer_load(OP_XFER_STAT_HI downto OP_XFER_STAT_LO),
+            O_STAT_D        => o_xfer_wbit(OP_XFER_STAT_HI downto OP_XFER_STAT_LO),
+            O_STAT_Q        => o_xfer_rbit(OP_XFER_STAT_HI downto OP_XFER_STAT_LO),
+            O_STAT_I        => o_xfer_stat_i     ,
+            O_RESET_L       => o_xfer_reset_load ,
+            O_RESET_D       => o_xfer_reset_wbit ,
+            O_RESET_Q       => o_xfer_reset_rbit ,
+            O_START_L       => o_xfer_start_load ,
+            O_START_D       => o_xfer_start_wbit ,
+            O_START_Q       => o_xfer_start_rbit ,
+            O_STOP_L        => o_xfer_stop_load  , 
+            O_STOP_D        => o_xfer_stop_wbit  ,
+            O_STOP_Q        => o_xfer_stop_rbit  ,
+            O_PAUSE_L       => o_xfer_pause_load ,
+            O_PAUSE_D       => o_xfer_pause_wbit ,
+            O_PAUSE_Q       => o_xfer_pause_rbit ,
+            O_FIRST_L       => o_xfer_load(OP_XFER_FIRST_POS  ),
+            O_FIRST_D       => o_xfer_wbit(OP_XFER_FIRST_POS  ),
+            O_FIRST_Q       => o_xfer_rbit(OP_XFER_FIRST_POS  ),
+            O_LAST_L        => o_xfer_load(OP_XFER_LAST_POS   ),
+            O_LAST_D        => o_xfer_wbit(OP_XFER_LAST_POS   ),
+            O_LAST_Q        => o_xfer_rbit(OP_XFER_LAST_POS   ),
+            O_DONE_EN_L     => o_xfer_load(OP_XFER_DONE_EN_POS),
+            O_DONE_EN_D     => o_xfer_wbit(OP_XFER_DONE_EN_POS),
+            O_DONE_EN_Q     => o_xfer_rbit(OP_XFER_DONE_EN_POS),
+            O_DONE_ST_L     => o_xfer_load(OP_XFER_DONE_ST_POS),
+            O_DONE_ST_D     => o_xfer_wbit(OP_XFER_DONE_ST_POS),
+            O_DONE_ST_Q     => o_xfer_rbit(OP_XFER_DONE_ST_POS),
+            O_ERR_ST_L      => o_xfer_load(OP_XFER_ERR_ST_POS ),
+            O_ERR_ST_D      => o_xfer_wbit(OP_XFER_ERR_ST_POS ),
+            O_ERR_ST_Q      => o_xfer_rbit(OP_XFER_ERR_ST_POS ),
+            O_ADDR_FIX      => o_xfer_rbit(OP_ADDR_FIX_POS),
+            O_SPECULATIVE   => o_xfer_rbit(OP_SPECUL_POS ),
+            O_SAFETY        => o_xfer_rbit(OP_SAFETY_POS ),
+            O_CACHE         => o_xfer_rbit(OP_CACHE_HI downto OP_CACHE_LO),
+            O_LOCK          => O_LOCK            ,
+            O_PROT          => O_PROT            ,
+            O_QOS           => O_QOS             ,
+            O_REGION        => O_REGION          ,
         --------------------------------------------------------------------------
         -- Input AXI4 Read Address Channel Signals.
         --------------------------------------------------------------------------
-            I_ARID          => I_ARID          , -- Out :
-            I_ARADDR        => I_ARADDR        , -- Out :
-            I_ARLEN         => I_ARLEN         , -- Out :
-            I_ARSIZE        => I_ARSIZE        , -- Out :
-            I_ARBURST       => I_ARBURST       , -- Out :
-            I_ARLOCK        => I_ARLOCK        , -- Out :
-            I_ARCACHE       => I_ARCACHE       , -- Out :
-            I_ARPROT        => I_ARPROT        , -- Out :
-            I_ARQOS         => I_ARQOS         , -- Out :
-            I_ARREGION      => I_ARREGION      , -- Out :
-            I_ARUSER        => I_ARUSER        , -- Out :
-            I_ARVALID       => I_ARVALID       , -- Out :
-            I_ARREADY       => I_ARREADY       , -- In  :
+            I_ARID          => I_ARID            , -- Out :
+            I_ARADDR        => I_ARADDR          , -- Out :
+            I_ARLEN         => I_ARLEN           , -- Out :
+            I_ARSIZE        => I_ARSIZE          , -- Out :
+            I_ARBURST       => I_ARBURST         , -- Out :
+            I_ARLOCK        => I_ARLOCK          , -- Out :
+            I_ARCACHE       => I_ARCACHE         , -- Out :
+            I_ARPROT        => I_ARPROT          , -- Out :
+            I_ARQOS         => I_ARQOS           , -- Out :
+            I_ARREGION      => I_ARREGION        , -- Out :
+            I_ARUSER        => I_ARUSER          , -- Out :
+            I_ARVALID       => I_ARVALID         , -- Out :
+            I_ARREADY       => I_ARREADY         , -- In  :
         --------------------------------------------------------------------------
         -- Input AXI4 Read Data Channel Signals.
         --------------------------------------------------------------------------
-            I_RID           => I_RID           , -- In  :
-            I_RDATA         => I_RDATA         , -- In  :
-            I_RRESP         => I_RRESP         , -- In  :
-            I_RLAST         => I_RLAST         , -- In  :
-            I_RUSER         => I_RUSER         , -- In  :
-            I_RVALID        => I_RVALID        , -- In  :
-            I_RREADY        => I_RREADY        , -- Out :
+            I_RID           => I_RID             , -- In  :
+            I_RDATA         => I_RDATA           , -- In  :
+            I_RRESP         => I_RRESP           , -- In  :
+            I_RLAST         => I_RLAST           , -- In  :
+            I_RUSER         => I_RUSER           , -- In  :
+            I_RVALID        => I_RVALID          , -- In  :
+            I_RREADY        => I_RREADY          , -- Out :
         --------------------------------------------------------------------------
         -- Output AXI4 Write Address Channel Signals.
         --------------------------------------------------------------------------
-            O_AWID          => O_AWID          , -- Out :
-            O_AWADDR        => O_AWADDR        , -- Out :
-            O_AWLEN         => O_AWLEN         , -- Out :
-            O_AWSIZE        => O_AWSIZE        , -- Out :
-            O_AWBURST       => O_AWBURST       , -- Out :
-            O_AWLOCK        => O_AWLOCK        , -- Out :
-            O_AWCACHE       => O_AWCACHE       , -- Out :
-            O_AWPROT        => O_AWPROT        , -- Out :
-            O_AWQOS         => O_AWQOS         , -- Out :
-            O_AWREGION      => O_AWREGION      , -- Out :
-            O_AWUSER        => O_AWUSER        , -- Out :
-            O_AWVALID       => O_AWVALID       , -- Out :
-            O_AWREADY       => O_AWREADY       , -- In  :
+            O_AWID          => O_AWID            , -- Out :
+            O_AWADDR        => O_AWADDR          , -- Out :
+            O_AWLEN         => O_AWLEN           , -- Out :
+            O_AWSIZE        => O_AWSIZE          , -- Out :
+            O_AWBURST       => O_AWBURST         , -- Out :
+            O_AWLOCK        => O_AWLOCK          , -- Out :
+            O_AWCACHE       => O_AWCACHE         , -- Out :
+            O_AWPROT        => O_AWPROT          , -- Out :
+            O_AWQOS         => O_AWQOS           , -- Out :
+            O_AWREGION      => O_AWREGION        , -- Out :
+            O_AWUSER        => O_AWUSER          , -- Out :
+            O_AWVALID       => O_AWVALID         , -- Out :
+            O_AWREADY       => O_AWREADY         , -- In  :
         --------------------------------------------------------------------------
         -- Output AXI4 Write Data Channel Signals.
         --------------------------------------------------------------------------
-            O_WID           => O_WID           , -- Out :
-            O_WDATA         => O_WDATA         , -- Out :
-            O_WSTRB         => O_WSTRB         , -- Out :
-            O_WUSER         => O_WUSER         , -- Out :
-            O_WLAST         => O_WLAST         , -- Out :
-            O_WVALID        => O_WVALID        , -- Out :
-            O_WREADY        => O_WREADY        , -- In  :
+            O_WID           => O_WID             , -- Out :
+            O_WDATA         => O_WDATA           , -- Out :
+            O_WSTRB         => O_WSTRB           , -- Out :
+            O_WUSER         => O_WUSER           , -- Out :
+            O_WLAST         => O_WLAST           , -- Out :
+            O_WVALID        => O_WVALID          , -- Out :
+            O_WREADY        => O_WREADY          , -- In  :
         --------------------------------------------------------------------------
         -- Output AXI4 Write Response Channel Signals.
         --------------------------------------------------------------------------
-            O_BID           => O_BID           , -- In  :
-            O_BRESP         => O_BRESP         , -- In  :
-            O_BUSER         => O_BUSER         , -- In  :
-            O_BVALID        => O_BVALID        , -- In  :
-            O_BREADY        => O_BREADY        , -- Out :
-        -------------------------------------------------------------------------------
+            O_BID           => O_BID             , -- In  :
+            O_BRESP         => O_BRESP           , -- In  :
+            O_BUSER         => O_BUSER           , -- In  :
+            O_BVALID        => O_BVALID          , -- In  :
+            O_BREADY        => O_BREADY          , -- Out :
+        ---------------------------------------------------------------------------
         -- Intake Status.
-        -------------------------------------------------------------------------------
-            I_OPEN          => ip_open         , -- Out :
-            I_RUNNING       => ip_run          , -- Out :
-            I_DONE          => ip_done         , -- Out :
-            I_ERROR         => ip_error        , -- Out :
-        -------------------------------------------------------------------------------
+        ---------------------------------------------------------------------------
+            I_OPEN          => i_xfer_open       , -- Out :
+            I_RUNNING       => i_xfer_run        , -- Out :
+            I_DONE          => i_xfer_done       , -- Out :
+            I_ERROR         => i_xfer_error      , -- Out :
+        ---------------------------------------------------------------------------
         -- Outlet Status.
-        -------------------------------------------------------------------------------
-            O_OPEN          => op_open         , -- Out :
-            O_RUNNING       => op_run          , -- Out :
-            O_DONE          => op_done         , -- Out :
-            O_ERROR         => op_error          -- Out :
+        ---------------------------------------------------------------------------
+            O_OPEN          => o_xfer_open       , -- Out :
+            O_RUNNING       => o_xfer_run        , -- Out :
+            O_DONE          => o_xfer_done       , -- Out :
+            O_ERROR         => o_xfer_error        -- Out :
         );
-    ip_trb_rbit(TRB_RESV_POS) <= '0';
-    op_trb_rbit(TRB_RESV_POS) <= '0';
-    ------------------------------------------------------------------------------
+    i_xfer_rbit(OP_XFER_RESV_POS) <= '0';
+    o_xfer_rbit(OP_XFER_RESV_POS) <= '0';
+    -------------------------------------------------------------------------------
     -- 
-    ------------------------------------------------------------------------------
-    ip_stat_in <= (others => '0');
-    op_stat_in <= (others => '0');
+    -------------------------------------------------------------------------------
+    i_xfer_stat_i <= (others => '0');
+    o_xfer_stat_i <= (others => '0');
 end RTL;
