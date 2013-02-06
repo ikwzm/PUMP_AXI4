@@ -563,8 +563,8 @@ architecture RTL of PUMP_SG_AXI4_TO_AXI4 is
     signal   mr_push_last       : std_logic;
     signal   mr_push_error      : std_logic;
     signal   mr_buf_wen         : std_logic_vector(1 downto 0);
-    signal   mr_buf_ben         : std_logic_vector(2**(MR_BUF_WIDTH-3) downto 0);
-    signal   mr_buf_wdata       : std_logic_vector(2**(MR_BUF_WIDTH  ) downto 0);
+    signal   mr_buf_ben         : std_logic_vector(2**(MR_BUF_WIDTH-3)-1 downto 0);
+    signal   mr_buf_wdata       : std_logic_vector(2**(MR_BUF_WIDTH  )-1 downto 0);
     signal   mr_buf_wptr        : std_logic_vector(MR_BUF_SIZE   -1 downto 0);
     signal   mr_buf_wready      : std_logic;
     -------------------------------------------------------------------------------
@@ -609,7 +609,7 @@ architecture RTL of PUMP_SG_AXI4_TO_AXI4 is
     signal   mw_pull_size       : std_logic_vector(MW_SIZE_BITS  -1 downto 0);
     signal   mw_pull_last       : std_logic;
     signal   mw_pull_error      : std_logic;
-    constant mw_buf_rdata       : std_logic_vector(2**(MW_BUF_WIDTH  ) downto 0) := (others => '0');
+    constant mw_buf_rdata       : std_logic_vector(2**(MW_BUF_WIDTH)-1 downto 0) := (others => '0');
     signal   mw_buf_rptr        : std_logic_vector(MW_BUF_SIZE   -1 downto 0);
     constant mw_buf_rready      : std_logic := '0';
     -------------------------------------------------------------------------------
@@ -961,7 +961,7 @@ begin
             REQ_SIZE_BITS   => MR_SIZE_BITS      , -- 
             REQ_SIZE_VALID  => 1                 , -- 
             FLOW_VALID      => 0                 , -- 
-            BUF_DATA_WIDTH  => MR_BUF_WIDTH      , -- 
+            BUF_DATA_WIDTH  => 2**MR_BUF_WIDTH   , -- 
             BUF_PTR_BITS    => MR_BUF_SIZE       , -- 
             XFER_MIN_SIZE   => MR_MAX_XFER_SIZE  , -- 
             XFER_MAX_SIZE   => MR_MAX_XFER_SIZE  , -- 
@@ -1073,7 +1073,7 @@ begin
             REQ_SIZE_BITS   => MW_SIZE_BITS      , -- 
             REQ_SIZE_VALID  => 1                 , -- 
             FLOW_VALID      => 0                 , -- 
-            BUF_DATA_WIDTH  => MW_BUF_WIDTH      , -- 
+            BUF_DATA_WIDTH  => 2**MW_BUF_WIDTH   , -- 
             BUF_PTR_BITS    => MW_BUF_SIZE       , -- 
             XFER_MIN_SIZE   => MW_MAX_XFER_SIZE  , -- 
             XFER_MAX_SIZE   => MW_MAX_XFER_SIZE  , -- 
