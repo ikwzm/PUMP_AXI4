@@ -63,7 +63,7 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1358592306" xil_pn:in_ck="5104436878389476933" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1358592306">
+    <transform xil_pn:end_ts="1360237008" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1360237008">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <status xil_pn:value="OutOfDateForInputs"/>
@@ -93,6 +93,8 @@
       <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_types.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/chopper.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/components.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/components/delay_adjuster.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/components/delay_register.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter_integer_arch.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_register.vhd"/>
@@ -106,9 +108,12 @@
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_controller.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_down_register.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_up_register.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_flow_syncronizer.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_intake_valve.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_operation_processor.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_outlet_valve.vhd"/>
       <outfile xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4.vhd"/>
+      <outfile xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4_core.vhd"/>
       <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench.vhd"/>
       <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench_32_32.vhd"/>
     </transform>
@@ -124,7 +129,7 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1358592306" xil_pn:in_ck="5104436878389476933" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1358592306">
+    <transform xil_pn:end_ts="1360237009" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1360237008">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <status xil_pn:value="OutOfDateForInputs"/>
@@ -155,6 +160,8 @@
       <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_types.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/chopper.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/components.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/components/delay_adjuster.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/components/delay_register.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter_integer_arch.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_register.vhd"/>
@@ -168,13 +175,16 @@
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_controller.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_down_register.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_up_register.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_flow_syncronizer.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_intake_valve.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_operation_processor.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/pump/pump_outlet_valve.vhd"/>
       <outfile xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4.vhd"/>
+      <outfile xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4_core.vhd"/>
       <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench.vhd"/>
       <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench_32_32.vhd"/>
     </transform>
-    <transform xil_pn:end_ts="1358592356" xil_pn:in_ck="5104436878389476933" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="3339511213927817329" xil_pn:start_ts="1358592306">
+    <transform xil_pn:end_ts="1360237062" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="3339511213927817329" xil_pn:start_ts="1360237009">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <status xil_pn:value="OutOfDateForInputs"/>
@@ -189,7 +199,7 @@
       <outfile xil_pn:name="isim.log"/>
       <outfile xil_pn:name="xilinxsim.ini"/>
     </transform>
-    <transform xil_pn:end_ts="1358592434" xil_pn:in_ck="1464123064449591107" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-7906703972340566701" xil_pn:start_ts="1358592433">
+    <transform xil_pn:end_ts="1360237137" xil_pn:in_ck="1464123064449591107" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-7906703972340566701" xil_pn:start_ts="1360237135">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <status xil_pn:value="OutOfDateForPredecessor"/>
