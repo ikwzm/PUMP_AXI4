@@ -63,13 +63,9 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1360237008" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1360237008">
+    <transform xil_pn:end_ts="1360481161" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1360481161">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
-      <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="InputChanged"/>
-      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_channel_player.vhd"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_core.vhd"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_master_player.vhd"/>
@@ -129,14 +125,9 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1360237009" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1360237008">
+    <transform xil_pn:end_ts="1360481162" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1360481161">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
-      <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="InputChanged"/>
-      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_channel_player.vhd"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_core.vhd"/>
       <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_master_player.vhd"/>
@@ -184,13 +175,10 @@
       <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench.vhd"/>
       <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench_32_32.vhd"/>
     </transform>
-    <transform xil_pn:end_ts="1360237062" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="3339511213927817329" xil_pn:start_ts="1360237009">
+    <transform xil_pn:end_ts="1360481223" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="3339511213927817329" xil_pn:start_ts="1360481162">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
       <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="InputChanged"/>
       <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_beh.prj"/>
       <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_isim_beh.exe"/>
@@ -199,10 +187,9 @@
       <outfile xil_pn:name="isim.log"/>
       <outfile xil_pn:name="xilinxsim.ini"/>
     </transform>
-    <transform xil_pn:end_ts="1360237137" xil_pn:in_ck="1464123064449591107" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-7906703972340566701" xil_pn:start_ts="1360237135">
+    <transform xil_pn:end_ts="1360481224" xil_pn:in_ck="1464123064449591107" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-7906703972340566701" xil_pn:start_ts="1360481223">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
       <status xil_pn:value="OutOfDateForOutputs"/>
       <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_isim_beh.wdb"/>

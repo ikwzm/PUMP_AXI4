@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_test_bench.vhd
 --!     @brief   Test Bench for Pump Sample Module (AXI4 to AXI4)
---!     @version 0.0.4
---!     @date    2013/1/7
+--!     @version 0.0.13
+--!     @date    2013/2/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -118,6 +118,8 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
                                  WUSER       => 1,
                                  RUSER       => 1,
                                  BUSER       => 1);
+    constant I_PROC_VALID    : integer :=  1;
+    constant O_PROC_VALID    : integer :=  1;
     constant I_AXI_ID        : integer :=  1;
     constant O_AXI_ID        : integer :=  2;
     constant M_AXI_ID        : integer :=  3;
@@ -384,6 +386,7 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             I_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
             I_RUSER_WIDTH   : integer range 1 to 32                  :=  4;
             I_MAX_XFER_SIZE : integer                                :=  8;
+            I_PROC_VALID    : integer                                :=  1;
             O_AXI_ID        : integer                                :=  2;
             O_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
             O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
@@ -392,6 +395,7 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             O_WUSER_WIDTH   : integer range 1 to 32                  :=  4;
             O_BUSER_WIDTH   : integer range 1 to 32                  :=  4;
             O_MAX_XFER_SIZE : integer                                :=  8;
+            O_PROC_VALID    : integer                                :=  1;
             BUF_DEPTH       : integer                                := 12
         );
         ---------------------------------------------------------------------------
@@ -594,6 +598,7 @@ begin
             I_AUSER_WIDTH   => I_WIDTH.ARUSER     ,
             I_RUSER_WIDTH   => I_WIDTH.RUSER      ,
             I_MAX_XFER_SIZE => MAX_XFER_SIZE      ,
+            I_PROC_VALID    => I_PROC_VALID       ,
             O_AXI_ID        => O_AXI_ID           ,
             O_ADDR_WIDTH    => O_WIDTH.AWADDR     ,
             O_DATA_WIDTH    => O_WIDTH.WDATA      ,
@@ -602,6 +607,7 @@ begin
             O_WUSER_WIDTH   => O_WIDTH.WUSER      ,
             O_BUSER_WIDTH   => O_WIDTH.BUSER      ,
             O_MAX_XFER_SIZE => MAX_XFER_SIZE      ,
+            O_PROC_VALID    => O_PROC_VALID       ,
             BUF_DEPTH       => BUF_DEPTH          
         )
         ---------------------------------------------------------------------------
