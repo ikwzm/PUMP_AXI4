@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
---!     @file    pump_axi4_to_axi4_test_bench_32_64.vhd
---!     @brief   Test Bench for Pump Sample Module (AXI4 to AXI4)
---!     @version 0.1.0
---!     @date    2013/2/11
+--!     @file    pump_axi4_to_axi4_for_xilinx.vhd
+--!     @brief   Pump Sample Module (AXI4 to AXI4)
+--!     @version 0.0.14
+--!     @date    2013/2/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -34,30 +34,14 @@
 --      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --
 -----------------------------------------------------------------------------------
------------------------------------------------------------------------------------
---
------------------------------------------------------------------------------------
-library ieee;
-use     ieee.std_logic_1164.all;
-entity  PUMP_AXI4_TO_AXI4_TEST_BENCH_32_64 is
-end     PUMP_AXI4_TO_AXI4_TEST_BENCH_32_64;
-architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH_32_64 is
-    component  PUMP_AXI4_TO_AXI4_TEST_BENCH
-        generic (
-            NAME            : STRING;
-            SCENARIO_FILE   : STRING;
-            I_DATA_WIDTH    : integer;
-            O_DATA_WIDTH    : integer;
-            MAX_XFER_SIZE   : integer
-        );
-    end component;
-begin
-    TB: PUMP_AXI4_TO_AXI4_TEST_BENCH
-        generic map (
-            NAME            => string'("PUMP_AXI4_TO_AXI4_TEST_BENCH_32_64"),
-            SCENARIO_FILE   => string'("pump_axi4_to_axi4_test_bench_32_64.snr"),
-            I_DATA_WIDTH    => 32,
-            O_DATA_WIDTH    => 64,
-            MAX_XFER_SIZE   =>  6
-        );        
-end MODEL;
+configuration PUMP_AXI4_TO_AXI4_FOR_XILINX of PUMP_AXI4_TO_AXI4 is
+    for RTL
+        for PUMP_CORE : PUMP_AXI4_TO_AXI4_CORE
+            for RTL
+                for RAM : SDPRAM 
+                    use entity PIPEWORK.SDPRAM(XILINX_AUTO_SELECT);
+                end for;
+            end for;
+        end for;
+    end for;
+end PUMP_AXI4_TO_AXI4_FOR_XILINX;
