@@ -3,80 +3,80 @@ PUMP AXI4 to AXI4 (PipeWork Example)
 
 ###概要###
 
-いわゆるスキャッターギャザーDMAです.
+いわゆるスキャッターギャザーDMAです.  
 入力、出力、スキャッターギャザーテーブルの読み込みは AXI4 マスターインターフェース、   
 レジスタアクセスには AXI4 スレーブインターフェースを持っています.
 
 ###使用コンポーネント###
 
-PipeWork のコンポーネントのうち、次のものを使ってます.
+PipeWork のコンポーネントのうち、次のものを使ってます.  
 PUMP_AXI4 のほとんどのモジュールは PipeWork のものを使っています.
 
-  * AXI4_REGISTER_INTERFACE
+  * AXI4_REGISTER_INTERFACE   
     レジスタアクセス用のAXI4スレーブインターフェースモジュール.   
     ./PipeWork/src/axi4/axi4_register_interface.vhd
 
-  * AXI4_REGISTER_READ_INTERFACE
+  * AXI4_REGISTER_READ_INTERFACE   
     レジスタリード用のAXI4スレーブインターフェースモジュール.   
     ./PipeWork/src/axi4/axi4_register_read_interface.vhd
 
-  * AXI4_REGISTER_WRITE_INTERFACE
+  * AXI4_REGISTER_WRITE_INTERFACE   
     レジスタライト用のAXI4スレーブインターフェースモジュール.   
     ./PipeWork/src/axi4/axi4_register_write_interface.vhd
 
-  * AXI4_MASTER_READ_INTERFACE
+  * AXI4_MASTER_READ_INTERFACE   
     AXI4マスターリードインターフェースモジュール.   
     ./PipeWork/src/axi4/axi4_master_read_interface.vhd
 
-  * AXI4_MASTER_WRITE_INTERFACE
+  * AXI4_MASTER_WRITE_INTERFACE   
     AXI4マスターライトインターフェースモジュール.     
     ./PipeWork/src/axi4/axi4_master_write_interface.vhd
 
-  * PUMP_CONTROLLER
+  * PUMP_CONTROLLER   
     汎用のポンプ(DMA)のコントローラーモジュール.   
     ./PipeWork/src/pump/pump_controller.vhd
 
-  * PUMP_OPERATION_PROCESSOR
+  * PUMP_OPERATION_PROCESSOR   
     汎用のポンプ(DMA)をスキャッターギャザー対応にするための簡易プロセッサ.   
     ./PipeWork/src/pump/pump_controller.vhd
 
-  * PUMP_CONTROL_REGISTER
+  * PUMP_CONTROL_REGISTER   
     汎用のポンプ(DMA)の制御レジスタモジュール.   
     ./PipeWork/src/pump/pump_control_register.vhd
 
-  * PUMP_COUNT_DOWN_REGISTER
+  * PUMP_COUNT_DOWN_REGISTER   
     汎用のポンプ(DMA)のカウントダウンレジスタ.   
     ./PipeWork/src/pump/pump_count_down_register.vhd
 
-  * PUMP_COUNT_UP_REGISTER
+  * PUMP_COUNT_UP_REGISTER   
     汎用のポンプ(DMA)のカウントアップレジスタ.   
     ./PipeWork/src/pump/pump_count_up_register.vhd
 
-  * PUMP_FLOW_SYNCRONIZER
+  * PUMP_FLOW_SYNCRONIZER   
     汎用のポンプ(DMA)の入力側と出力側の同期をとるためのクロック同期化モジュール.  
     ./PipeWork/src/pump/pump_flow_syncronizer.vhd
 
-  * PUMP_INTAKE_VALVE
+  * PUMP_INTAKE_VALVE   
     汎用ポンプ(DMA)の入力側のフロー制御をするモジュール.  
     ./PipeWork/src/pump/pump_intake_valve.vhd
 
-  * PUMP_OUTLET_VALVE
+  * PUMP_OUTLET_VALVE   
     汎用ポンプ(DMA)の出力側のフロー制御をするモジュール.  
     ./PipeWork/src/pump/pump_outlet_valve.vhd
 
-  * CHOPPER
+  * CHOPPER   
     先頭アドレスとサイズで示されたブロックを指定された大きさのピースに分割するモジュール.   
     ./PipeWork/src/components/chopper.vhd
 
-  * REDUCER
+  * REDUCER   
     異なるデータ幅のパスを継ぐためのアダプタ.   
     ./PipeWork/src/components/reducer.vhd
 
-  * QUEUE_REGISTER
+  * QUEUE_REGISTER   
     フリップフロップベースの比較的浅いキュー.   
     ./PipeWork/src/components/queue_register.vhd
 
-  * QUEUE_ARBITER
+  * QUEUE_ARBITER   
     キュー(ファーストインファーストアウト)方式の調停回路.   
     ./PipeWork/src/components/queue_arbiter.vhd
     ./PipeWork/src/components/queue_arbiter_integer_arch.vhd
