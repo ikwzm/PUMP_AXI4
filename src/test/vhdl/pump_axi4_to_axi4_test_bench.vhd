@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_test_bench.vhd
 --!     @brief   Test Bench for Pump Sample Module (AXI4 to AXI4)
---!     @version 0.0.4
---!     @date    2013/1/7
+--!     @version 0.1.0
+--!     @date    2013/2/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -85,6 +85,17 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
                                  WUSER       => 1,
                                  RUSER       => 1,
                                  BUSER       => 1);
+    constant M_WIDTH         : AXI4_SIGNAL_WIDTH_TYPE := (
+                                 ID          => 4,
+                                 AWADDR      => AXI4_ADDR_WIDTH,
+                                 ARADDR      => AXI4_ADDR_WIDTH,
+                                 WDATA       => 32,
+                                 RDATA       => 32,
+                                 ARUSER      => 1,
+                                 AWUSER      => 1,
+                                 WUSER       => 1,
+                                 RUSER       => 1,
+                                 BUSER       => 1);
     constant I_WIDTH         : AXI4_SIGNAL_WIDTH_TYPE := (
                                  ID          => 4,
                                  AWADDR      => AXI4_ADDR_WIDTH,
@@ -107,8 +118,11 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
                                  WUSER       => 1,
                                  RUSER       => 1,
                                  BUSER       => 1);
+    constant I_PROC_VALID    : integer :=  1;
+    constant O_PROC_VALID    : integer :=  1;
     constant I_AXI_ID        : integer :=  1;
     constant O_AXI_ID        : integer :=  2;
+    constant M_AXI_ID        : integer :=  3;
     constant BUF_DEPTH       : integer := 12;
     constant SYNC_WIDTH      : integer :=  2;
     constant GPO_WIDTH       : integer :=  8;
@@ -121,7 +135,7 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     signal   RESET           : std_logic;
     constant CLEAR           : std_logic := '0';
     ------------------------------------------------------------------------------
-    -- CSR I/F リードアドレスチャネルシグナル.
+    -- CSR I/F 
     ------------------------------------------------------------------------------
     signal   C_ARADDR        : std_logic_vector(C_WIDTH.ARADDR -1 downto 0);
     signal   C_ARWRITE       : std_logic;
@@ -170,7 +184,56 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     signal   C_BVALID        : std_logic;
     signal   C_BREADY        : std_logic;
     ------------------------------------------------------------------------------
-    -- IN I/F リードアドレスチャネルシグナル.
+    -- Transaction Request Block I/F.
+    ------------------------------------------------------------------------------
+    signal   M_ARADDR        : std_logic_vector(M_WIDTH.ARADDR -1 downto 0);
+    signal   M_ARWRITE       : std_logic;
+    signal   M_ARLEN         : AXI4_ALEN_TYPE;
+    signal   M_ARSIZE        : AXI4_ASIZE_TYPE;
+    signal   M_ARBURST       : AXI4_ABURST_TYPE;
+    signal   M_ARLOCK        : AXI4_ALOCK_TYPE;
+    signal   M_ARCACHE       : AXI4_ACACHE_TYPE;
+    signal   M_ARPROT        : AXI4_APROT_TYPE;
+    signal   M_ARQOS         : AXI4_AQOS_TYPE;
+    signal   M_ARREGION      : AXI4_AREGION_TYPE;
+    signal   M_ARUSER        : std_logic_vector(M_WIDTH.ARUSER -1 downto 0);
+    signal   M_ARID          : std_logic_vector(M_WIDTH.ID     -1 downto 0);
+    signal   M_ARVALID       : std_logic;
+    signal   M_ARREADY       : std_logic;
+    signal   M_RVALID        : std_logic;
+    signal   M_RLAST         : std_logic;
+    signal   M_RDATA         : std_logic_vector(M_WIDTH.RDATA  -1 downto 0);
+    signal   M_RRESP         : AXI4_RESP_TYPE;
+    signal   M_RUSER         : std_logic_vector(M_WIDTH.RUSER  -1 downto 0);
+    signal   M_RID           : std_logic_vector(M_WIDTH.ID     -1 downto 0);
+    signal   M_RREADY        : std_logic;
+    signal   M_AWADDR        : std_logic_vector(M_WIDTH.AWADDR -1 downto 0);
+    signal   M_AWLEN         : AXI4_ALEN_TYPE;
+    signal   M_AWSIZE        : AXI4_ASIZE_TYPE;
+    signal   M_AWBURST       : AXI4_ABURST_TYPE;
+    signal   M_AWLOCK        : AXI4_ALOCK_TYPE;
+    signal   M_AWCACHE       : AXI4_ACACHE_TYPE;
+    signal   M_AWPROT        : AXI4_APROT_TYPE;
+    signal   M_AWQOS         : AXI4_AQOS_TYPE;
+    signal   M_AWREGION      : AXI4_AREGION_TYPE;
+    signal   M_AWUSER        : std_logic_vector(M_WIDTH.AWUSER -1 downto 0);
+    signal   M_AWID          : std_logic_vector(M_WIDTH.ID     -1 downto 0);
+    signal   M_AWVALID       : std_logic;
+    signal   M_AWREADY       : std_logic;
+    signal   M_WLAST         : std_logic;
+    signal   M_WDATA         : std_logic_vector(M_WIDTH.WDATA  -1 downto 0);
+    signal   M_WSTRB         : std_logic_vector(M_WIDTH.WDATA/8-1 downto 0);
+    signal   M_WUSER         : std_logic_vector(M_WIDTH.WUSER  -1 downto 0);
+    signal   M_WID           : std_logic_vector(M_WIDTH.ID     -1 downto 0);
+    signal   M_WVALID        : std_logic;
+    signal   M_WREADY        : std_logic;
+    signal   M_BRESP         : AXI4_RESP_TYPE;
+    signal   M_BUSER         : std_logic_vector(M_WIDTH.BUSER  -1 downto 0);
+    signal   M_BID           : std_logic_vector(M_WIDTH.ID     -1 downto 0);
+    signal   M_BVALID        : std_logic;
+    signal   M_BREADY        : std_logic;
+    ------------------------------------------------------------------------------
+    -- IN I/F 
     ------------------------------------------------------------------------------
     signal   I_ARADDR        : std_logic_vector(I_WIDTH.ARADDR -1 downto 0);
     signal   I_ARWRITE       : std_logic;
@@ -219,7 +282,7 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     signal   I_BVALID        : std_logic;
     signal   I_BREADY        : std_logic;
     -------------------------------------------------------------------------------
-    -- OUT I/F ライトアドレスチャネルシグナル.
+    -- OUT I/F
     -------------------------------------------------------------------------------
     signal   O_ARADDR        : std_logic_vector(O_WIDTH.ARADDR -1 downto 0);
     signal   O_ARWRITE       : std_logic;
@@ -281,6 +344,8 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     -------------------------------------------------------------------------------
     signal   C_GPI           : std_logic_vector(GPI_WIDTH    -1 downto 0);
     signal   C_GPO           : std_logic_vector(GPO_WIDTH    -1 downto 0);
+    signal   M_GPI           : std_logic_vector(GPI_WIDTH    -1 downto 0);
+    signal   M_GPO           : std_logic_vector(GPO_WIDTH    -1 downto 0);
     signal   I_GPI           : std_logic_vector(GPI_WIDTH    -1 downto 0);
     signal   I_GPO           : std_logic_vector(GPO_WIDTH    -1 downto 0);
     signal   O_GPI           : std_logic_vector(GPI_WIDTH    -1 downto 0);
@@ -290,10 +355,12 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     -------------------------------------------------------------------------------
     signal   N_REPORT        : REPORT_STATUS_TYPE;
     signal   C_REPORT        : REPORT_STATUS_TYPE;
+    signal   M_REPORT        : REPORT_STATUS_TYPE;
     signal   I_REPORT        : REPORT_STATUS_TYPE;
     signal   O_REPORT        : REPORT_STATUS_TYPE;
     signal   N_FINISH        : std_logic;
     signal   C_FINISH        : std_logic;
+    signal   M_FINISH        : std_logic;
     signal   I_FINISH        : std_logic;
     signal   O_FINISH        : std_logic;
     -------------------------------------------------------------------------------
@@ -307,6 +374,11 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             C_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
             C_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
             C_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
+            M_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
+            M_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
+            M_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
+            M_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
+            M_AXI_ID        : integer                                :=  1;
             I_AXI_ID        : integer                                :=  1;
             I_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
             I_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
@@ -314,6 +386,7 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             I_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
             I_RUSER_WIDTH   : integer range 1 to 32                  :=  4;
             I_MAX_XFER_SIZE : integer                                :=  8;
+            I_PROC_VALID    : integer                                :=  1;
             O_AXI_ID        : integer                                :=  2;
             O_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
             O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
@@ -322,6 +395,7 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             O_WUSER_WIDTH   : integer range 1 to 32                  :=  4;
             O_BUSER_WIDTH   : integer range 1 to 32                  :=  4;
             O_MAX_XFER_SIZE : integer                                :=  8;
+            O_PROC_VALID    : integer                                :=  1;
             BUF_DEPTH       : integer                                := 12
         );
         ---------------------------------------------------------------------------
@@ -377,6 +451,62 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             C_BRESP         : out   AXI4_RESP_TYPE;
             C_BVALID        : out   std_logic;
             C_BREADY        : in    std_logic;
+            -----------------------------------------------------------------------
+            -- Transfer Request Block Access I/F AXI4 Read Address Channel Signals.
+            -----------------------------------------------------------------------
+            M_ARID          : out   std_logic_vector(M_ID_WIDTH    -1 downto 0);
+            M_ARADDR        : out   std_logic_vector(M_ADDR_WIDTH  -1 downto 0);
+            M_ARLEN         : out   AXI4_ALEN_TYPE;
+            M_ARSIZE        : out   AXI4_ASIZE_TYPE;
+            M_ARBURST       : out   AXI4_ABURST_TYPE;
+            M_ARLOCK        : out   AXI4_ALOCK_TYPE;
+            M_ARCACHE       : out   AXI4_ACACHE_TYPE;
+            M_ARPROT        : out   AXI4_APROT_TYPE;
+            M_ARQOS         : out   AXI4_AQOS_TYPE;
+            M_ARREGION      : out   AXI4_AREGION_TYPE;
+            M_ARUSER        : out   std_logic_vector(M_AUSER_WIDTH -1 downto 0);
+            M_ARVALID       : out   std_logic;
+            M_ARREADY       : in    std_logic;
+            -----------------------------------------------------------------------
+            -- Transfer Request Block Access I/F AXI4 Read Data Channel Signals.
+            -----------------------------------------------------------------------
+            M_RID           : in    std_logic_vector(M_ID_WIDTH    -1 downto 0);
+            M_RDATA         : in    std_logic_vector(M_DATA_WIDTH  -1 downto 0);
+            M_RRESP         : in    AXI4_RESP_TYPE;
+            M_RLAST         : in    std_logic;
+            M_RVALID        : in    std_logic;
+            M_RREADY        : out   std_logic;
+            -----------------------------------------------------------------------
+            -- Transfer Request Block Access I/F AXI4 Write Address Channel Signals.
+            -----------------------------------------------------------------------
+            M_AWID          : out   std_logic_vector(M_ID_WIDTH    -1 downto 0);
+            M_AWADDR        : out   std_logic_vector(M_ADDR_WIDTH  -1 downto 0);
+            M_AWLEN         : out   AXI4_ALEN_TYPE;
+            M_AWSIZE        : out   AXI4_ASIZE_TYPE;
+            M_AWBURST       : out   AXI4_ABURST_TYPE;
+            M_AWLOCK        : out   AXI4_ALOCK_TYPE;
+            M_AWCACHE       : out   AXI4_ACACHE_TYPE;
+            M_AWPROT        : out   AXI4_APROT_TYPE;
+            M_AWQOS         : out   AXI4_AQOS_TYPE;
+            M_AWREGION      : out   AXI4_AREGION_TYPE;
+            M_AWUSER        : out   std_logic_vector(M_AUSER_WIDTH -1 downto 0);
+            M_AWVALID       : out   std_logic;
+            M_AWREADY       : in    std_logic;
+            -----------------------------------------------------------------------
+            -- Transfer Request Block Access I/F AXI4 Write Data Channel Signals.
+            -----------------------------------------------------------------------
+            M_WDATA         : out   std_logic_vector(M_DATA_WIDTH  -1 downto 0);
+            M_WSTRB         : out   std_logic_vector(M_DATA_WIDTH/8-1 downto 0);
+            M_WLAST         : out   std_logic;
+            M_WVALID        : out   std_logic;
+            M_WREADY        : in    std_logic;
+            -----------------------------------------------------------------------
+            -- Transfer Request Block Access I/F AXI4 Write Response Channel Signals.
+            -----------------------------------------------------------------------
+            M_BID           : in    std_logic_vector(M_ID_WIDTH    -1 downto 0);
+            M_BRESP         : in    AXI4_RESP_TYPE;
+            M_BVALID        : in    std_logic;
+            M_BREADY        : out   std_logic;
             ----------------------------------------------------------------------
             -- Input AXI4 Read Address Channel Signals.
             ----------------------------------------------------------------------
@@ -456,6 +586,11 @@ begin
             C_ADDR_WIDTH    => C_WIDTH.AWADDR     ,
             C_DATA_WIDTH    => C_WIDTH.WDATA      ,
             C_ID_WIDTH      => C_WIDTH.ID         ,
+            M_ADDR_WIDTH    => M_WIDTH.ARADDR     ,
+            M_DATA_WIDTH    => M_WIDTH.RDATA      ,
+            M_ID_WIDTH      => M_WIDTH.ID         ,
+            M_AUSER_WIDTH   => M_WIDTH.ARUSER     ,
+            M_AXI_ID        => M_AXI_ID           ,
             I_AXI_ID        => I_AXI_ID           ,
             I_ADDR_WIDTH    => I_WIDTH.ARADDR     ,
             I_DATA_WIDTH    => I_WIDTH.RDATA      ,
@@ -463,6 +598,7 @@ begin
             I_AUSER_WIDTH   => I_WIDTH.ARUSER     ,
             I_RUSER_WIDTH   => I_WIDTH.RUSER      ,
             I_MAX_XFER_SIZE => MAX_XFER_SIZE      ,
+            I_PROC_VALID    => I_PROC_VALID       ,
             O_AXI_ID        => O_AXI_ID           ,
             O_ADDR_WIDTH    => O_WIDTH.AWADDR     ,
             O_DATA_WIDTH    => O_WIDTH.WDATA      ,
@@ -471,6 +607,7 @@ begin
             O_WUSER_WIDTH   => O_WIDTH.WUSER      ,
             O_BUSER_WIDTH   => O_WIDTH.BUSER      ,
             O_MAX_XFER_SIZE => MAX_XFER_SIZE      ,
+            O_PROC_VALID    => O_PROC_VALID       ,
             BUF_DEPTH       => BUF_DEPTH          
         )
         ---------------------------------------------------------------------------
@@ -526,6 +663,62 @@ begin
             C_BRESP         => C_BRESP         , -- Out:
             C_BVALID        => C_BVALID        , -- Out:
             C_BREADY        => C_BREADY        , -- In :
+            -----------------------------------------------------------------------
+            -- Transfer Request Block Access I/F AXI4 Read Address Channel Signals.
+            -----------------------------------------------------------------------
+            M_ARID          => M_ARID          , -- Out:
+            M_ARADDR        => M_ARADDR        , -- Out:
+            M_ARLEN         => M_ARLEN         , -- Out:
+            M_ARSIZE        => M_ARSIZE        , -- Out:
+            M_ARBURST       => M_ARBURST       , -- Out:
+            M_ARLOCK        => M_ARLOCK        , -- Out:
+            M_ARCACHE       => M_ARCACHE       , -- Out:
+            M_ARPROT        => M_ARPROT        , -- Out:
+            M_ARQOS         => M_ARQOS         , -- Out:
+            M_ARREGION      => M_ARREGION      , -- Out:
+            M_ARUSER        => M_ARUSER        , -- Out:
+            M_ARVALID       => M_ARVALID       , -- Out:
+            M_ARREADY       => M_ARREADY       , -- In :
+            -----------------------------------------------------------------------
+            -- Transfer Request Block Access I/F AXI4 Read Data Channel Signals.
+            -----------------------------------------------------------------------
+            M_RID           => M_RID           , -- In :
+            M_RDATA         => M_RDATA         , -- In :
+            M_RRESP         => M_RRESP         , -- In :
+            M_RLAST         => M_RLAST         , -- In :
+            M_RVALID        => M_RVALID        , -- In :
+            M_RREADY        => M_RREADY        , -- Out:
+            -----------------------------------------------------------------------
+            -- Transfer Request Block Access I/F AXI4 Write Address Channel Signals.
+            -----------------------------------------------------------------------
+            M_AWID          => M_AWID          , -- Out:
+            M_AWADDR        => M_AWADDR        , -- Out:
+            M_AWLEN         => M_AWLEN         , -- Out:
+            M_AWSIZE        => M_AWSIZE        , -- Out:
+            M_AWBURST       => M_AWBURST       , -- Out:
+            M_AWLOCK        => M_AWLOCK        , -- Out:
+            M_AWCACHE       => M_AWCACHE       , -- Out:
+            M_AWPROT        => M_AWPROT        , -- Out:
+            M_AWQOS         => M_AWQOS         , -- Out:
+            M_AWREGION      => M_AWREGION      , -- Out:
+            M_AWUSER        => M_AWUSER        , -- Out:
+            M_AWVALID       => M_AWVALID       , -- Out:
+            M_AWREADY       => M_AWREADY       , -- In :
+            -----------------------------------------------------------------------
+            -- Transfer Request Block Access I/F AXI4 Write Data Channel Signals.
+            -----------------------------------------------------------------------
+            M_WDATA         => M_WDATA         , -- Out:
+            M_WSTRB         => M_WSTRB         , -- Out:
+            M_WLAST         => M_WLAST         , -- Out:
+            M_WVALID        => M_WVALID        , -- Out:
+            M_WREADY        => M_WREADY        , -- In :
+            -----------------------------------------------------------------------
+            -- Transfer Request Block Access I/F AXI4 Write Response Channel Signals.
+            -----------------------------------------------------------------------
+            M_BID           => M_BID           , -- In :
+            M_BRESP         => M_BRESP         , -- In :
+            M_BVALID        => M_BVALID        , -- In :
+            M_BREADY        => M_BREADY        , -- Out:
             ----------------------------------------------------------------------
             -- Input AXI4 Read Address Channel Signals.
             ----------------------------------------------------------------------
@@ -713,6 +906,105 @@ begin
     ------------------------------------------------------------------------------
     -- AXI4_SLAVE_PLAYER
     ------------------------------------------------------------------------------
+    M: AXI4_SLAVE_PLAYER
+        generic map (
+            SCENARIO_FILE   => SCENARIO_FILE   ,
+            NAME            => "M"             ,
+            READ_ENABLE     => TRUE            ,
+            WRITE_ENABLE    => FALSE           ,
+            OUTPUT_DELAY    => DELAY           ,
+            WIDTH           => M_WIDTH         ,
+            SYNC_PLUG_NUM   => 3               ,
+            SYNC_WIDTH      => SYNC_WIDTH      ,
+            GPI_WIDTH       => GPI_WIDTH       ,
+            GPO_WIDTH       => GPO_WIDTH       ,
+            FINISH_ABORT    => FALSE
+        )
+        port map(
+        ---------------------------------------------------------------------------
+        -- グローバルシグナル.
+        ---------------------------------------------------------------------------
+            ACLK            => ACLK            , -- In  :
+            ARESETn         => ARESETn         , -- In  :
+        ---------------------------------------------------------------------------
+        -- リードアドレスチャネルシグナル.
+        ---------------------------------------------------------------------------
+            ARADDR          => M_ARADDR        , -- In  :    
+            ARLEN           => M_ARLEN         , -- In  :    
+            ARSIZE          => M_ARSIZE        , -- In  :    
+            ARBURST         => M_ARBURST       , -- In  :    
+            ARLOCK          => M_ARLOCK        , -- In  :    
+            ARCACHE         => M_ARCACHE       , -- In  :    
+            ARPROT          => M_ARPROT        , -- In  :    
+            ARQOS           => M_ARQOS         , -- In  :    
+            ARREGION        => M_ARREGION      , -- In  :    
+            ARUSER          => M_ARUSER        , -- In  :    
+            ARID            => M_ARID          , -- In  :    
+            ARVALID         => M_ARVALID       , -- In  :    
+            ARREADY         => M_ARREADY       , -- I/O : 
+        ---------------------------------------------------------------------------
+        -- リードデータチャネルシグナル.
+        ---------------------------------------------------------------------------
+            RLAST           => M_RLAST         , -- I/O : 
+            RDATA           => M_RDATA         , -- I/O : 
+            RRESP           => M_RRESP         , -- I/O : 
+            RUSER           => M_RUSER         , -- I/O : 
+            RID             => M_RID           , -- I/O : 
+            RVALID          => M_RVALID        , -- I/O : 
+            RREADY          => M_RREADY        , -- In  :    
+        ---------------------------------------------------------------------------
+        -- ライトアドレスチャネルシグナル.
+        ---------------------------------------------------------------------------
+            AWADDR          => M_AWADDR        , -- In  :    
+            AWLEN           => M_AWLEN         , -- In  :    
+            AWSIZE          => M_AWSIZE        , -- In  :    
+            AWBURST         => M_AWBURST       , -- In  :    
+            AWLOCK          => M_AWLOCK        , -- In  :    
+            AWCACHE         => M_AWCACHE       , -- In  :    
+            AWPROT          => M_AWPROT        , -- In  :    
+            AWQOS           => M_AWQOS         , -- In  :    
+            AWREGION        => M_AWREGION      , -- In  :    
+            AWUSER          => M_AWUSER        , -- In  :    
+            AWID            => M_AWID          , -- In  :    
+            AWVALID         => M_AWVALID       , -- In  :    
+            AWREADY         => M_AWREADY       , -- I/O : 
+        ---------------------------------------------------------------------------
+        -- ライトデータチャネルシグナル.
+        ---------------------------------------------------------------------------
+            WLAST           => M_WLAST         , -- In  :    
+            WDATA           => M_WDATA         , -- In  :    
+            WSTRB           => M_WSTRB         , -- In  :    
+            WUSER           => M_WUSER         , -- In  :    
+            WID             => M_WID           , -- In  :    
+            WVALID          => M_WVALID        , -- In  :    
+            WREADY          => M_WREADY        , -- I/O : 
+        --------------------------------------------------------------------------
+        -- ライト応答チャネルシグナル.
+        --------------------------------------------------------------------------
+            BRESP           => M_BRESP         , -- I/O : 
+            BUSER           => M_BUSER         , -- I/O : 
+            BID             => M_BID           , -- I/O : 
+            BVALID          => M_BVALID        , -- I/O : 
+            BREADY          => M_BREADY        , -- In  :    
+        ---------------------------------------------------------------------------
+        -- シンクロ用信号
+        ---------------------------------------------------------------------------
+            SYNC(0)         => SYNC(0)         , -- I/O :
+            SYNC(1)         => SYNC(1)         , -- I/O :
+        --------------------------------------------------------------------------
+        -- GPIO
+        --------------------------------------------------------------------------
+            GPI             => M_GPI           , -- In  :
+            GPO             => M_GPO           , -- Out :
+        --------------------------------------------------------------------------
+        -- 各種状態出力.
+        --------------------------------------------------------------------------
+            REPORT_STATUS   => M_REPORT        , -- Out :
+            FINISH          => M_FINISH          -- Out :
+    );
+    ------------------------------------------------------------------------------
+    -- AXI4_SLAVE_PLAYER
+    ------------------------------------------------------------------------------
     I: AXI4_SLAVE_PLAYER
         generic map (
             SCENARIO_FILE   => SCENARIO_FILE   ,
@@ -721,7 +1013,7 @@ begin
             WRITE_ENABLE    => FALSE           ,
             OUTPUT_DELAY    => DELAY           ,
             WIDTH           => I_WIDTH         ,
-            SYNC_PLUG_NUM   => 3               ,
+            SYNC_PLUG_NUM   => 4               ,
             SYNC_WIDTH      => SYNC_WIDTH      ,
             GPI_WIDTH       => GPI_WIDTH       ,
             GPO_WIDTH       => GPO_WIDTH       ,
@@ -820,7 +1112,7 @@ begin
             WRITE_ENABLE    => TRUE            ,
             OUTPUT_DELAY    => DELAY           ,
             WIDTH           => O_WIDTH         ,
-            SYNC_PLUG_NUM   => 3               ,
+            SYNC_PLUG_NUM   => 5               ,
             SYNC_WIDTH      => SYNC_WIDTH      ,
             GPI_WIDTH       => GPI_WIDTH       ,
             GPO_WIDTH       => GPO_WIDTH       ,
@@ -922,6 +1214,7 @@ begin
     C_GPI(0) <= I_IRQ;
     C_GPI(1) <= O_IRQ;
     C_GPI(C_GPI'high downto 2) <= (C_GPI'high downto 2 => '0');
+    M_GPI    <= (others => '0');
     I_GPI    <= (others => '0');
     O_GPI    <= (others => '0');
     process
@@ -936,6 +1229,11 @@ begin
         WRITE(L,T & "  Error    : ");WRITE(L,C_REPORT.error_count   );WRITELINE(OUTPUT,L);
         WRITE(L,T & "  Mismatch : ");WRITE(L,C_REPORT.mismatch_count);WRITELINE(OUTPUT,L);
         WRITE(L,T & "  Warning  : ");WRITE(L,C_REPORT.warning_count );WRITELINE(OUTPUT,L);
+        WRITE(L,T);                                                   WRITELINE(OUTPUT,L);
+        WRITE(L,T & "[ MRB ]");                                       WRITELINE(OUTPUT,L);
+        WRITE(L,T & "  Error    : ");WRITE(L,M_REPORT.error_count   );WRITELINE(OUTPUT,L);
+        WRITE(L,T & "  Mismatch : ");WRITE(L,M_REPORT.mismatch_count);WRITELINE(OUTPUT,L);
+        WRITE(L,T & "  Warning  : ");WRITE(L,M_REPORT.warning_count );WRITELINE(OUTPUT,L);
         WRITE(L,T);                                                   WRITELINE(OUTPUT,L);
         WRITE(L,T & "[ IN ]");                                        WRITELINE(OUTPUT,L);
         WRITE(L,T & "  Error    : ");WRITE(L,I_REPORT.error_count   );WRITELINE(OUTPUT,L);

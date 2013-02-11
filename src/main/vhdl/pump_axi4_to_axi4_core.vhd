@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_core.vhd
 --!     @brief   Pump Core Module (AXI4 to AXI4)
---!     @version 0.0.12
---!     @date    2013/2/3
+--!     @version 0.1.0
+--!     @date    2013/2/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -46,46 +46,119 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
     -- 
     -------------------------------------------------------------------------------
     generic (
-        I_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
-        I_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
-        I_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
-        I_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
-        I_RUSER_WIDTH   : integer range 1 to 32                  :=  4;
-        I_AXI_ID        : integer                                :=  1;
-        I_REG_ADDR_BITS : integer                                := 32;
-        I_REG_SIZE_BITS : integer                                := 32;
-        I_REG_MODE_BITS : integer                                := 32;
-        I_REG_STAT_BITS : integer                                := 32;
-        I_MAX_XFER_SIZE : integer                                :=  8;
-        I_RES_QUEUE     : integer                                :=  1;
-        O_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
-        O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
-        O_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
-        O_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
-        O_WUSER_WIDTH   : integer range 1 to 32                  :=  4;
-        O_BUSER_WIDTH   : integer range 1 to 32                  :=  4;
-        O_AXI_ID        : integer                                :=  2;
-        O_REG_ADDR_BITS : integer                                := 32;
-        O_REG_SIZE_BITS : integer                                := 32;
-        O_REG_MODE_BITS : integer                                := 32;
-        O_REG_STAT_BITS : integer                                := 32;
-        O_MAX_XFER_SIZE : integer                                :=  8;
-        O_RES_QUEUE     : integer                                :=  2;
-        BUF_DEPTH       : integer                                := 12
+        I_CLK_RATE      : --! @brief PUMP INTAKE CLOCK RATE :
+                          --! O_CLK_RATEとペアで入力側のクロック(I_CLK)と出力側の
+                          --! クロック(O_CLK)との関係を指定する.
+                          --! 詳細は PipeWork.Components の SYNCRONIZER を参照.
+                          integer :=  1;
+        I_ADDR_WIDTH    : --! @brief PUMP INTAKE AXI4 ADDRESS WIDTH :
+                          --! I_ARADDR のビット幅を指定する.
+                          integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
+        I_DATA_WIDTH    : --! @brief PUMP INTAKE AXI4 DATA WIDTH :
+                          --! I_RDATA のビット幅を指定する.
+                          integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
+        I_ID_WIDTH      : --! @brief PUMP INTAKE AXI4 ID WIDTH :
+                          --! I_ARID/I_RID のビット幅を指定する.
+                          integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
+        I_AUSER_WIDTH   : --! @brief PUMP INTAKE AXI4 AUSER WIDTH :
+                          --! I_ARUSER のビット幅を指定する.
+                          integer range 1 to 32                  :=  4;
+        I_RUSER_WIDTH   : --! @brief PUMP INTAKE AXI4 RUSER WIDTH :
+                          --! I_RUSER のビット幅を指定する.
+                          integer range 1 to 32                  :=  4;
+        I_AXI_ID        : --! @brief PUMP INTAKE AXI4 ID :
+                          --! I_ARID/I_RIDの値を指定する.
+                          integer :=  1;
+        I_REG_ADDR_BITS : --! @brief PUMP INTAKE ADDRESS REGISTER BITS :
+                          --! I_ADDR_L/I_ADDR_D/I_ADDR_Q のビット数を指定する.
+                          integer := 64;
+        I_REG_SIZE_BITS : --! @brief PUMP INTAKE SIZE REGISTER BITS :
+                          --! I_SIZE_L/I_SIZE_D/I_SIZE_Q のビット数を指定する.
+                          integer := 32;
+        I_REG_MODE_BITS : --! @brief PUMP INTAKE MODE REGISTER BITS :
+                          --! I_MODE_L/I_MODE_D/I_MODE_Q のビット数を指定する.
+                          integer := 16;
+        I_REG_STAT_BITS : --! @brief PUMP INTAKE STATUS REGISTER BITS :
+                          --! I_STAT_L/I_STAT_D/I_STAT_Q のビット数を指定する.
+                          integer :=  8;
+        I_MAX_XFER_SIZE : --! @brief PUMP INTAKE MAX TRANSFER SIZE :
+                          --! PUMP INTAKE の最大転送バイト数を２のべき乗値で指定す
+                          --! る.
+                          integer :=  8;
+        I_RES_QUEUE     : --! @brief PUMP INTAKE RESPONSE QUEUE SIZE :
+                          --! PUMP INTAKE のレスポンスキューの大きさを指定する.
+                          --! 詳細は PipeWork.Components の AXI4_MASTER_READ_INTERFACE を参照.
+                          integer :=  1;
+        O_CLK_RATE      : --! @brief OUTPUT CLOCK RATE :
+                          --! I_CLK_RATEとペアで入力側のクロック(I_CLK)と出力側の
+                          --! クロック(O_CLK)との関係を指定する.
+                          --! 詳細は PipeWork.Components の SYNCRONIZER を参照.
+                          integer :=  1;
+        O_ADDR_WIDTH    : --! @brief PUMP OUTLET AXI4 ADDRESS WIDTH :
+                          --! O_AWADDR のビット幅を指定する.
+                          integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
+        O_DATA_WIDTH    : --! @brief PUMP OUTLET AXI4 DATA WIDTH :
+                          --! O_WDATA のビット幅を指定する.
+                          integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
+        O_ID_WIDTH      : --! @brief PUMP OUTLET AXI4 ID WIDTH :
+                          --! O_AWID/O_WID/O_BID のビット幅を指定する.
+                          integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
+        O_AUSER_WIDTH   : --! @brief PUMP OUTLET AXI4 AUSER WIDTH :
+                          --! O_AWUSER のビット幅を指定する.
+                          integer range 1 to 32                  :=  4;
+        O_WUSER_WIDTH   : --! @brief PUMP OUTLET AXI4 WUSER WIDTH :
+                          --! O_WUSER のビット幅を指定する.
+                          integer range 1 to 32                  :=  4;
+        O_BUSER_WIDTH   : --! @brief PUMP OUTLET AXI4 BUSER WIDTH :
+                          --! O_BUSER のビット幅を指定する.
+                          integer range 1 to 32                  :=  4;
+        O_AXI_ID        : --! @brief PUMP OUTLET AXI4 ID :
+                          --! O_AWID/O_WIDの値を指定する.
+                          integer :=  2;
+        O_REG_ADDR_BITS : --! @brief PUMP OUTLET ADDRESS REGISTER BITS :
+                          --! O_ADDR_L/O_ADDR_D/O_ADDR_Q のビット数を指定する.
+                          integer := 64;
+        O_REG_SIZE_BITS : --! @brief PUMP OUTLET SIZE REGISTER BITS :
+                          --! O_SIZE_L/O_SIZE_D/O_SIZE_Q のビット数を指定する.
+                          integer := 32;
+        O_REG_MODE_BITS : --! @brief PUMP OUTLET MODE REGISTER BITS :
+                          --! O_MODE_L/O_MODE_D/O_MODE_Q のビット数を指定する.
+                          integer := 16;
+        O_REG_STAT_BITS : --! @brief PUMP OUTLET STATUS REGISTER BITS :
+                          --! O_STAT_L/O_STAT_D/O_STAT_Q のビット数を指定する.
+                          integer :=  8;
+        O_MAX_XFER_SIZE : --! @brief PUMP OUTLET MAX TRANSFER SIZE :
+                          --! PUMP OUTLET の最大転送バイト数を２のべき乗値で指定す
+                          --! る.
+                          integer :=  8;
+        O_RES_QUEUE     : --! @brief PUMP OUTLET RESPONSE QUEUE SIZE :
+                          --! PUMP OUTLET のレスポンスキューの大きさを指定する.
+                          --! 詳細は PipeWork.Components の AXI4_MASTER_WRITE_INTERFACE を参照.
+                          integer :=  2;
+        BUF_DEPTH       : --! @brief BUFFER DEPTH :
+                          --! バッファの大きさ(バイト数)を２のべき乗で指定する.
+                          integer := 12
     );
-    -------------------------------------------------------------------------------
-    -- 入出力ポートの定義.
-    -------------------------------------------------------------------------------
     port(
-        ---------------------------------------------------------------------------
-        -- Clock & Reset Signals.
-        ---------------------------------------------------------------------------
-        CLK             : in  std_logic; 
+    -------------------------------------------------------------------------------
+    -- Asyncronous Reset Signal.
+    -------------------------------------------------------------------------------
         RST             : in  std_logic;
-        CLR             : in  std_logic;
-        ---------------------------------------------------------------------------
-        -- Intake Control Register Interface.
-        ---------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
+    -- Pump Intake Clock and Clock Enable.
+    -------------------------------------------------------------------------------
+        I_CLK           : in  std_logic;
+        I_CLR           : in  std_logic;
+        I_CKE           : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Pump Outlet Clock and Clock Enable.
+    -------------------------------------------------------------------------------
+        O_CLK           : in  std_logic;
+        O_CLR           : in  std_logic;
+        O_CKE           : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Pump Intake Control Register I/F Signals.
+    -------------------------------------------------------------------------------
         I_ADDR_L        : in  std_logic_vector(I_REG_ADDR_BITS-1 downto 0);
         I_ADDR_D        : in  std_logic_vector(I_REG_ADDR_BITS-1 downto 0);
         I_ADDR_Q        : out std_logic_vector(I_REG_ADDR_BITS-1 downto 0);
@@ -134,9 +207,9 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         I_PROT          : in  AXI4_APROT_TYPE  ;
         I_QOS           : in  AXI4_AQOS_TYPE   ;
         I_REGION        : in  AXI4_AREGION_TYPE;
-        ---------------------------------------------------------------------------
-        -- Outlet Control Register Interface.
-        ---------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
+    -- Pump Outlet Control Register I/F Signals.
+    -------------------------------------------------------------------------------
         O_ADDR_L        : in  std_logic_vector(O_REG_ADDR_BITS-1 downto 0);
         O_ADDR_D        : in  std_logic_vector(O_REG_ADDR_BITS-1 downto 0);
         O_ADDR_Q        : out std_logic_vector(O_REG_ADDR_BITS-1 downto 0);
@@ -185,9 +258,9 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         O_PROT          : in  AXI4_APROT_TYPE  ;
         O_QOS           : in  AXI4_AQOS_TYPE   ;
         O_REGION        : in  AXI4_AREGION_TYPE;
-        --------------------------------------------------------------------------
-        -- Input AXI4 Read Address Channel Signals.
-        --------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
+    -- Pump Intake AXI4 Read Address Channel Signals.
+    -------------------------------------------------------------------------------
         I_ARID          : out std_logic_vector(I_ID_WIDTH    -1 downto 0);
         I_ARADDR        : out std_logic_vector(I_ADDR_WIDTH  -1 downto 0);
         I_ARLEN         : out AXI4_ALEN_TYPE;
@@ -201,9 +274,9 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         I_ARUSER        : out std_logic_vector(I_AUSER_WIDTH -1 downto 0);
         I_ARVALID       : out std_logic;
         I_ARREADY       : in  std_logic;
-        --------------------------------------------------------------------------
-        -- Input AXI4 Read Data Channel Signals.
-        --------------------------------------------------------------------------
+    ------------------------------------------------------------------------------
+    -- Pump Intake AXI4 Read Data Channel Signals.
+    ------------------------------------------------------------------------------
         I_RID           : in  std_logic_vector(I_ID_WIDTH    -1 downto 0);
         I_RDATA         : in  std_logic_vector(I_DATA_WIDTH  -1 downto 0);
         I_RRESP         : in  AXI4_RESP_TYPE;
@@ -211,9 +284,9 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         I_RUSER         : in  std_logic_vector(I_RUSER_WIDTH -1 downto 0);
         I_RVALID        : in  std_logic;
         I_RREADY        : out std_logic;
-        --------------------------------------------------------------------------
-        -- Output AXI4 Write Address Channel Signals.
-        --------------------------------------------------------------------------
+    ------------------------------------------------------------------------------
+    -- Pump Outlet AXI4 Write Address Channel Signals.
+    ------------------------------------------------------------------------------
         O_AWID          : out std_logic_vector(O_ID_WIDTH    -1 downto 0);
         O_AWADDR        : out std_logic_vector(O_ADDR_WIDTH  -1 downto 0);
         O_AWLEN         : out AXI4_ALEN_TYPE;
@@ -227,9 +300,9 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         O_AWUSER        : out std_logic_vector(O_AUSER_WIDTH -1 downto 0);
         O_AWVALID       : out std_logic;
         O_AWREADY       : in  std_logic;
-        --------------------------------------------------------------------------
-        -- Output AXI4 Write Data Channel Signals.
-        --------------------------------------------------------------------------
+    ------------------------------------------------------------------------------
+    -- Pump Outlet AXI4 Write Data Channel Signals.
+    ------------------------------------------------------------------------------
         O_WID           : out std_logic_vector(O_ID_WIDTH    -1 downto 0);
         O_WDATA         : out std_logic_vector(O_DATA_WIDTH  -1 downto 0);
         O_WSTRB         : out std_logic_vector(O_DATA_WIDTH/8-1 downto 0);
@@ -237,24 +310,24 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         O_WLAST         : out std_logic;
         O_WVALID        : out std_logic;
         O_WREADY        : in  std_logic;
-        --------------------------------------------------------------------------
-        -- Output AXI4 Write Response Channel Signals.
-        --------------------------------------------------------------------------
+    ------------------------------------------------------------------------------
+    -- Pump Outlet AXI4 Write Response Channel Signals.
+    ------------------------------------------------------------------------------
         O_BID           : in  std_logic_vector(O_ID_WIDTH    -1 downto 0);
         O_BRESP         : in  AXI4_RESP_TYPE;
         O_BUSER         : in  std_logic_vector(O_BUSER_WIDTH -1 downto 0);
         O_BVALID        : in  std_logic;
         O_BREADY        : out std_logic;
-        ---------------------------------------------------------------------------
-        -- Intake Status.
-        ---------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
+    -- Pump Intake Status Signals.
+    -------------------------------------------------------------------------------
         I_OPEN          : out std_logic;
         I_RUNNING       : out std_logic;
         I_DONE          : out std_logic;
         I_ERROR         : out std_logic;
-        ---------------------------------------------------------------------------
-        -- Outlet Status.
-        ---------------------------------------------------------------------------
+    -------------------------------------------------------------------------------
+    -- Pump Outlet Status Signals.
+    -------------------------------------------------------------------------------
         O_OPEN          : out std_logic;
         O_RUNNING       : out std_logic;
         O_DONE          : out std_logic;
@@ -311,7 +384,6 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     ------------------------------------------------------------------------------
     -- 入力側の各種定数.
     ------------------------------------------------------------------------------
-    constant I_CKE              : std_logic := '1';
     constant I_ID               : std_logic_vector(I_ID_WIDTH -1 downto 0) :=
                                   std_logic_vector(to_unsigned(I_AXI_ID, I_ID_WIDTH));
     constant I_XFER_SIZE_SEL    : std_logic_vector(I_MAX_XFER_SIZE downto I_MAX_XFER_SIZE) := "1";
@@ -342,7 +414,6 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     ------------------------------------------------------------------------------
     -- 出力側の各種定数.
     ------------------------------------------------------------------------------
-    constant O_CKE              : std_logic := '1';
     constant O_ID               : std_logic_vector(O_ID_WIDTH -1 downto 0) := 
                                   std_logic_vector(to_unsigned(O_AXI_ID, O_ID_WIDTH));
     constant O_XFER_SIZE_SEL    : std_logic_vector(O_MAX_XFER_SIZE downto O_MAX_XFER_SIZE) := "1";
@@ -417,9 +488,9 @@ begin
         --------------------------------------------------------------------------
         -- Clock and Reset Signals.
         --------------------------------------------------------------------------
-            CLK             => CLK             ,
+            CLK             => I_CLK           ,
             RST             => RST             ,
-            CLR             => CLR             ,
+            CLR             => I_CLR           ,
         --------------------------------------------------------------------------
         -- AXI4 Read Address Channel Signals.
         --------------------------------------------------------------------------
@@ -531,9 +602,9 @@ begin
         --------------------------------------------------------------------------
         -- Clock and Reset Signals.
         --------------------------------------------------------------------------
-            CLK             => CLK             ,
+            CLK             => O_CLK           ,
             RST             => RST             ,
-            CLR             => CLR             ,
+            CLR             => O_CLR           ,
         --------------------------------------------------------------------------
         -- AXI4 Write Address Channel Signals.
         --------------------------------------------------------------------------
@@ -634,7 +705,7 @@ begin
     -------------------------------------------------------------------------------
     CTRL: PUMP_CONTROLLER 
         generic map (
-            I_CLK_RATE      => 1               , 
+            I_CLK_RATE      => I_CLK_RATE      , 
             I_REQ_ADDR_VALID=> 1               , 
             I_REQ_ADDR_BITS => I_ADDR_WIDTH    ,
             I_REG_ADDR_BITS => I_REG_ADDR_BITS ,
@@ -643,7 +714,7 @@ begin
             I_REG_SIZE_BITS => I_REG_SIZE_BITS ,
             I_REG_MODE_BITS => I_REG_MODE_BITS ,
             I_REG_STAT_BITS => I_REG_STAT_BITS ,
-            O_CLK_RATE      => 1               , 
+            O_CLK_RATE      => O_CLK_RATE      , 
             O_REQ_ADDR_VALID=> 1               ,
             O_REQ_ADDR_BITS => O_ADDR_WIDTH    ,
             O_REG_ADDR_BITS => O_REG_ADDR_BITS ,
@@ -663,8 +734,8 @@ begin
         ---------------------------------------------------------------------------
         -- Intake Clock and Clock Enable.
         ---------------------------------------------------------------------------
-            I_CLK           => CLK             , -- In  :
-            I_CLR           => CLR             , -- In  :
+            I_CLK           => I_CLK           , -- In  :
+            I_CLR           => I_CLR           , -- In  :
             I_CKE           => I_CKE           , -- In  :
         ---------------------------------------------------------------------------
         -- Intake Control Register Interface.
@@ -717,8 +788,8 @@ begin
         ---------------------------------------------------------------------------
         -- Outlet Clock and Clock Enable.
         ---------------------------------------------------------------------------
-            O_CLK           => CLK             , -- In  :
-            O_CLR           => CLR             , -- In  :
+            O_CLK           => O_CLK           , -- In  :
+            O_CLR           => O_CLR           , -- In  :
             O_CKE           => O_CKE           , -- In  :
         ---------------------------------------------------------------------------
         -- Outlet Control Register Interface.
@@ -857,11 +928,11 @@ begin
             ID          => 0                     -- 
         )                                        -- 
         port map (                               -- 
-            WCLK        => CLK                 , -- In  :
+            WCLK        => I_CLK               , -- In  :
             WE          => buf_we              , -- In  :
             WADDR       => buf_wptr(BUF_DEPTH-1 downto BUF_DATA_SIZE-3), -- In  :
             WDATA       => buf_wdata           , -- In  :
-            RCLK        => CLK                 , -- In  :
+            RCLK        => O_CLK               , -- In  :
             RADDR       => buf_rptr(BUF_DEPTH-1 downto BUF_DATA_SIZE-3), -- In  :
             RDATA       => buf_rdata             -- Out :
         );
