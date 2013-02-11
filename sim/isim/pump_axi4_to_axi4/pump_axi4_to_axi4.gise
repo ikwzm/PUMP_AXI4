@@ -22,6 +22,9 @@
   <sourceproject xmlns="http://www.xilinx.com/XMLSchema" xil_pn:fileType="FILE_XISE" xil_pn:name="pump_axi4_to_axi4.xise"/>
 
   <files xmlns="http://www.xilinx.com/XMLSchema">
+    <file xil_pn:fileType="FILE_XST_PROJECT" xil_pn:name=".prj"/>
+    <file xil_pn:fileType="FILE_XST_STX" xil_pn:name=".stx"/>
+    <file xil_pn:fileType="FILE_XST" xil_pn:name=".xst"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_NGDBUILD_LOG" xil_pn:name="PUMP_AXI4_TO_AXI4.bld"/>
     <file xil_pn:fileType="FILE_CMD_LOG" xil_pn:name="PUMP_AXI4_TO_AXI4.cmd_log"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_LSO" xil_pn:name="PUMP_AXI4_TO_AXI4.lso"/>
@@ -66,52 +69,12 @@
     <transform xil_pn:end_ts="1360481161" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1360481161">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_channel_player.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_core.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_master_player.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_models.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_signal_printer.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_slave_player.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_types.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/core.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/marchal.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/reader.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/sync.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/util.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/vocal.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_components.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_master_address_channel_controller.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_master_read_interface.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_master_write_interface.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_register_interface.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_register_read_interface.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_register_write_interface.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_types.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/chopper.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/components.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/delay_adjuster.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/delay_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter_integer_arch.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/queue_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/reducer.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/sdpram.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/sdpram_model.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/syncronizer.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/syncronizer_input_pending_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_components.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_control_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_controller.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_down_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_up_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_flow_syncronizer.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_intake_valve.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_operation_processor.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_outlet_valve.vhd"/>
-      <outfile xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4.vhd"/>
-      <outfile xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4_core.vhd"/>
-      <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench.vhd"/>
-      <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench_32_32.vhd"/>
+      <status xil_pn:value="OutOfDateForInputs"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="InputAdded"/>
+      <status xil_pn:value="InputChanged"/>
+      <status xil_pn:value="InputRemoved"/>
+      <status xil_pn:value="OutputRemoved"/>
     </transform>
     <transform xil_pn:end_ts="1357319558" xil_pn:name="TRAN_xawsToSimhdl" xil_pn:prop_ck="3862279397360720779" xil_pn:start_ts="1357319558">
       <status xil_pn:value="SuccessfullyRun"/>
@@ -124,150 +87,105 @@
     <transform xil_pn:end_ts="1358151340" xil_pn:name="TRAN_regenerateCoresSim" xil_pn:prop_ck="4624222170622520182" xil_pn:start_ts="1358151340">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForProperties"/>
     </transform>
     <transform xil_pn:end_ts="1360481162" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1360481161">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_channel_player.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_core.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_master_player.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_models.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_signal_printer.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_slave_player.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/axi4/axi4_types.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/core.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/marchal.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/reader.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/sync.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/util.vhd"/>
-      <outfile xil_pn:name="../../../Dummy_Plug/src/main/vhdl/core/vocal.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_components.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_master_address_channel_controller.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_master_read_interface.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_master_write_interface.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_register_interface.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_register_read_interface.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_register_write_interface.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/axi4/axi4_types.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/chopper.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/components.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/delay_adjuster.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/delay_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter_integer_arch.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/queue_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/reducer.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/sdpram.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/sdpram_model.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/syncronizer.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/syncronizer_input_pending_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_components.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_control_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_controller.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_down_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_count_up_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_flow_syncronizer.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_intake_valve.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_operation_processor.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/pump/pump_outlet_valve.vhd"/>
-      <outfile xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4.vhd"/>
-      <outfile xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4_core.vhd"/>
-      <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench.vhd"/>
-      <outfile xil_pn:name="../../../src/test/vhdl/pump_axi4_to_axi4_test_bench_32_32.vhd"/>
+      <status xil_pn:value="OutOfDateForInputs"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="InputRemoved"/>
+      <status xil_pn:value="OutputRemoved"/>
     </transform>
     <transform xil_pn:end_ts="1360481223" xil_pn:in_ck="-8095257831205833518" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="3339511213927817329" xil_pn:start_ts="1360481162">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForInputs"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
       <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="InputRemoved"/>
       <status xil_pn:value="OutputChanged"/>
-      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_beh.prj"/>
-      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_isim_beh.exe"/>
-      <outfile xil_pn:name="fuse.log"/>
-      <outfile xil_pn:name="isim"/>
-      <outfile xil_pn:name="isim.log"/>
-      <outfile xil_pn:name="xilinxsim.ini"/>
+      <status xil_pn:value="OutputRemoved"/>
     </transform>
     <transform xil_pn:end_ts="1360481224" xil_pn:in_ck="1464123064449591107" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-7906703972340566701" xil_pn:start_ts="1360481223">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForInputs"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
       <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="InputRemoved"/>
       <status xil_pn:value="OutputChanged"/>
-      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_isim_beh.wdb"/>
-      <outfile xil_pn:name="isim.cmd"/>
-      <outfile xil_pn:name="isim.log"/>
+      <status xil_pn:value="OutputRemoved"/>
     </transform>
     <transform xil_pn:end_ts="1357364809" xil_pn:name="TRAN_copyInitialToXSTAbstractSynthesis" xil_pn:start_ts="1357364809">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1357364809" xil_pn:name="TRAN_schematicsToHdl" xil_pn:prop_ck="3590989170725937490" xil_pn:start_ts="1357364809">
-      <status xil_pn:value="SuccessfullyRun"/>
-      <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForProperties"/>
-    </transform>
-    <transform xil_pn:end_ts="1357365158" xil_pn:name="TRAN_regenerateCores" xil_pn:prop_ck="3896577586105282353" xil_pn:start_ts="1357365158">
-      <status xil_pn:value="SuccessfullyRun"/>
-      <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForProperties"/>
-    </transform>
-    <transform xil_pn:end_ts="1357364809" xil_pn:name="TRAN_SubProjectAbstractToPreProxy" xil_pn:start_ts="1357364809">
+    <transform xil_pn:end_ts="1360556376" xil_pn:name="TRAN_schematicsToHdl" xil_pn:prop_ck="3590989170725937490" xil_pn:start_ts="1360556376">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1357364809" xil_pn:name="TRAN_xawsTohdl" xil_pn:prop_ck="-8959798099591691994" xil_pn:start_ts="1357364809">
+    <transform xil_pn:end_ts="1360556376" xil_pn:name="TRAN_regenerateCores" xil_pn:prop_ck="3896577586105282353" xil_pn:start_ts="1360556376">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForProperties"/>
     </transform>
-    <transform xil_pn:end_ts="1357365158" xil_pn:name="TRAN_SubProjectPreToStructuralProxy" xil_pn:prop_ck="5702940744563229898" xil_pn:start_ts="1357365158">
+    <transform xil_pn:end_ts="1360556376" xil_pn:name="TRAN_SubProjectAbstractToPreProxy" xil_pn:start_ts="1360556376">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
     </transform>
-    <transform xil_pn:end_ts="1357365158" xil_pn:name="TRAN_platgen" xil_pn:prop_ck="-3535299488439803845" xil_pn:start_ts="1357365158">
+    <transform xil_pn:end_ts="1360556376" xil_pn:name="TRAN_xawsTohdl" xil_pn:prop_ck="-8959798099591691994" xil_pn:start_ts="1360556376">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForProperties"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
     </transform>
-    <transform xil_pn:end_ts="1357365332" xil_pn:in_ck="6765651079389351251" xil_pn:name="TRANEXT_xstsynthesize_virtex6" xil_pn:prop_ck="8319049447521812965" xil_pn:start_ts="1357365158">
+    <transform xil_pn:end_ts="1360556376" xil_pn:name="TRAN_SubProjectPreToStructuralProxy" xil_pn:prop_ck="5702940744563229898" xil_pn:start_ts="1360556376">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="ReadyToRun"/>
+    </transform>
+    <transform xil_pn:end_ts="1360556376" xil_pn:name="TRAN_platgen" xil_pn:prop_ck="-3535299488439803845" xil_pn:start_ts="1360556376">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="ReadyToRun"/>
+    </transform>
+    <transform xil_pn:end_ts="1360566411" xil_pn:in_ck="-1384344617079595556" xil_pn:name="TRANEXT_xstsynthesize_virtex6" xil_pn:prop_ck="8319049447521812965" xil_pn:start_ts="1360566265">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
-      <status xil_pn:value="OutOfDateForProperties"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
-      <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="InputAdded"/>
-      <status xil_pn:value="InputChanged"/>
-      <status xil_pn:value="InputRemoved"/>
-      <status xil_pn:value="OutputRemoved"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4.lso"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4.ngc"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4.ngr"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4.prj"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4.stx"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4.syr"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4.xst"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_beh.prj"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_stx_beh.prj"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_xst.xrpt"/>
+      <outfile xil_pn:name="_xmsgs/xst.xmsgs"/>
+      <outfile xil_pn:name="webtalk_pn.xml"/>
+      <outfile xil_pn:name="xst"/>
     </transform>
-    <transform xil_pn:end_ts="1357365023" xil_pn:name="TRAN_compileBCD2" xil_pn:prop_ck="5858148277473350299" xil_pn:start_ts="1357365023">
+    <transform xil_pn:end_ts="1360566497" xil_pn:name="TRAN_compileBCD2" xil_pn:prop_ck="5858148277473350299" xil_pn:start_ts="1360566497">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForProperties"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
     </transform>
-    <transform xil_pn:end_ts="1357365364" xil_pn:in_ck="-4334702108727434796" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="6824671163332831225" xil_pn:start_ts="1357365332">
+    <transform xil_pn:end_ts="1360566535" xil_pn:in_ck="-4334702108727434796" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="6824671163332831225" xil_pn:start_ts="1360566497">
       <status xil_pn:value="SuccessfullyRun"/>
-      <status xil_pn:value="NotReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
-      <status xil_pn:value="OutOfDateForProperties"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
-      <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="InputRemoved"/>
-      <status xil_pn:value="OutputRemoved"/>
+      <status xil_pn:value="ReadyToRun"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4.bld"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4.ngd"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_ngdbuild.xrpt"/>
+      <outfile xil_pn:name="_ngo"/>
+      <outfile xil_pn:name="_xmsgs/ngdbuild.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1357365428" xil_pn:in_ck="-4334702108727434795" xil_pn:name="TRANEXT_map_virtex7" xil_pn:prop_ck="4905648241949837361" xil_pn:start_ts="1357365364">
+    <transform xil_pn:end_ts="1360566598" xil_pn:in_ck="-4334702108727434795" xil_pn:name="TRANEXT_map_virtex7" xil_pn:prop_ck="4905648241949837361" xil_pn:start_ts="1360566535">
       <status xil_pn:value="FailedRun"/>
       <status xil_pn:value="WarningsGenerated"/>
-      <status xil_pn:value="NotReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
-      <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="InputRemoved"/>
-      <status xil_pn:value="OutputRemoved"/>
+      <status xil_pn:value="ReadyToRun"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_map.map"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_map.mrp"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_map.ngm"/>
+      <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_map.xrpt"/>
+      <outfile xil_pn:name="_xmsgs/map.xmsgs"/>
     </transform>
   </transforms>
 

@@ -2,7 +2,7 @@
 --!     @file    pump_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
 --!     @version 0.0.14
---!     @date    2013/2/10
+--!     @date    2013/2/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -267,6 +267,526 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     signal   RST                : std_logic;
     constant CLR                : std_logic := '0';
     -------------------------------------------------------------------------------
+    -- レジスタアクセスインターフェースのアドレスのビット数.
+    -------------------------------------------------------------------------------
+    constant REGS_ADDR_WIDTH    : integer := 6;
+    constant CORE_ADDR_WIDTH    : integer := 5;
+    -------------------------------------------------------------------------------
+    -- 全レジスタのビット数.
+    -------------------------------------------------------------------------------
+    constant REGS_DATA_BITS     : integer := (2**REGS_ADDR_WIDTH)*8;
+    constant CORE_DATA_BITS     : integer := (2**CORE_ADDR_WIDTH)*8;
+    -------------------------------------------------------------------------------
+    -- レジスタアクセスインターフェースのデータのビット数.
+    -------------------------------------------------------------------------------
+    constant REGS_DATA_WIDTH    : integer := 32;
+    -------------------------------------------------------------------------------
+    -- 定数
+    -------------------------------------------------------------------------------
+    constant I_CKE              : std_logic        := '1';
+    constant I_LOCK             : AXI4_ALOCK_TYPE  := (others => '0');
+    constant I_PROT             : AXI4_APROT_TYPE  := (others => '0');
+    constant I_QOS              : AXI4_AQOS_TYPE   := (others => '0');
+    constant I_REGION           : AXI4_AREGION_TYPE:= (others => '0');
+    -------------------------------------------------------------------------------
+    -- 定数
+    -------------------------------------------------------------------------------
+    constant O_CKE              : std_logic        := '1';
+    constant O_LOCK             : AXI4_ALOCK_TYPE  := (others => '0');
+    constant O_PROT             : AXI4_APROT_TYPE  := (others => '0');
+    constant O_QOS              : AXI4_AQOS_TYPE   := (others => '0');
+    constant O_REGION           : AXI4_AREGION_TYPE:= (others => '0');
+    -------------------------------------------------------------------------------
+    -- レジスタアクセス用の信号群.
+    -------------------------------------------------------------------------------
+    signal   regs_load          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
+    signal   regs_wbit          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
+    signal   regs_rbit          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
+    signal   pump_load          : std_logic_vector(CORE_DATA_BITS   -1 downto 0);
+    signal   pump_wbit          : std_logic_vector(CORE_DATA_BITS   -1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Operation Code Foramt
+    -------------------------------------------------------------------------------
+    --           31            24              16               8               0
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x00 |                                                               |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x04 |                                                               |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x08 |                                                               |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x0C | TYPE  |E|F|                                                   |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -------------------------------------------------------------------------------
+    -- TYPE        = オペレーションコードのタイプ.
+    -- End         = このビットが'1'の場合、オペレーション終了時にオペレーションプ
+    --               ロセッサのStatus[0]をセットすることを指定する.
+    -- Fetch       = このビットが'1'の場合、オペレーションコード読み込み時にオペレ
+    --               ーションプロセッサのStatus[1]をセットすることを指定する.
+    -------------------------------------------------------------------------------
+    constant PO_BITS            : integer := 128;
+    constant PO_TYPE_HI         : integer := 127;
+    constant PO_TYPE_LO         : integer := 124;
+    constant PO_END_POS         : integer := 123;
+    constant PO_FETCH_POS       : integer := 122;
+    constant PI_BITS            : integer := 128;
+    constant PI_TYPE_HI         : integer := 127;
+    constant PI_TYPE_LO         : integer := 124;
+    constant PI_END_POS         : integer := 123;
+    constant PI_FETCH_POS       : integer := 122;
+    -------------------------------------------------------------------------------
+    -- Operation Code(NONE)
+    -------------------------------------------------------------------------------
+    --           31            24              16               8               0
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x00 |                       Reserve[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x04 |                       Reserve[63:31]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x08 |                       Reserve[95:64]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x0C |0|0|0|0|E|F|           Reserve[121:96]                         |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -------------------------------------------------------------------------------
+    -- TYPE        = "0000"
+    -- End         = このビットが'1'の場合、オペレーション終了時にオペレーションプ
+    --               ロセッサのStatus[0]をセットすることを指定する.
+    -- Fetch       = このビットが'1'の場合、オペレーションコード読み込み時にオペレ
+    --               ーションプロセッサのStatus[1]をセットすることを指定する.
+    -------------------------------------------------------------------------------
+    constant PO_NONE_CODE       : integer :=   0;
+    constant PI_NONE_CODE       : integer :=   0;
+    -------------------------------------------------------------------------------
+    -- Operation Code(XFER)
+    -------------------------------------------------------------------------------
+    --           31            24              16               8               0
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x00 |                       Address[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x04 |                       Address[63:31]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x08 |                          Size[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x0C |1|1|0|0|E|F|L|F|0|0|0|0|0|0|0|0|          Mode[15:00]          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -------------------------------------------------------------------------------
+    -- TYPE        = "1100"
+    -- End         = このビットが'1'の場合、オペレーション終了時にオペレーションプ
+    --               ロセッサのStatus[0]をセットすることを指定する.
+    -- Fetch       = このビットが'1'の場合、オペレーションコード読み込み時にオペレ
+    --               ーションプロセッサのStatus[1]をセットすることを指定する.
+    -- Last        = 1:連続したトランザクションの開始を指定する.
+    -- First       = 1:連続したトランザクションの終了を指定する.
+    -- Mode[15]    = 1:AXI4 Master I/F をセイフティモードで動かすことを示す.
+    -- Mode[14]    = 1:AXI4 Master I/F を投機モードで動かすことを示す.
+    -- Mode[13]    = 1:AXI4 Master I/F をアドレス固定モードにすることを示す.
+    -- Mode[11:08] = AXI4 Master I/F のキャッシュモードを指定する.
+    -- Mode[01]    = 1:エラー発生時(Status[1]='1')に割り込みを発生する.
+    -- Mode[00]    = 1:転送終了時(Status[0]='1')に割り込みを発生する.
+    -- Size[31:00] = 転送サイズ.
+    -- Address     = 転送開始アドレス.
+    -------------------------------------------------------------------------------
+    constant PO_XFER_CODE       : integer :=  12;
+    constant PO_CORE_HI         : integer := 123;
+    constant PO_CORE_LO         : integer :=   0;
+    constant PI_XFER_CODE       : integer :=  12;
+    constant PI_CORE_HI         : integer := 123;
+    constant PI_CORE_LO         : integer :=   0;
+    -------------------------------------------------------------------------------
+    -- Operation Code(LINK)
+    -------------------------------------------------------------------------------
+    --           31            24              16               8               0
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x00 |                       Address[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x04 |                       Address[63:31]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x08 |                          Mode[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    --     +0x0C |1|1|0|1|E|F|   |    Status     |          Mode[47:32]          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -------------------------------------------------------------------------------
+    -- TYPE        = "1101"
+    -- End         = このビットが'1'の場合、オペレーション終了時にオペレーションプ
+    --               ロセッサのStatus[0]をセットすることを指定する.
+    -- Fetch       = このビットが'1'の場合、オペレーションコード読み込み時にオペレ
+    --               ーションプロセッサのStatus[1]をセットすることを指定する.
+    -- Mode[43:40] = AXI4 Master Read I/F のキャッシュモードを指定する.
+    -- Mode[33]    = 1:Operation Code を読み込んだ時(Status[1]='1')に割り込みを発生する.
+    -- Mode[32]    = 1:オペレーション終了時(Status[0]='1')に割り込みを発生する.
+    -- Address     = オペレーションコードフェッチアドレス.
+    -------------------------------------------------------------------------------
+    constant PO_LINK_CODE       : integer :=  13;
+    constant PO_STAT_HI         : integer := 119;
+    constant PO_STAT_LO         : integer := 112;
+    constant PO_MODE_HI         : integer := 111;
+    constant PO_MODE_LO         : integer :=  64;
+    constant PO_ADDR_HI         : integer :=  63;
+    constant PO_ADDR_LO         : integer :=   0;
+    constant PI_LINK_CODE       : integer :=  13;
+    constant PI_STAT_HI         : integer := 119;
+    constant PI_STAT_LO         : integer := 112;
+    constant PI_MODE_HI         : integer := 111;
+    constant PI_MODE_LO         : integer :=  64;
+    constant PI_ADDR_HI         : integer :=  63;
+    constant PI_ADDR_LO         : integer :=   0;
+    -------------------------------------------------------------------------------
+    -- レジスタのアドレスマップ.
+    -------------------------------------------------------------------------------
+    -- Pump Core Outlet Registers
+    -------------------------------------------------------------------------------
+    --           31            24              16               8               0
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x00 |                       Address[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x04 |                       Address[63:31]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x08 |                          Size[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x0C | Control[7:0]  |  Status[7:0]  |          Mode[15:00]          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -------------------------------------------------------------------------------
+    constant CO_REGS_BASE_ADDR  : integer := 16#00#;
+    constant CO_REGS_BITS       : integer := 128;   
+    constant CO_REGS_LO         : integer := 8*CO_REGS_BASE_ADDR;
+    constant CO_REGS_HI         : integer := CO_REGS_LO + CO_REGS_BITS - 1;
+    -------------------------------------------------------------------------------
+    -- Pump Core Outlet Address Register
+    -------------------------------------------------------------------------------
+    -- Address     = 転送開始アドレス.
+    -------------------------------------------------------------------------------
+    constant CO_ADDR_REGS_ADDR  : integer := CO_REGS_BASE_ADDR + 16#00#;
+    constant CO_ADDR_REGS_BITS  : integer := 64;
+    constant CO_ADDR_REGS_LO    : integer := 8*CO_ADDR_REGS_ADDR;
+    constant CO_ADDR_REGS_HI    : integer := 8*CO_ADDR_REGS_ADDR + CO_ADDR_REGS_BITS-1;
+    -------------------------------------------------------------------------------
+    -- Pump Core Outlet Size Register
+    -------------------------------------------------------------------------------
+    -- Size[31:00] = 転送サイズ.
+    -------------------------------------------------------------------------------
+    constant CO_SIZE_REGS_ADDR  : integer := CO_REGS_BASE_ADDR + 16#08#;
+    constant CO_SIZE_REGS_BITS  : integer := 32;
+    constant CO_SIZE_REGS_LO    : integer := 8*CO_SIZE_REGS_ADDR;
+    constant CO_SIZE_REGS_HI    : integer := 8*CO_SIZE_REGS_ADDR + CO_SIZE_REGS_BITS-1;
+    -------------------------------------------------------------------------------
+    -- Pump Core Outlet Mode Register
+    -------------------------------------------------------------------------------
+    -- Mode[15]    = 1:AXI4 Master Write I/F をセイフティモードで動かす.
+    -- Mode[14]    = 1:AXI4 Master Write I/F を投機モードで動かす.
+    -- Mode[13]    = 1:AXI4 Master Write I/F をアドレス固定モードにする.
+    -- Mode[11:08] = AXI4 Master Write I/F のキャッシュモードを指定する.
+    -- Mode[01]    = 1:エラー発生時(Status[1]='1')に割り込みを発生する.
+    -- Mode[00]    = 1:転送終了時(Status[0]='1')に割り込みを発生する.
+    -------------------------------------------------------------------------------
+    constant CO_MODE_REGS_ADDR  : integer := CO_REGS_BASE_ADDR + 16#0C#;
+    constant CO_MODE_REGS_BITS  : integer := 16;
+    constant CO_MODE_REGS_HI    : integer := 8*CO_MODE_REGS_ADDR + 15;
+    constant CO_MODE_REGS_LO    : integer := 8*CO_MODE_REGS_ADDR +  0;
+    constant CO_MODE_SAFETY_POS : integer := 8*CO_MODE_REGS_ADDR + 15;
+    constant CO_MODE_SPECUL_POS : integer := 8*CO_MODE_REGS_ADDR + 14;
+    constant CO_MODE_AFIX_POS   : integer := 8*CO_MODE_REGS_ADDR + 13;
+    constant CO_MODE_CACHE_HI   : integer := 8*CO_MODE_REGS_ADDR + 11;
+    constant CO_MODE_CACHE_LO   : integer := 8*CO_MODE_REGS_ADDR +  8;
+    constant CO_MODE_ERROR_POS  : integer := 8*CO_MODE_REGS_ADDR +  1;
+    constant CO_MODE_DONE_POS   : integer := 8*CO_MODE_REGS_ADDR +  0;
+    -------------------------------------------------------------------------------
+    -- Pump Core Outlet Status Register
+    -------------------------------------------------------------------------------
+    -- Status[7:2] = 予約.
+    -- Status[1]   = エラー発生時にセットされる.
+    -- Status[0]   = 転送終了時かつ Control[2]='1' にセットされる.
+    -------------------------------------------------------------------------------
+    constant CO_STAT_REGS_ADDR  : integer := CO_REGS_BASE_ADDR + 16#0E#;
+    constant CO_STAT_REGS_BITS  : integer := 8;
+    constant CO_STAT_RESV_HI    : integer := 8*CO_STAT_REGS_ADDR +  7;
+    constant CO_STAT_RESV_LO    : integer := 8*CO_STAT_REGS_ADDR +  2;
+    constant CO_STAT_ERROR_POS  : integer := 8*CO_STAT_REGS_ADDR +  1;
+    constant CO_STAT_DONE_POS   : integer := 8*CO_STAT_REGS_ADDR +  0;
+    constant CO_STAT_RESV_BITS  : integer := CO_STAT_RESV_HI - CO_STAT_RESV_LO + 1;
+    -------------------------------------------------------------------------------
+    -- Pump Core Outlet Control Register
+    -------------------------------------------------------------------------------
+    -- Control[7]  = 1:モジュールをリセットする. 0:リセットを解除する.
+    -- Control[6]  = 1:転送を一時中断する.       0:転送を再開する.
+    -- Control[5]  = 1:転送を中止する.           0:意味無し.
+    -- Control[4]  = 1:転送を開始する.           0:意味無し.
+    -- Control[3]  = 予約.
+    -- Control[2]  = 1:転送終了時にStatus[0]がセットされる.
+    -- Control[1]  = 1:連続したトランザクションの開始を指定する.
+    -- Control[0]  = 1:連続したトランザクションの終了を指定する.
+    -------------------------------------------------------------------------------
+    constant CO_CTRL_REGS_ADDR  : integer := CO_REGS_BASE_ADDR + 16#0F#;
+    constant CO_CTRL_RESET_POS  : integer := 8*CO_CTRL_REGS_ADDR +  7;
+    constant CO_CTRL_PAUSE_POS  : integer := 8*CO_CTRL_REGS_ADDR +  6;
+    constant CO_CTRL_STOP_POS   : integer := 8*CO_CTRL_REGS_ADDR +  5;
+    constant CO_CTRL_START_POS  : integer := 8*CO_CTRL_REGS_ADDR +  4;
+    constant CO_CTRL_RESV_POS   : integer := 8*CO_CTRL_REGS_ADDR +  3;
+    constant CO_CTRL_DONE_POS   : integer := 8*CO_CTRL_REGS_ADDR +  2;
+    constant CO_CTRL_FIRST_POS  : integer := 8*CO_CTRL_REGS_ADDR +  1;
+    constant CO_CTRL_LAST_POS   : integer := 8*CO_CTRL_REGS_ADDR +  0;
+    -------------------------------------------------------------------------------
+    -- Pump Core Outlet Processor Operation Code Range
+    -------------------------------------------------------------------------------
+    constant CO_OPERAND_LO      : integer := CO_REGS_LO;
+    constant CO_OPERAND_HI      : integer := CO_CTRL_RESV_POS;
+    -------------------------------------------------------------------------------
+    -- Pump Core Intake Registers
+    -------------------------------------------------------------------------------
+    --           31            24              16               8               0
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x10 |                       Address[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x14 |                       Address[63:31]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x18 |                          Size[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x1C | Control[7:0]  |  Status[7:0]  |          Mode[15:00]          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -------------------------------------------------------------------------------
+    constant CI_REGS_BASE_ADDR  : integer := 16#10#;
+    constant CI_REGS_BITS       : integer := 128;
+    constant CI_REGS_LO         : integer := 8*CI_REGS_BASE_ADDR;
+    constant CI_REGS_HI         : integer := CI_REGS_LO + CI_REGS_BITS - 1;
+    -------------------------------------------------------------------------------
+    -- Pump Core Intake Address Register
+    -------------------------------------------------------------------------------
+    -- Address     = 転送開始アドレス.
+    -------------------------------------------------------------------------------
+    constant CI_ADDR_REGS_ADDR  : integer := CI_REGS_BASE_ADDR + 16#00#;
+    constant CI_ADDR_REGS_BITS  : integer := 64;
+    constant CI_ADDR_REGS_LO    : integer := 8*CI_ADDR_REGS_ADDR;
+    constant CI_ADDR_REGS_HI    : integer := 8*CI_ADDR_REGS_ADDR + CI_ADDR_REGS_BITS-1;
+    -------------------------------------------------------------------------------
+    -- Pump Core Intake Size Register
+    -------------------------------------------------------------------------------
+    -- Size[31:00] = 転送サイズ.
+    -------------------------------------------------------------------------------
+    constant CI_SIZE_REGS_ADDR  : integer := CI_REGS_BASE_ADDR + 16#08#;
+    constant CI_SIZE_REGS_BITS  : integer := 32;
+    constant CI_SIZE_REGS_LO    : integer := 8*CI_SIZE_REGS_ADDR;
+    constant CI_SIZE_REGS_HI    : integer := 8*CI_SIZE_REGS_ADDR + CI_SIZE_REGS_BITS-1;
+    -------------------------------------------------------------------------------
+    -- Pump Core Intake Mode Register
+    -------------------------------------------------------------------------------
+    -- Mode[15]    = 1:AXI4 Master Read I/F をセイフティモードで動かす.
+    -- Mode[14]    = 1:AXI4 Master Read I/F を投機モードで動かす.
+    -- Mode[13]    = 1:AXI4 Master Read I/F をアドレス固定モードにする.
+    -- Mode[11:08] = AXI4 Master Read I/F のキャッシュモードを指定する.
+    -- Mode[01]    = 1:エラー発生時(Status[1]='1')に割り込みを発生する.
+    -- Mode[00]    = 1:転送終了時(Status[0]='1')に割り込みを発生する.
+    -------------------------------------------------------------------------------
+    constant CI_MODE_REGS_ADDR  : integer := CI_REGS_BASE_ADDR + 16#0C#;
+    constant CI_MODE_REGS_BITS  : integer := 16;
+    constant CI_MODE_REGS_HI    : integer := 8*CI_MODE_REGS_ADDR + 15;
+    constant CI_MODE_REGS_LO    : integer := 8*CI_MODE_REGS_ADDR +  0;
+    constant CI_MODE_SAFETY_POS : integer := 8*CI_MODE_REGS_ADDR + 15;
+    constant CI_MODE_SPECUL_POS : integer := 8*CI_MODE_REGS_ADDR + 14;
+    constant CI_MODE_AFIX_POS   : integer := 8*CI_MODE_REGS_ADDR + 13;
+    constant CI_MODE_CACHE_HI   : integer := 8*CI_MODE_REGS_ADDR + 11;
+    constant CI_MODE_CACHE_LO   : integer := 8*CI_MODE_REGS_ADDR +  8;
+    constant CI_MODE_ERROR_POS  : integer := 8*CI_MODE_REGS_ADDR +  1;
+    constant CI_MODE_DONE_POS   : integer := 8*CI_MODE_REGS_ADDR +  0;
+    -------------------------------------------------------------------------------
+    -- Pump Core Intake Status Register
+    -------------------------------------------------------------------------------
+    -- Status[7:2] = 予約.
+    -- Status[1]   = エラー発生時にセットされる.
+    -- Status[0]   = 転送終了時かつ Control[2]='1' にセットされる.
+    -------------------------------------------------------------------------------
+    constant CI_STAT_REGS_ADDR  : integer := CI_REGS_BASE_ADDR + 16#0E#;
+    constant CI_STAT_REGS_BITS  : integer := 8;
+    constant CI_STAT_RESV_HI    : integer := 8*CI_STAT_REGS_ADDR +  7;
+    constant CI_STAT_RESV_LO    : integer := 8*CI_STAT_REGS_ADDR +  2;
+    constant CI_STAT_ERROR_POS  : integer := 8*CI_STAT_REGS_ADDR +  1;
+    constant CI_STAT_DONE_POS   : integer := 8*CI_STAT_REGS_ADDR +  0;
+    constant CI_STAT_RESV_BITS  : integer := CI_STAT_RESV_HI - CI_STAT_RESV_LO + 1;
+    -------------------------------------------------------------------------------
+    -- Pump Core Intake Control Register
+    -------------------------------------------------------------------------------
+    -- Control[7]  = 1:モジュールをリセットする. 0:リセットを解除する.
+    -- Control[6]  = 1:転送を一時中断する.       0:転送を再開する.
+    -- Control[5]  = 1:転送を中止する.           0:意味無し.
+    -- Control[4]  = 1:転送を開始する.           0:意味無し.
+    -- Control[3]  = 予約.
+    -- Control[2]  = 1:転送終了時にStatus[0]がセットされる.
+    -- Control[1]  = 1:連続したトランザクションの開始を指定する.
+    -- Control[0]  = 1:連続したトランザクションの終了を指定する.
+    -------------------------------------------------------------------------------
+    constant CI_CTRL_REGS_ADDR  : integer := CI_REGS_BASE_ADDR + 16#0F#;
+    constant CI_CTRL_RESET_POS  : integer := 8*CI_CTRL_REGS_ADDR +  7;
+    constant CI_CTRL_PAUSE_POS  : integer := 8*CI_CTRL_REGS_ADDR +  6;
+    constant CI_CTRL_STOP_POS   : integer := 8*CI_CTRL_REGS_ADDR +  5;
+    constant CI_CTRL_START_POS  : integer := 8*CI_CTRL_REGS_ADDR +  4;
+    constant CI_CTRL_RESV_POS   : integer := 8*CI_CTRL_REGS_ADDR +  3;
+    constant CI_CTRL_DONE_POS   : integer := 8*CI_CTRL_REGS_ADDR +  2;
+    constant CI_CTRL_FIRST_POS  : integer := 8*CI_CTRL_REGS_ADDR +  1;
+    constant CI_CTRL_LAST_POS   : integer := 8*CI_CTRL_REGS_ADDR +  0;
+    -------------------------------------------------------------------------------
+    -- Pump Core Intake Processor Operation Code Range
+    -------------------------------------------------------------------------------
+    constant CI_OPERAND_LO      : integer := CI_REGS_LO;
+    constant CI_OPERAND_HI      : integer := CI_CTRL_RESV_POS;
+    -------------------------------------------------------------------------------
+    -- Pump Outlet Processor Registers
+    -------------------------------------------------------------------------------
+    --           31            24              16               8               0
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x20 |                       Address[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x24 |                       Address[63:31]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x28 |                          Mode[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x2C |  Control[7:0] |  Status[7:0]  |          Mode[47:32]          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -------------------------------------------------------------------------------
+    constant PO_REGS_BASE_ADDR  : integer := 16#20#;
+    constant PO_REGS_BITS       : integer := 128;
+    constant PO_REGS_LO         : integer := 8*PO_REGS_BASE_ADDR;
+    constant PO_REGS_HI         : integer := PO_REGS_LO + PO_REGS_BITS - 1;
+    -------------------------------------------------------------------------------
+    -- Pump Outlet Processor Address Register
+    -------------------------------------------------------------------------------
+    -- Address     = オペレーションコードフェッチアドレス.
+    -------------------------------------------------------------------------------
+    constant PO_ADDR_REGS_ADDR  : integer := PO_REGS_BASE_ADDR + 16#00#;
+    constant PO_ADDR_REGS_LO    : integer := 8*PO_REGS_BASE_ADDR + PO_ADDR_LO;
+    constant PO_ADDR_REGS_HI    : integer := 8*PO_REGS_BASE_ADDR + PO_ADDR_HI;
+    -------------------------------------------------------------------------------
+    -- Pump Outlet Processor Mode Register
+    -------------------------------------------------------------------------------
+    -- Mode[43:40] = AXI4 Master Read I/F のキャッシュモードを指定する.
+    -- Mode[33]    = 1:Operation Code を読み込んだ時(Status[1]='1')に割り込みを発生する.
+    -- Mode[32]    = 1:オペレーション終了時(Status[0]='1')に割り込みを発生する.
+    -------------------------------------------------------------------------------
+    constant PO_MODE_REGS_ADDR  : integer := PO_REGS_BASE_ADDR + 16#08#;
+    constant PO_MODE_REGS_HI    : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_HI;
+    constant PO_MODE_REGS_LO    : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO;
+    constant PO_MODE_CACHE_HI   : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 43;
+    constant PO_MODE_CACHE_LO   : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 40;
+    constant PO_MODE_FETCH_POS  : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 33;
+    constant PO_MODE_END_POS    : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 32;
+    -------------------------------------------------------------------------------
+    -- Pump Outlet Processor Status Register
+    -------------------------------------------------------------------------------
+    -- Status[4]   = 1:出力時にエラーが発生した事を示す.
+    -- Status[3]   = 1:オペレーションコード読み込み時にエラーが発生した事を示す.
+    -- Status[2]   = 1:不正なオペレーションコードを読み込んだ事を示す.
+    -- Status[1]   = 1:Fetchフラグ付きのオペレーションコードを読み込んだ事を示す.
+    -- Status[0]   = 1:Endフラグ付きのオペレーションコードを処理し終えた事をを示す.
+    -------------------------------------------------------------------------------
+    constant PO_STAT_REGS_ADDR  : integer := PO_REGS_BASE_ADDR + 16#0E#;
+    constant PO_STAT_REGS_HI    : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_HI;
+    constant PO_STAT_REGS_LO    : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_LO;
+    constant PO_STAT_ERROR_HI   : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_LO + 4;
+    constant PO_STAT_ERROR_LO   : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_LO + 2;
+    constant PO_STAT_FETCH_POS  : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_LO + 1;
+    constant PO_STAT_END_POS    : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_LO + 0;
+    -------------------------------------------------------------------------------
+    -- Pump Outlet Processor Control Register
+    -------------------------------------------------------------------------------
+    -- Control[7]  = 1:モジュールをリセットする. 0:リセットを解除する.
+    -- Control[6]  = 1:転送を一時中断する.       0:転送を再開する.
+    -- Control[5]  = 1:転送を中止する.           0:意味無し.
+    -- Control[4]  = 1:転送を開始する.           0:意味無し.
+    -- Control[3:0]= 予約.
+    -------------------------------------------------------------------------------
+    constant PO_CTRL_REGS_ADDR  : integer := PO_REGS_BASE_ADDR + 16#0F#;
+    constant PO_CTRL_RESET_POS  : integer := 8*PO_CTRL_REGS_ADDR + 7;
+    constant PO_CTRL_PAUSE_POS  : integer := 8*PO_CTRL_REGS_ADDR + 6;
+    constant PO_CTRL_STOP_POS   : integer := 8*PO_CTRL_REGS_ADDR + 5;
+    constant PO_CTRL_START_POS  : integer := 8*PO_CTRL_REGS_ADDR + 4;
+    constant PO_CTRL_RESV_HI    : integer := 8*PO_CTRL_REGS_ADDR + 3;
+    constant PO_CTRL_RESV_LO    : integer := 8*PO_CTRL_REGS_ADDR + 0;
+    -------------------------------------------------------------------------------
+    -- Pump Intake Processor Registers
+    -------------------------------------------------------------------------------
+    --           31            24              16               8               0
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x30 |                       Address[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x34 |                       Address[63:31]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x38 |                          Mode[31:00]                          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -- Addr=0x3C |  Control[7:0] |  Status[7:0]  |          Mode[47:32]          |
+    --           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    -------------------------------------------------------------------------------
+    constant PI_REGS_BASE_ADDR  : integer := 16#30#;
+    constant PI_REGS_BITS       : integer := 128;
+    constant PI_REGS_LO         : integer := 8*PI_REGS_BASE_ADDR;
+    constant PI_REGS_HI         : integer := PI_REGS_LO + PI_REGS_BITS - 1;
+    -------------------------------------------------------------------------------
+    -- Pump Intake Processor Address Register
+    -------------------------------------------------------------------------------
+    -- Address     = オペレーションコードフェッチアドレス.
+    -------------------------------------------------------------------------------
+    constant PI_ADDR_REGS_ADDR  : integer := PI_REGS_BASE_ADDR + 16#00#;
+    constant PI_ADDR_REGS_LO    : integer := 8*PI_REGS_BASE_ADDR + PI_ADDR_LO;
+    constant PI_ADDR_REGS_HI    : integer := 8*PI_REGS_BASE_ADDR + PI_ADDR_HI;
+    -------------------------------------------------------------------------------
+    -- Pump Intake Processor Mode Register
+    -------------------------------------------------------------------------------
+    -- Mode[43:40] = AXI4 Master Read I/F のキャッシュモードを指定する.
+    -- Mode[33]    = 1:Operation Code を読み込んだ時(Status[1]='1')に割り込みを発生する.
+    -- Mode[32]    = 1:オペレーション終了時(Status[0]='1')に割り込みを発生する.
+    -------------------------------------------------------------------------------
+    constant PI_MODE_REGS_ADDR  : integer := PI_REGS_BASE_ADDR + 16#08#;
+    constant PI_MODE_REGS_HI    : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_HI;
+    constant PI_MODE_REGS_LO    : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO;
+    constant PI_MODE_CACHE_HI   : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 43;
+    constant PI_MODE_CACHE_LO   : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 40;
+    constant PI_MODE_FETCH_POS  : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 33;
+    constant PI_MODE_END_POS    : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 32;
+    -------------------------------------------------------------------------------
+    -- Pump Intake Processor Status Register
+    -------------------------------------------------------------------------------
+    -- Status[4]   = 1:出力時にエラーが発生した事を示す.
+    -- Status[3]   = 1:オペレーションコード読み込み時にエラーが発生した事を示す.
+    -- Status[2]   = 1:不正なオペレーションコードを読み込んだ事を示す.
+    -- Status[1]   = 1:Fetchフラグ付きのオペレーションコードを読み込んだ事を示す.
+    -- Status[0]   = 1:Endフラグ付きのオペレーションコードを処理し終えた事をを示す.
+    -------------------------------------------------------------------------------
+    constant PI_STAT_REGS_ADDR  : integer := PI_REGS_BASE_ADDR + 16#0E#;
+    constant PI_STAT_REGS_HI    : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_HI;
+    constant PI_STAT_REGS_LO    : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_LO;
+    constant PI_STAT_ERROR_HI   : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_LO + 4;
+    constant PI_STAT_ERROR_LO   : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_LO + 2;
+    constant PI_STAT_FETCH_POS  : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_LO + 1;
+    constant PI_STAT_END_POS    : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_LO + 0;
+    -------------------------------------------------------------------------------
+    -- Pump Intake Processor Control Register
+    -------------------------------------------------------------------------------
+    -- Control[7]  = 1:モジュールをリセットする. 0:リセットを解除する.
+    -- Control[6]  = 1:転送を一時中断する.       0:転送を再開する.
+    -- Control[5]  = 1:転送を中止する.           0:意味無し.
+    -- Control[4]  = 1:転送を開始する.           0:意味無し.
+    -- Control[3:0]= 予約.
+    -------------------------------------------------------------------------------
+    constant PI_CTRL_REGS_ADDR  : integer := PI_REGS_BASE_ADDR + 16#0F#;
+    constant PI_CTRL_RESV_HI    : integer := 8*PI_CTRL_REGS_ADDR + 3;
+    constant PI_CTRL_RESV_LO    : integer := 8*PI_CTRL_REGS_ADDR + 0;
+    constant PI_CTRL_RESET_POS  : integer := 8*PI_CTRL_REGS_ADDR + 7;
+    constant PI_CTRL_PAUSE_POS  : integer := 8*PI_CTRL_REGS_ADDR + 6;
+    constant PI_CTRL_STOP_POS   : integer := 8*PI_CTRL_REGS_ADDR + 5;
+    constant PI_CTRL_START_POS  : integer := 8*PI_CTRL_REGS_ADDR + 4;
+    -------------------------------------------------------------------------------
+    -- Pump Core Outlet signals.
+    -------------------------------------------------------------------------------
+    signal   core_o_open        : std_logic;
+    signal   core_o_run         : std_logic;
+    signal   core_o_done        : std_logic;
+    signal   core_o_error       : std_logic;
+    signal   core_o_stat        : std_logic_vector(CO_STAT_RESV_HI downto CO_STAT_RESV_LO);
+    -------------------------------------------------------------------------------
+    -- Pump Core Intake signals.
+    -------------------------------------------------------------------------------
+    signal   core_i_open        : std_logic;
+    signal   core_i_run         : std_logic;
+    signal   core_i_done        : std_logic;
+    signal   core_i_error       : std_logic;
+    signal   core_i_stat        : std_logic_vector(CI_STAT_RESV_HI downto CI_STAT_RESV_LO);
+    -------------------------------------------------------------------------------
     -- PUMP_AXI4_TO_AXI4_CORE のコンポーネント宣言.
     -------------------------------------------------------------------------------
     component PUMP_AXI4_TO_AXI4_CORE
@@ -459,306 +979,6 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             O_ERROR         : out std_logic
         );
     end component;
-    -------------------------------------------------------------------------------
-    -- レジスタアクセスインターフェースのアドレスのビット数.
-    -------------------------------------------------------------------------------
-    constant REGS_ADDR_WIDTH    : integer := 6;
-    constant CORE_ADDR_WIDTH    : integer := 5;
-    -------------------------------------------------------------------------------
-    -- 全レジスタのビット数.
-    -------------------------------------------------------------------------------
-    constant REGS_DATA_BITS     : integer := (2**REGS_ADDR_WIDTH)*8;
-    constant CORE_DATA_BITS     : integer := (2**CORE_ADDR_WIDTH)*8;
-    -------------------------------------------------------------------------------
-    -- レジスタアクセスインターフェースのデータのビット数.
-    -------------------------------------------------------------------------------
-    constant REGS_DATA_WIDTH    : integer := 32;
-    -------------------------------------------------------------------------------
-    -- 定数
-    -------------------------------------------------------------------------------
-    constant I_CKE              : std_logic        := '1';
-    constant I_LOCK             : AXI4_ALOCK_TYPE  := (others => '0');
-    constant I_PROT             : AXI4_APROT_TYPE  := (others => '0');
-    constant I_QOS              : AXI4_AQOS_TYPE   := (others => '0');
-    constant I_REGION           : AXI4_AREGION_TYPE:= (others => '0');
-    -------------------------------------------------------------------------------
-    -- 定数
-    -------------------------------------------------------------------------------
-    constant O_CKE              : std_logic        := '1';
-    constant O_LOCK             : AXI4_ALOCK_TYPE  := (others => '0');
-    constant O_PROT             : AXI4_APROT_TYPE  := (others => '0');
-    constant O_QOS              : AXI4_AQOS_TYPE   := (others => '0');
-    constant O_REGION           : AXI4_AREGION_TYPE:= (others => '0');
-    -------------------------------------------------------------------------------
-    -- レジスタアクセス用の信号群.
-    -------------------------------------------------------------------------------
-    signal   regs_load          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
-    signal   regs_wbit          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
-    signal   regs_rbit          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
-    signal   pump_load          : std_logic_vector(CORE_DATA_BITS   -1 downto 0);
-    signal   pump_wbit          : std_logic_vector(CORE_DATA_BITS   -1 downto 0);
-    -------------------------------------------------------------------------------
-    -- アドレスレジスタのビット数.
-    -------------------------------------------------------------------------------
-    constant M_ADDR_REGS_BITS   : integer := 64;
-    -------------------------------------------------------------------------------
-    -- レジスタのアドレスマップ.
-    -------------------------------------------------------------------------------
-    -- Pump Core Outlet Registers
-    -------------------------------------------------------------------------------
-    constant CO_REGS_BASE_ADDR  : integer := 16#00#;
-    constant CO_REGS_BITS       : integer := 128;
-    constant CO_REGS_LO         : integer := 8*CO_REGS_BASE_ADDR;
-    constant CO_REGS_HI         : integer := CO_REGS_LO + CO_REGS_BITS - 1;
-    -------------------------------------------------------------------------------
-    -- Pump Core Outlet Address Register
-    -------------------------------------------------------------------------------
-    constant CO_ADDR_REGS_ADDR  : integer := CO_REGS_BASE_ADDR + 16#00#;
-    constant CO_ADDR_REGS_BITS  : integer := 64;
-    constant CO_ADDR_REGS_LO    : integer := 8*CO_ADDR_REGS_ADDR;
-    constant CO_ADDR_REGS_HI    : integer := 8*CO_ADDR_REGS_ADDR + CO_ADDR_REGS_BITS-1;
-    -------------------------------------------------------------------------------
-    -- Pump Core Outlet Size Register
-    -------------------------------------------------------------------------------
-    constant CO_SIZE_REGS_ADDR  : integer := CO_REGS_BASE_ADDR + 16#08#;
-    constant CO_SIZE_REGS_BITS  : integer := 32;
-    constant CO_SIZE_REGS_LO    : integer := 8*CO_SIZE_REGS_ADDR;
-    constant CO_SIZE_REGS_HI    : integer := 8*CO_SIZE_REGS_ADDR + CO_SIZE_REGS_BITS-1;
-    -------------------------------------------------------------------------------
-    -- Pump Core Outlet Mode Register
-    -------------------------------------------------------------------------------
-    constant CO_MODE_REGS_ADDR  : integer := CO_REGS_BASE_ADDR + 16#0C#;
-    constant CO_MODE_REGS_LO    : integer := 8*CO_MODE_REGS_ADDR +  0;
-    constant CO_MODE_REGS_HI    : integer := 8*CO_MODE_REGS_ADDR + 15;
-    constant CO_MODE_DONE_POS   : integer := 8*CO_MODE_REGS_ADDR +  0;
-    constant CO_MODE_ERROR_POS  : integer := 8*CO_MODE_REGS_ADDR +  1;
-    constant CO_MODE_CACHE_LO   : integer := 8*CO_MODE_REGS_ADDR +  8;
-    constant CO_MODE_CACHE_HI   : integer := 8*CO_MODE_REGS_ADDR + 11;
-    constant CO_MODE_AFIX_POS   : integer := 8*CO_MODE_REGS_ADDR + 13;
-    constant CO_MODE_SPECUL_POS : integer := 8*CO_MODE_REGS_ADDR + 14;
-    constant CO_MODE_SAFETY_POS : integer := 8*CO_MODE_REGS_ADDR + 15;
-    constant CO_MODE_REGS_BITS  : integer := 16;
-    -------------------------------------------------------------------------------
-    -- Pump Core Outlet Status Register
-    -------------------------------------------------------------------------------
-    constant CO_STAT_REGS_ADDR  : integer := CO_REGS_BASE_ADDR + 16#0E#;
-    constant CO_STAT_DONE_POS   : integer := 8*CO_STAT_REGS_ADDR +  0;
-    constant CO_STAT_ERROR_POS  : integer := 8*CO_STAT_REGS_ADDR +  1;
-    constant CO_STAT_RESV_LO    : integer := 8*CO_STAT_REGS_ADDR +  2;
-    constant CO_STAT_RESV_HI    : integer := 8*CO_STAT_REGS_ADDR +  7;
-    constant CO_STAT_RESV_BITS  : integer := CO_STAT_RESV_HI - CO_STAT_RESV_LO + 1;
-    -------------------------------------------------------------------------------
-    -- Pump Core Outlet Control Register
-    -------------------------------------------------------------------------------
-    constant CO_CTRL_REGS_ADDR  : integer := CO_REGS_BASE_ADDR + 16#0F#;
-    constant CO_CTRL_LAST_POS   : integer := 8*CO_CTRL_REGS_ADDR +  0;
-    constant CO_CTRL_FIRST_POS  : integer := 8*CO_CTRL_REGS_ADDR +  1;
-    constant CO_CTRL_DONE_POS   : integer := 8*CO_CTRL_REGS_ADDR +  2;
-    constant CO_CTRL_RESV_POS   : integer := 8*CO_CTRL_REGS_ADDR +  3;
-    constant CO_CTRL_START_POS  : integer := 8*CO_CTRL_REGS_ADDR +  4;
-    constant CO_CTRL_STOP_POS   : integer := 8*CO_CTRL_REGS_ADDR +  5;
-    constant CO_CTRL_PAUSE_POS  : integer := 8*CO_CTRL_REGS_ADDR +  6;
-    constant CO_CTRL_RESET_POS  : integer := 8*CO_CTRL_REGS_ADDR +  7;
-    -------------------------------------------------------------------------------
-    -- Pump Core Outlet Processor Operation Code Range
-    -------------------------------------------------------------------------------
-    constant CO_OPERAND_LO      : integer := CO_ADDR_REGS_LO;
-    constant CO_OPERAND_HI      : integer := CO_CTRL_RESV_POS;
-    -------------------------------------------------------------------------------
-    -- Pump Core Intake Registers
-    -------------------------------------------------------------------------------
-    constant CI_REGS_BASE_ADDR  : integer := 16#10#;
-    constant CI_REGS_BITS       : integer := 128;
-    constant CI_REGS_LO         : integer := 8*CI_REGS_BASE_ADDR;
-    constant CI_REGS_HI         : integer := CI_REGS_LO + CI_REGS_BITS - 1;
-    -------------------------------------------------------------------------------
-    -- Pump Core Intake Address Register
-    -------------------------------------------------------------------------------
-    constant CI_ADDR_REGS_ADDR  : integer := CI_REGS_BASE_ADDR + 16#00#;
-    constant CI_ADDR_REGS_BITS  : integer := 64;
-    constant CI_ADDR_REGS_LO    : integer := 8*CI_ADDR_REGS_ADDR;
-    constant CI_ADDR_REGS_HI    : integer := 8*CI_ADDR_REGS_ADDR + CI_ADDR_REGS_BITS-1;
-    -------------------------------------------------------------------------------
-    -- Pump Core Intake Size Register
-    -------------------------------------------------------------------------------
-    constant CI_SIZE_REGS_ADDR  : integer := CI_REGS_BASE_ADDR + 16#08#;
-    constant CI_SIZE_REGS_BITS  : integer := 32;
-    constant CI_SIZE_REGS_LO    : integer := 8*CI_SIZE_REGS_ADDR;
-    constant CI_SIZE_REGS_HI    : integer := 8*CI_SIZE_REGS_ADDR + CI_SIZE_REGS_BITS-1;
-    -------------------------------------------------------------------------------
-    -- Pump Core Intake Mode Register
-    -------------------------------------------------------------------------------
-    constant CI_MODE_REGS_ADDR  : integer := CI_REGS_BASE_ADDR + 16#0C#;
-    constant CI_MODE_REGS_LO    : integer := 8*CI_MODE_REGS_ADDR +  0;
-    constant CI_MODE_REGS_HI    : integer := 8*CI_MODE_REGS_ADDR + 15;
-    constant CI_MODE_DONE_POS   : integer := 8*CI_MODE_REGS_ADDR +  0;
-    constant CI_MODE_ERROR_POS  : integer := 8*CI_MODE_REGS_ADDR +  1;
-    constant CI_MODE_CACHE_LO   : integer := 8*CI_MODE_REGS_ADDR +  8;
-    constant CI_MODE_CACHE_HI   : integer := 8*CI_MODE_REGS_ADDR + 11;
-    constant CI_MODE_AFIX_POS   : integer := 8*CI_MODE_REGS_ADDR + 13;
-    constant CI_MODE_SPECUL_POS : integer := 8*CI_MODE_REGS_ADDR + 14;
-    constant CI_MODE_SAFETY_POS : integer := 8*CI_MODE_REGS_ADDR + 15;
-    constant CI_MODE_REGS_BITS  : integer := 16;
-    -------------------------------------------------------------------------------
-    -- Pump Core Intake Status Register
-    -------------------------------------------------------------------------------
-    constant CI_STAT_REGS_ADDR  : integer := CI_REGS_BASE_ADDR + 16#0E#;
-    constant CI_STAT_DONE_POS   : integer := 8*CI_STAT_REGS_ADDR +  0;
-    constant CI_STAT_ERROR_POS  : integer := 8*CI_STAT_REGS_ADDR +  1;
-    constant CI_STAT_RESV_LO    : integer := 8*CI_STAT_REGS_ADDR +  2;
-    constant CI_STAT_RESV_HI    : integer := 8*CI_STAT_REGS_ADDR +  7;
-    constant CI_STAT_RESV_BITS  : integer := CI_STAT_RESV_HI - CI_STAT_RESV_LO + 1;
-    -------------------------------------------------------------------------------
-    -- Pump Core Intake Control Register
-    -------------------------------------------------------------------------------
-    constant CI_CTRL_REGS_ADDR  : integer := CI_REGS_BASE_ADDR + 16#0F#;
-    constant CI_CTRL_LAST_POS   : integer := 8*CI_CTRL_REGS_ADDR +  0;
-    constant CI_CTRL_FIRST_POS  : integer := 8*CI_CTRL_REGS_ADDR +  1;
-    constant CI_CTRL_DONE_POS   : integer := 8*CI_CTRL_REGS_ADDR +  2;
-    constant CI_CTRL_RESV_POS   : integer := 8*CI_CTRL_REGS_ADDR +  3;
-    constant CI_CTRL_START_POS  : integer := 8*CI_CTRL_REGS_ADDR +  4;
-    constant CI_CTRL_STOP_POS   : integer := 8*CI_CTRL_REGS_ADDR +  5;
-    constant CI_CTRL_PAUSE_POS  : integer := 8*CI_CTRL_REGS_ADDR +  6;
-    constant CI_CTRL_RESET_POS  : integer := 8*CI_CTRL_REGS_ADDR +  7;
-    -------------------------------------------------------------------------------
-    -- Pump Core Intake Processor Operation Code Range
-    -------------------------------------------------------------------------------
-    constant CI_OPERAND_LO      : integer := CI_ADDR_REGS_LO;
-    constant CI_OPERAND_HI      : integer := CI_CTRL_RESV_POS;
-    -------------------------------------------------------------------------------
-    -- Pump Outlet Processor Registers
-    -------------------------------------------------------------------------------
-    constant PO_REGS_BASE_ADDR  : integer := 16#20#;
-    constant PO_BITS            : integer := 128;
-    constant PO_ADDR_LO         : integer :=   0;
-    constant PO_ADDR_HI         : integer :=  63;
-    constant PO_MODE_LO         : integer :=  64;
-    constant PO_MODE_HI         : integer := 111;
-    constant PO_STAT_LO         : integer := 112;
-    constant PO_STAT_HI         : integer := 119;
-    constant PO_FETCH_POS       : integer := 122;
-    constant PO_END_POS         : integer := 123;
-    constant PO_TYPE_LO         : integer := 124;
-    constant PO_TYPE_HI         : integer := 127;
-    constant PO_CORE_LO         : integer :=   0;
-    constant PO_CORE_HI         : integer := 123;
-    constant PO_NONE_CODE       : integer :=   0;
-    constant PO_XFER_CODE       : integer :=  12;
-    constant PO_LINK_CODE       : integer :=  13;
-    constant PO_REGS_BITS       : integer := PO_BITS;
-    constant PO_REGS_LO         : integer := 8*PO_REGS_BASE_ADDR;
-    constant PO_REGS_HI         : integer := PO_REGS_LO + PO_REGS_BITS - 1;
-    -------------------------------------------------------------------------------
-    -- Pump Outlet Processor Address Register
-    -------------------------------------------------------------------------------
-    constant PO_ADDR_REGS_ADDR  : integer := PO_REGS_BASE_ADDR + 16#00#;
-    constant PO_ADDR_REGS_LO    : integer := 8*PO_REGS_BASE_ADDR + PO_ADDR_LO;
-    constant PO_ADDR_REGS_HI    : integer := 8*PO_REGS_BASE_ADDR + PO_ADDR_HI;
-    -------------------------------------------------------------------------------
-    -- Pump Outlet Processor Mode Register
-    -------------------------------------------------------------------------------
-    constant PO_MODE_REGS_ADDR  : integer := PO_REGS_BASE_ADDR + 16#08#;
-    constant PO_MODE_REGS_LO    : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO;
-    constant PO_MODE_REGS_HI    : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_HI;
-    constant PO_MODE_END_POS    : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 32;
-    constant PO_MODE_FETCH_POS  : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 33;
-    constant PO_MODE_CACHE_LO   : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 40;
-    constant PO_MODE_CACHE_HI   : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 43;
-    -------------------------------------------------------------------------------
-    -- Pump Outlet Processor Status Register
-    -------------------------------------------------------------------------------
-    constant PO_STAT_REGS_ADDR  : integer := PO_REGS_BASE_ADDR + 16#0E#;
-    constant PO_STAT_REGS_LO    : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_LO;
-    constant PO_STAT_REGS_HI    : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_HI;
-    constant PO_STAT_END_POS    : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_LO + 0;
-    constant PO_STAT_FETCH_POS  : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_LO + 1;
-    constant PO_STAT_ERROR_LO   : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_LO + 2;
-    constant PO_STAT_ERROR_HI   : integer := 8*PO_REGS_BASE_ADDR + PO_STAT_LO + 4;
-    -------------------------------------------------------------------------------
-    -- Pump Outlet Processor Control Register
-    -------------------------------------------------------------------------------
-    constant PO_CTRL_REGS_ADDR  : integer := PO_REGS_BASE_ADDR + 16#0F#;
-    constant PO_CTRL_RESV_LO    : integer := 8*PO_CTRL_REGS_ADDR + 0;
-    constant PO_CTRL_RESV_HI    : integer := 8*PO_CTRL_REGS_ADDR + 3;
-    constant PO_CTRL_START_POS  : integer := 8*PO_CTRL_REGS_ADDR + 4;
-    constant PO_CTRL_STOP_POS   : integer := 8*PO_CTRL_REGS_ADDR + 5;
-    constant PO_CTRL_PAUSE_POS  : integer := 8*PO_CTRL_REGS_ADDR + 6;
-    constant PO_CTRL_RESET_POS  : integer := 8*PO_CTRL_REGS_ADDR + 7;
-    -------------------------------------------------------------------------------
-    -- Pump Intake Processor Registers
-    -------------------------------------------------------------------------------
-    constant PI_REGS_BASE_ADDR  : integer := 16#30#;
-    constant PI_BITS            : integer := 128;
-    constant PI_ADDR_LO         : integer :=   0;
-    constant PI_ADDR_HI         : integer :=  63;
-    constant PI_MODE_LO         : integer :=  64;
-    constant PI_MODE_HI         : integer := 111;
-    constant PI_STAT_LO         : integer := 112;
-    constant PI_STAT_HI         : integer := 119;
-    constant PI_FETCH_POS       : integer := 122;
-    constant PI_END_POS         : integer := 123;
-    constant PI_TYPE_LO         : integer := 124;
-    constant PI_TYPE_HI         : integer := 127;
-    constant PI_CORE_LO         : integer :=   0;
-    constant PI_CORE_HI         : integer := 123;
-    constant PI_NONE_CODE       : integer :=   0;
-    constant PI_XFER_CODE       : integer :=  12;
-    constant PI_LINK_CODE       : integer :=  13;
-    constant PI_REGS_BITS       : integer := PI_BITS;
-    constant PI_REGS_LO         : integer := 8*PI_REGS_BASE_ADDR;
-    constant PI_REGS_HI         : integer := PI_REGS_LO + PI_REGS_BITS - 1;
-    -------------------------------------------------------------------------------
-    -- Pump Intake Processor Address Register
-    -------------------------------------------------------------------------------
-    constant PI_ADDR_REGS_ADDR  : integer := PI_REGS_BASE_ADDR + 16#00#;
-    constant PI_ADDR_REGS_LO    : integer := 8*PI_REGS_BASE_ADDR + PI_ADDR_LO;
-    constant PI_ADDR_REGS_HI    : integer := 8*PI_REGS_BASE_ADDR + PI_ADDR_HI;
-    -------------------------------------------------------------------------------
-    -- Pump Intake Processor Mode Register
-    -------------------------------------------------------------------------------
-    constant PI_MODE_REGS_ADDR  : integer := PI_REGS_BASE_ADDR + 16#08#;
-    constant PI_MODE_REGS_LO    : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO;
-    constant PI_MODE_REGS_HI    : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_HI;
-    constant PI_MODE_END_POS    : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 32;
-    constant PI_MODE_FETCH_POS  : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 33;
-    constant PI_MODE_CACHE_LO   : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 40;
-    constant PI_MODE_CACHE_HI   : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 43;
-    -------------------------------------------------------------------------------
-    -- Pump Intake Processor Status Register
-    -------------------------------------------------------------------------------
-    constant PI_STAT_REGS_ADDR  : integer := PI_REGS_BASE_ADDR + 16#0E#;
-    constant PI_STAT_REGS_LO    : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_LO;
-    constant PI_STAT_REGS_HI    : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_HI;
-    constant PI_STAT_END_POS    : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_LO + 0;
-    constant PI_STAT_FETCH_POS  : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_LO + 1;
-    constant PI_STAT_ERROR_LO   : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_LO + 2;
-    constant PI_STAT_ERROR_HI   : integer := 8*PI_REGS_BASE_ADDR + PI_STAT_LO + 4;
-    -------------------------------------------------------------------------------
-    -- Pump Intake Processor Control Register
-    -------------------------------------------------------------------------------
-    constant PI_CTRL_REGS_ADDR  : integer := PI_REGS_BASE_ADDR + 16#0F#;
-    constant PI_CTRL_RESV_LO    : integer := 8*PI_CTRL_REGS_ADDR + 0;
-    constant PI_CTRL_RESV_HI    : integer := 8*PI_CTRL_REGS_ADDR + 3;
-    constant PI_CTRL_START_POS  : integer := 8*PI_CTRL_REGS_ADDR + 4;
-    constant PI_CTRL_STOP_POS   : integer := 8*PI_CTRL_REGS_ADDR + 5;
-    constant PI_CTRL_PAUSE_POS  : integer := 8*PI_CTRL_REGS_ADDR + 6;
-    constant PI_CTRL_RESET_POS  : integer := 8*PI_CTRL_REGS_ADDR + 7;
-    -------------------------------------------------------------------------------
-    -- Pump Core Outlet signals.
-    -------------------------------------------------------------------------------
-    signal   core_o_open        : std_logic;
-    signal   core_o_run         : std_logic;
-    signal   core_o_done        : std_logic;
-    signal   core_o_error       : std_logic;
-    signal   core_o_stat_i      : std_logic_vector(CO_STAT_RESV_BITS-1 downto 0);
-    -------------------------------------------------------------------------------
-    -- Pump Core Intake signals.
-    -------------------------------------------------------------------------------
-    signal   core_i_open        : std_logic;
-    signal   core_i_run         : std_logic;
-    signal   core_i_done        : std_logic;
-    signal   core_i_error       : std_logic;
-    signal   core_i_stat_i      : std_logic_vector(CI_STAT_RESV_BITS-1 downto 0);
 begin
     -------------------------------------------------------------------------------
     -- 
@@ -1784,7 +2004,7 @@ begin
             I_STAT_L        => pump_load(CI_STAT_RESV_HI downto CI_STAT_RESV_LO),
             I_STAT_D        => pump_wbit(CI_STAT_RESV_HI downto CI_STAT_RESV_LO),
             I_STAT_Q        => regs_rbit(CI_STAT_RESV_HI downto CI_STAT_RESV_LO),
-            I_STAT_I        => core_i_stat_i ,
+            I_STAT_I        => core_i_stat                  ,
             I_RESET_L       => pump_load(CI_CTRL_RESET_POS ),
             I_RESET_D       => pump_wbit(CI_CTRL_RESET_POS ),
             I_RESET_Q       => regs_rbit(CI_CTRL_RESET_POS ),
@@ -1835,7 +2055,7 @@ begin
             O_STAT_L        => pump_load(CO_STAT_RESV_HI downto CO_STAT_RESV_LO),
             O_STAT_D        => pump_wbit(CO_STAT_RESV_HI downto CO_STAT_RESV_LO),
             O_STAT_Q        => regs_rbit(CO_STAT_RESV_HI downto CO_STAT_RESV_LO),
-            O_STAT_I        => core_o_stat_i ,
+            O_STAT_I        => core_o_stat                  ,
             O_RESET_L       => pump_load(CO_CTRL_RESET_POS ),
             O_RESET_D       => pump_wbit(CO_CTRL_RESET_POS ),
             O_RESET_Q       => regs_rbit(CO_CTRL_RESET_POS ),
@@ -1951,6 +2171,6 @@ begin
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-    core_i_stat_i <= (others => '0');
-    core_o_stat_i <= (others => '0');
+    core_i_stat <= (others => '0');
+    core_o_stat <= (others => '0');
 end RTL;
