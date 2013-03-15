@@ -91,7 +91,7 @@
       <library xil_pn:name="PipeWork"/>
     </file>
     <file xil_pn:name="../../../PipeWork/src/components/queue_arbiter.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="22"/>
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="18"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="18"/>
       <library xil_pn:name="PipeWork"/>
     </file>
@@ -101,17 +101,17 @@
       <library xil_pn:name="PipeWork"/>
     </file>
     <file xil_pn:name="../../../PipeWork/src/components/queue_register.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="21"/>
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="17"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="17"/>
       <library xil_pn:name="PipeWork"/>
     </file>
     <file xil_pn:name="../../../PipeWork/src/components/reducer.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="20"/>
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="16"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="16"/>
       <library xil_pn:name="PipeWork"/>
     </file>
     <file xil_pn:name="../../../PipeWork/src/components/sdpram.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="19"/>
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="15"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="15"/>
       <library xil_pn:name="PipeWork"/>
     </file>
@@ -126,32 +126,32 @@
       <library xil_pn:name="PipeWork"/>
     </file>
     <file xil_pn:name="../../../PipeWork/src/pump/pump_components.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="18"/>
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="14"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="14"/>
       <library xil_pn:name="PipeWork"/>
     </file>
-    <file xil_pn:name="../../../PipeWork/src/pump/pump_count_down_register.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="16"/>
+    <file xil_pn:name="../../../PipeWork/src/components/count_down_register.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="22"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="12"/>
       <library xil_pn:name="PipeWork"/>
     </file>
-    <file xil_pn:name="../../../PipeWork/src/pump/pump_count_up_register.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="15"/>
+    <file xil_pn:name="../../../PipeWork/src/components/count_up_register.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="21"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="11"/>
       <library xil_pn:name="PipeWork"/>
     </file>
     <file xil_pn:name="../../../PipeWork/src/pump/pump_control_register.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="17"/>
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="13"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="13"/>
       <library xil_pn:name="PipeWork"/>
     </file>
-    <file xil_pn:name="../../../PipeWork/src/pump/pump_intake_valve.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="13"/>
+    <file xil_pn:name="../../../PipeWork/src/components/pool_intake_valve.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="20"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="9"/>
       <library xil_pn:name="PipeWork"/>
     </file>
-    <file xil_pn:name="../../../PipeWork/src/pump/pump_outlet_valve.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="12"/>
+    <file xil_pn:name="../../../PipeWork/src/components/pool_outlet_valve.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="19"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="8"/>
       <library xil_pn:name="PipeWork"/>
     </file>
@@ -213,7 +213,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../PipeWork/src/pump/pump_flow_syncronizer.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="14"/>
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="12"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="10"/>
       <library xil_pn:name="PipeWork"/>
     </file>
@@ -236,12 +236,9 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="3"/>
       <library xil_pn:name="PipeWork"/>
     </file>
-    <file xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4_for_xilinx.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="81"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
-    </file>
+    <file xil_pn:name="../../../src/main/vhdl/pump_axi4_to_axi4_for_xilinx.vhd" xil_pn:type="FILE_VHDL"/>
     <file xil_pn:name="../../../PipeWork/src/components/sdpram_xilinx_auto_select.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="85"/>
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="28"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="22"/>
       <library xil_pn:name="PipeWork"/>
     </file>

@@ -78,7 +78,7 @@ PUMP_AXI4 のほとんどのモジュールは PipeWork のものを使ってい
 
   * QUEUE_ARBITER   
     キュー(ファーストインファーストアウト)方式の調停回路.   
-    ./PipeWork/src/components/queue_arbiter.vhd
+    ./PipeWork/src/components/queue_arbiter.vhd  
     ./PipeWork/src/components/queue_arbiter_integer_arch.vhd
 
   * SYNCRONIZER  
