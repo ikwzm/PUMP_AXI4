@@ -96,8 +96,8 @@
       <outfile xil_pn:name="../../../PipeWork/src/components/count_up_register.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/delay_adjuster.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/delay_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/pool_intake_valve.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/pool_outlet_valve.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/components/float_intake_valve.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/components/float_outlet_valve.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter_integer_arch.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_register.vhd"/>
@@ -158,8 +158,8 @@
       <outfile xil_pn:name="../../../PipeWork/src/components/count_up_register.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/delay_adjuster.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/delay_register.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/pool_intake_valve.vhd"/>
-      <outfile xil_pn:name="../../../PipeWork/src/components/pool_outlet_valve.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/components/float_intake_valve.vhd"/>
+      <outfile xil_pn:name="../../../PipeWork/src/components/float_outlet_valve.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_arbiter_integer_arch.vhd"/>
       <outfile xil_pn:name="../../../PipeWork/src/components/queue_register.vhd"/>

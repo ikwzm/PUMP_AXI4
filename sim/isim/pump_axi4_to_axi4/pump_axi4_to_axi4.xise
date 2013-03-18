@@ -145,12 +145,12 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="13"/>
       <library xil_pn:name="PipeWork"/>
     </file>
-    <file xil_pn:name="../../../PipeWork/src/components/pool_intake_valve.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../../../PipeWork/src/components/float_intake_valve.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="20"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="9"/>
       <library xil_pn:name="PipeWork"/>
     </file>
-    <file xil_pn:name="../../../PipeWork/src/components/pool_outlet_valve.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="../../../PipeWork/src/components/float_outlet_valve.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="19"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="8"/>
       <library xil_pn:name="PipeWork"/>
