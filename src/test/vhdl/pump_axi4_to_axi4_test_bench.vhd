@@ -78,6 +78,8 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
                                  ID          => 4,
                                  AWADDR      => AXI4_ADDR_WIDTH,
                                  ARADDR      => AXI4_ADDR_WIDTH,
+                                 ALEN        => AXI4_ALEN_WIDTH,
+                                 ALOCK       => AXI4_ALOCK_WIDTH,
                                  WDATA       => 32,
                                  RDATA       => 32,
                                  ARUSER      => 1,
@@ -89,6 +91,8 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
                                  ID          => 4,
                                  AWADDR      => AXI4_ADDR_WIDTH,
                                  ARADDR      => AXI4_ADDR_WIDTH,
+                                 ALEN        => AXI4_ALEN_WIDTH,
+                                 ALOCK       => AXI4_ALOCK_WIDTH,
                                  WDATA       => 32,
                                  RDATA       => 32,
                                  ARUSER      => 1,
@@ -100,6 +104,8 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
                                  ID          => 4,
                                  AWADDR      => AXI4_ADDR_WIDTH,
                                  ARADDR      => AXI4_ADDR_WIDTH,
+                                 ALEN        => AXI4_ALEN_WIDTH,
+                                 ALOCK       => AXI4_ALOCK_WIDTH,
                                  WDATA       => I_DATA_WIDTH,
                                  RDATA       => I_DATA_WIDTH,
                                  ARUSER      => 1,
@@ -111,6 +117,8 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
                                  ID          => 4,
                                  AWADDR      => AXI4_ADDR_WIDTH,
                                  ARADDR      => AXI4_ADDR_WIDTH,
+                                 ALEN        => AXI4_ALEN_WIDTH,
+                                 ALOCK       => AXI4_ALOCK_WIDTH,
                                  WDATA       => O_DATA_WIDTH,
                                  RDATA       => O_DATA_WIDTH,
                                  ARUSER      => 1,
@@ -139,10 +147,10 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     ------------------------------------------------------------------------------
     signal   C_ARADDR        : std_logic_vector(C_WIDTH.ARADDR -1 downto 0);
     signal   C_ARWRITE       : std_logic;
-    signal   C_ARLEN         : AXI4_ALEN_TYPE;
+    signal   C_ARLEN         : std_logic_vector(C_WIDTH.ALEN   -1 downto 0);
     signal   C_ARSIZE        : AXI4_ASIZE_TYPE;
     signal   C_ARBURST       : AXI4_ABURST_TYPE;
-    signal   C_ARLOCK        : AXI4_ALOCK_TYPE;
+    signal   C_ARLOCK        : std_logic_vector(C_WIDTH.ALOCK  -1 downto 0);
     signal   C_ARCACHE       : AXI4_ACACHE_TYPE;
     signal   C_ARPROT        : AXI4_APROT_TYPE;
     signal   C_ARQOS         : AXI4_AQOS_TYPE;
@@ -159,10 +167,10 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     signal   C_RID           : std_logic_vector(C_WIDTH.ID     -1 downto 0);
     signal   C_RREADY        : std_logic;
     signal   C_AWADDR        : std_logic_vector(C_WIDTH.AWADDR -1 downto 0);
-    signal   C_AWLEN         : AXI4_ALEN_TYPE;
+    signal   C_AWLEN         : std_logic_vector(C_WIDTH.ALEN   -1 downto 0);
     signal   C_AWSIZE        : AXI4_ASIZE_TYPE;
     signal   C_AWBURST       : AXI4_ABURST_TYPE;
-    signal   C_AWLOCK        : AXI4_ALOCK_TYPE;
+    signal   C_AWLOCK        : std_logic_vector(C_WIDTH.ALOCK  -1 downto 0);
     signal   C_AWCACHE       : AXI4_ACACHE_TYPE;
     signal   C_AWPROT        : AXI4_APROT_TYPE;
     signal   C_AWQOS         : AXI4_AQOS_TYPE;
@@ -187,11 +195,10 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     -- Transaction Request Block I/F.
     ------------------------------------------------------------------------------
     signal   M_ARADDR        : std_logic_vector(M_WIDTH.ARADDR -1 downto 0);
-    signal   M_ARWRITE       : std_logic;
-    signal   M_ARLEN         : AXI4_ALEN_TYPE;
+    signal   M_ARLEN         : std_logic_vector(M_WIDTH.ALEN   -1 downto 0);
     signal   M_ARSIZE        : AXI4_ASIZE_TYPE;
     signal   M_ARBURST       : AXI4_ABURST_TYPE;
-    signal   M_ARLOCK        : AXI4_ALOCK_TYPE;
+    signal   M_ARLOCK        : std_logic_vector(M_WIDTH.ALOCK  -1 downto 0);
     signal   M_ARCACHE       : AXI4_ACACHE_TYPE;
     signal   M_ARPROT        : AXI4_APROT_TYPE;
     signal   M_ARQOS         : AXI4_AQOS_TYPE;
@@ -208,10 +215,10 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     signal   M_RID           : std_logic_vector(M_WIDTH.ID     -1 downto 0);
     signal   M_RREADY        : std_logic;
     signal   M_AWADDR        : std_logic_vector(M_WIDTH.AWADDR -1 downto 0);
-    signal   M_AWLEN         : AXI4_ALEN_TYPE;
+    signal   M_AWLEN         : std_logic_vector(M_WIDTH.ALEN   -1 downto 0);
     signal   M_AWSIZE        : AXI4_ASIZE_TYPE;
     signal   M_AWBURST       : AXI4_ABURST_TYPE;
-    signal   M_AWLOCK        : AXI4_ALOCK_TYPE;
+    signal   M_AWLOCK        : std_logic_vector(M_WIDTH.ALOCK  -1 downto 0);
     signal   M_AWCACHE       : AXI4_ACACHE_TYPE;
     signal   M_AWPROT        : AXI4_APROT_TYPE;
     signal   M_AWQOS         : AXI4_AQOS_TYPE;
@@ -236,11 +243,10 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     -- IN I/F 
     ------------------------------------------------------------------------------
     signal   I_ARADDR        : std_logic_vector(I_WIDTH.ARADDR -1 downto 0);
-    signal   I_ARWRITE       : std_logic;
-    signal   I_ARLEN         : AXI4_ALEN_TYPE;
+    signal   I_ARLEN         : std_logic_vector(I_WIDTH.ALEN   -1 downto 0);
     signal   I_ARSIZE        : AXI4_ASIZE_TYPE;
     signal   I_ARBURST       : AXI4_ABURST_TYPE;
-    signal   I_ARLOCK        : AXI4_ALOCK_TYPE;
+    signal   I_ARLOCK        : std_logic_vector(I_WIDTH.ALOCK  -1 downto 0);
     signal   I_ARCACHE       : AXI4_ACACHE_TYPE;
     signal   I_ARPROT        : AXI4_APROT_TYPE;
     signal   I_ARQOS         : AXI4_AQOS_TYPE;
@@ -257,10 +263,10 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     signal   I_RID           : std_logic_vector(I_WIDTH.ID     -1 downto 0);
     signal   I_RREADY        : std_logic;
     signal   I_AWADDR        : std_logic_vector(I_WIDTH.AWADDR -1 downto 0);
-    signal   I_AWLEN         : AXI4_ALEN_TYPE;
+    signal   I_AWLEN         : std_logic_vector(I_WIDTH.ALEN   -1 downto 0);
     signal   I_AWSIZE        : AXI4_ASIZE_TYPE;
     signal   I_AWBURST       : AXI4_ABURST_TYPE;
-    signal   I_AWLOCK        : AXI4_ALOCK_TYPE;
+    signal   I_AWLOCK        : std_logic_vector(I_WIDTH.ALOCK  -1 downto 0);
     signal   I_AWCACHE       : AXI4_ACACHE_TYPE;
     signal   I_AWPROT        : AXI4_APROT_TYPE;
     signal   I_AWQOS         : AXI4_AQOS_TYPE;
@@ -285,11 +291,10 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     -- OUT I/F
     -------------------------------------------------------------------------------
     signal   O_ARADDR        : std_logic_vector(O_WIDTH.ARADDR -1 downto 0);
-    signal   O_ARWRITE       : std_logic;
-    signal   O_ARLEN         : AXI4_ALEN_TYPE;
+    signal   O_ARLEN         : std_logic_vector(O_WIDTH.ALEN   -1 downto 0);
     signal   O_ARSIZE        : AXI4_ASIZE_TYPE;
     signal   O_ARBURST       : AXI4_ABURST_TYPE;
-    signal   O_ARLOCK        : AXI4_ALOCK_TYPE;
+    signal   O_ARLOCK        : std_logic_vector(O_WIDTH.ALOCK  -1 downto 0);
     signal   O_ARCACHE       : AXI4_ACACHE_TYPE;
     signal   O_ARPROT        : AXI4_APROT_TYPE;
     signal   O_ARQOS         : AXI4_AQOS_TYPE;
@@ -306,10 +311,10 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     signal   O_RID           : std_logic_vector(O_WIDTH.ID     -1 downto 0);
     signal   O_RREADY        : std_logic;
     signal   O_AWADDR        : std_logic_vector(O_WIDTH.AWADDR -1 downto 0);
-    signal   O_AWLEN         : AXI4_ALEN_TYPE;
+    signal   O_AWLEN         : std_logic_vector(O_WIDTH.ALEN   -1 downto 0);
     signal   O_AWSIZE        : AXI4_ASIZE_TYPE;
     signal   O_AWBURST       : AXI4_ABURST_TYPE;
-    signal   O_AWLOCK        : AXI4_ALOCK_TYPE;
+    signal   O_AWLOCK        : std_logic_vector(O_WIDTH.ALOCK  -1 downto 0);
     signal   O_AWCACHE       : AXI4_ACACHE_TYPE;
     signal   O_AWPROT        : AXI4_APROT_TYPE;
     signal   O_AWQOS         : AXI4_AQOS_TYPE;
@@ -385,6 +390,8 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             I_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
             I_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
             I_RUSER_WIDTH   : integer range 1 to 32                  :=  4;
+            I_WUSER_WIDTH   : integer range 1 to 32                  :=  4;
+            I_BUSER_WIDTH   : integer range 1 to 32                  :=  4;
             I_MAX_XFER_SIZE : integer                                :=  8;
             I_PROC_VALID    : integer                                :=  1;
             O_AXI_ID        : integer                                :=  2;
@@ -392,6 +399,7 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
             O_ID_WIDTH      : integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
             O_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
+            O_RUSER_WIDTH   : integer range 1 to 32                  :=  4;
             O_WUSER_WIDTH   : integer range 1 to 32                  :=  4;
             O_BUSER_WIDTH   : integer range 1 to 32                  :=  4;
             O_MAX_XFER_SIZE : integer                                :=  8;
@@ -405,14 +413,14 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             -----------------------------------------------------------------------
             -- Clock and Reset Signals.
             -----------------------------------------------------------------------
-            ACLK            : in    std_logic;
+            ACLOCK          : in    std_logic;
             ARESETn         : in    std_logic;
             -----------------------------------------------------------------------
             -- Control Status Register I/F AXI4 Read Address Channel Signals.
             -----------------------------------------------------------------------
-            C_ARID          : in    std_logic_vector(C_ID_WIDTH    -1 downto 0);
-            C_ARADDR        : in    std_logic_vector(C_ADDR_WIDTH  -1 downto 0);
-            C_ARLEN         : in    AXI4_ALEN_TYPE;
+            C_ARID          : in    std_logic_vector(C_ID_WIDTH      -1 downto 0);
+            C_ARADDR        : in    std_logic_vector(C_ADDR_WIDTH    -1 downto 0);
+            C_ARLEN         : in    std_logic_vector(AXI4_ALEN_WIDTH -1 downto 0);
             C_ARSIZE        : in    AXI4_ASIZE_TYPE;
             C_ARBURST       : in    AXI4_ABURST_TYPE;
             C_ARVALID       : in    std_logic;
@@ -420,8 +428,8 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             ----------------------------------------------------------------------
             -- Control Status Register I/F AXI4 Read Data Channel Signals.
             ----------------------------------------------------------------------
-            C_RID           : out   std_logic_vector(C_ID_WIDTH    -1 downto 0);
-            C_RDATA         : out   std_logic_vector(C_DATA_WIDTH  -1 downto 0);
+            C_RID           : out   std_logic_vector(C_ID_WIDTH      -1 downto 0);
+            C_RDATA         : out   std_logic_vector(C_DATA_WIDTH    -1 downto 0);
             C_RRESP         : out   AXI4_RESP_TYPE;
             C_RLAST         : out   std_logic;
             C_RVALID        : out   std_logic;
@@ -429,9 +437,9 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             ----------------------------------------------------------------------
             -- Control Status Register I/F AXI4 Write Address Channel Signals.
             ----------------------------------------------------------------------
-            C_AWID          : in    std_logic_vector(C_ID_WIDTH    -1 downto 0);
-            C_AWADDR        : in    std_logic_vector(C_ADDR_WIDTH  -1 downto 0);
-            C_AWLEN         : in    AXI4_ALEN_TYPE;
+            C_AWID          : in    std_logic_vector(C_ID_WIDTH      -1 downto 0);
+            C_AWADDR        : in    std_logic_vector(C_ADDR_WIDTH    -1 downto 0);
+            C_AWLEN         : in    std_logic_vector(AXI4_ALEN_WIDTH -1 downto 0);
             C_AWSIZE        : in    AXI4_ASIZE_TYPE;
             C_AWBURST       : in    AXI4_ABURST_TYPE;
             C_AWVALID       : in    std_logic;
@@ -439,39 +447,39 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             ----------------------------------------------------------------------
             -- Control Status Register I/F AXI4 Write Data Channel Signals.
             ----------------------------------------------------------------------
-            C_WDATA         : in    std_logic_vector(C_DATA_WIDTH  -1 downto 0);
-            C_WSTRB         : in    std_logic_vector(C_DATA_WIDTH/8-1 downto 0);
+            C_WDATA         : in    std_logic_vector(C_DATA_WIDTH    -1 downto 0);
+            C_WSTRB         : in    std_logic_vector(C_DATA_WIDTH/8  -1 downto 0);
             C_WLAST         : in    std_logic;
             C_WVALID        : in    std_logic;
             C_WREADY        : out   std_logic;
             ----------------------------------------------------------------------
             -- Control Status Register I/F AXI4 Write Response Channel Signals.
             ----------------------------------------------------------------------
-            C_BID           : out   std_logic_vector(C_ID_WIDTH    -1 downto 0);
+            C_BID           : out   std_logic_vector(C_ID_WIDTH      -1 downto 0);
             C_BRESP         : out   AXI4_RESP_TYPE;
             C_BVALID        : out   std_logic;
             C_BREADY        : in    std_logic;
             -----------------------------------------------------------------------
             -- Transfer Request Block Access I/F AXI4 Read Address Channel Signals.
             -----------------------------------------------------------------------
-            M_ARID          : out   std_logic_vector(M_ID_WIDTH    -1 downto 0);
-            M_ARADDR        : out   std_logic_vector(M_ADDR_WIDTH  -1 downto 0);
-            M_ARLEN         : out   AXI4_ALEN_TYPE;
+            M_ARID          : out   std_logic_vector(M_ID_WIDTH      -1 downto 0);
+            M_ARADDR        : out   std_logic_vector(M_ADDR_WIDTH    -1 downto 0);
+            M_ARLEN         : out   std_logic_vector(AXI4_ALEN_WIDTH -1 downto 0);
             M_ARSIZE        : out   AXI4_ASIZE_TYPE;
             M_ARBURST       : out   AXI4_ABURST_TYPE;
-            M_ARLOCK        : out   AXI4_ALOCK_TYPE;
+            M_ARLOCK        : out   std_logic_vector(AXI4_ALOCK_WIDTH-1 downto 0);
             M_ARCACHE       : out   AXI4_ACACHE_TYPE;
             M_ARPROT        : out   AXI4_APROT_TYPE;
             M_ARQOS         : out   AXI4_AQOS_TYPE;
             M_ARREGION      : out   AXI4_AREGION_TYPE;
-            M_ARUSER        : out   std_logic_vector(M_AUSER_WIDTH -1 downto 0);
+            M_ARUSER        : out   std_logic_vector(M_AUSER_WIDTH   -1 downto 0);
             M_ARVALID       : out   std_logic;
             M_ARREADY       : in    std_logic;
             -----------------------------------------------------------------------
             -- Transfer Request Block Access I/F AXI4 Read Data Channel Signals.
             -----------------------------------------------------------------------
-            M_RID           : in    std_logic_vector(M_ID_WIDTH    -1 downto 0);
-            M_RDATA         : in    std_logic_vector(M_DATA_WIDTH  -1 downto 0);
+            M_RID           : in    std_logic_vector(M_ID_WIDTH      -1 downto 0);
+            M_RDATA         : in    std_logic_vector(M_DATA_WIDTH    -1 downto 0);
             M_RRESP         : in    AXI4_RESP_TYPE;
             M_RLAST         : in    std_logic;
             M_RVALID        : in    std_logic;
@@ -479,97 +487,158 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
             -----------------------------------------------------------------------
             -- Transfer Request Block Access I/F AXI4 Write Address Channel Signals.
             -----------------------------------------------------------------------
-            M_AWID          : out   std_logic_vector(M_ID_WIDTH    -1 downto 0);
-            M_AWADDR        : out   std_logic_vector(M_ADDR_WIDTH  -1 downto 0);
-            M_AWLEN         : out   AXI4_ALEN_TYPE;
+            M_AWID          : out   std_logic_vector(M_ID_WIDTH      -1 downto 0);
+            M_AWADDR        : out   std_logic_vector(M_ADDR_WIDTH    -1 downto 0);
+            M_AWLEN         : out   std_logic_vector(AXI4_ALEN_WIDTH -1 downto 0);
             M_AWSIZE        : out   AXI4_ASIZE_TYPE;
             M_AWBURST       : out   AXI4_ABURST_TYPE;
-            M_AWLOCK        : out   AXI4_ALOCK_TYPE;
+            M_AWLOCK        : out   std_logic_vector(AXI4_ALOCK_WIDTH-1 downto 0);
             M_AWCACHE       : out   AXI4_ACACHE_TYPE;
             M_AWPROT        : out   AXI4_APROT_TYPE;
             M_AWQOS         : out   AXI4_AQOS_TYPE;
             M_AWREGION      : out   AXI4_AREGION_TYPE;
-            M_AWUSER        : out   std_logic_vector(M_AUSER_WIDTH -1 downto 0);
+            M_AWUSER        : out   std_logic_vector(M_AUSER_WIDTH   -1 downto 0);
             M_AWVALID       : out   std_logic;
             M_AWREADY       : in    std_logic;
             -----------------------------------------------------------------------
             -- Transfer Request Block Access I/F AXI4 Write Data Channel Signals.
             -----------------------------------------------------------------------
-            M_WDATA         : out   std_logic_vector(M_DATA_WIDTH  -1 downto 0);
-            M_WSTRB         : out   std_logic_vector(M_DATA_WIDTH/8-1 downto 0);
+            M_WDATA         : out   std_logic_vector(M_DATA_WIDTH    -1 downto 0);
+            M_WSTRB         : out   std_logic_vector(M_DATA_WIDTH/8  -1 downto 0);
             M_WLAST         : out   std_logic;
             M_WVALID        : out   std_logic;
             M_WREADY        : in    std_logic;
             -----------------------------------------------------------------------
             -- Transfer Request Block Access I/F AXI4 Write Response Channel Signals.
             -----------------------------------------------------------------------
-            M_BID           : in    std_logic_vector(M_ID_WIDTH    -1 downto 0);
+            M_BID           : in    std_logic_vector(M_ID_WIDTH      -1 downto 0);
             M_BRESP         : in    AXI4_RESP_TYPE;
             M_BVALID        : in    std_logic;
             M_BREADY        : out   std_logic;
             ----------------------------------------------------------------------
             -- Input AXI4 Read Address Channel Signals.
             ----------------------------------------------------------------------
-            I_ARID          : out   std_logic_vector(I_ID_WIDTH    -1 downto 0);
-            I_ARADDR        : out   std_logic_vector(I_ADDR_WIDTH  -1 downto 0);
-            I_ARLEN         : out   AXI4_ALEN_TYPE;
+            I_ARID          : out   std_logic_vector(I_ID_WIDTH      -1 downto 0);
+            I_ARADDR        : out   std_logic_vector(I_ADDR_WIDTH    -1 downto 0);
+            I_ARLEN         : out   std_logic_vector(AXI4_ALEN_WIDTH -1 downto 0);
             I_ARSIZE        : out   AXI4_ASIZE_TYPE;
             I_ARBURST       : out   AXI4_ABURST_TYPE;
-            I_ARLOCK        : out   AXI4_ALOCK_TYPE;
+            I_ARLOCK        : out   std_logic_vector(AXI4_ALOCK_WIDTH-1 downto 0);
             I_ARCACHE       : out   AXI4_ACACHE_TYPE;
             I_ARPROT        : out   AXI4_APROT_TYPE;
             I_ARQOS         : out   AXI4_AQOS_TYPE;
             I_ARREGION      : out   AXI4_AREGION_TYPE;
-            I_ARUSER        : out   std_logic_vector(I_AUSER_WIDTH -1 downto 0);
+            I_ARUSER        : out   std_logic_vector(I_AUSER_WIDTH   -1 downto 0);
             I_ARVALID       : out   std_logic;
             I_ARREADY       : in    std_logic;
             ----------------------------------------------------------------------
             -- Input AXI4 Read Data Channel Signals.
             ----------------------------------------------------------------------
-            I_RID           : in    std_logic_vector(I_ID_WIDTH    -1 downto 0);
-            I_RDATA         : in    std_logic_vector(I_DATA_WIDTH  -1 downto 0);
+            I_RID           : in    std_logic_vector(I_ID_WIDTH      -1 downto 0);
+            I_RDATA         : in    std_logic_vector(I_DATA_WIDTH    -1 downto 0);
             I_RRESP         : in    AXI4_RESP_TYPE;
             I_RLAST         : in    std_logic;
-            I_RUSER         : in    std_logic_vector(I_RUSER_WIDTH -1 downto 0);
+            I_RUSER         : in    std_logic_vector(I_RUSER_WIDTH   -1 downto 0);
             I_RVALID        : in    std_logic;
             I_RREADY        : out   std_logic;
             ----------------------------------------------------------------------
+            -- Intput AXI4 Write Address Channel Signals(Not Used).
+            ----------------------------------------------------------------------
+            I_AWID          : out   std_logic_vector(I_ID_WIDTH      -1 downto 0);
+            I_AWADDR        : out   std_logic_vector(I_ADDR_WIDTH    -1 downto 0);
+            I_AWLEN         : out   std_logic_vector(AXI4_ALEN_WIDTH -1 downto 0);
+            I_AWSIZE        : out   AXI4_ASIZE_TYPE;
+            I_AWBURST       : out   AXI4_ABURST_TYPE;
+            I_AWLOCK        : out   std_logic_vector(AXI4_ALOCK_WIDTH-1 downto 0);
+            I_AWCACHE       : out   AXI4_ACACHE_TYPE;
+            I_AWPROT        : out   AXI4_APROT_TYPE;
+            I_AWQOS         : out   AXI4_AQOS_TYPE;
+            I_AWREGION      : out   AXI4_AREGION_TYPE;
+            I_AWUSER        : out   std_logic_vector(I_AUSER_WIDTH   -1 downto 0);
+            I_AWVALID       : out   std_logic;
+            I_AWREADY       : in    std_logic;
+            ----------------------------------------------------------------------
+            -- Intake AXI4 Write Data Channel Signals(Not Used).
+            ----------------------------------------------------------------------
+            I_WID           : out   std_logic_vector(I_ID_WIDTH      -1 downto 0);
+            I_WDATA         : out   std_logic_vector(I_DATA_WIDTH    -1 downto 0);
+            I_WSTRB         : out   std_logic_vector(I_DATA_WIDTH/8  -1 downto 0);
+            I_WUSER         : out   std_logic_vector(I_WUSER_WIDTH   -1 downto 0);
+            I_WLAST         : out   std_logic;
+            I_WVALID        : out   std_logic;
+            I_WREADY        : in    std_logic;
+            ----------------------------------------------------------------------
+            -- Intake AXI4 Write Response Channel Signals(Not Used).
+            ----------------------------------------------------------------------
+            I_BID           : in    std_logic_vector(I_ID_WIDTH      -1 downto 0);
+            I_BRESP         : in    AXI4_RESP_TYPE;
+            I_BUSER         : in    std_logic_vector(I_BUSER_WIDTH   -1 downto 0);
+            I_BVALID        : in    std_logic;
+            I_BREADY        : out   std_logic;
+            ----------------------------------------------------------------------
+            -- Output AXI4 Read Address Channel Signals(Not Used).
+            ----------------------------------------------------------------------
+            O_ARID          : out   std_logic_vector(O_ID_WIDTH      -1 downto 0);
+            O_ARADDR        : out   std_logic_vector(O_ADDR_WIDTH    -1 downto 0);
+            O_ARLEN         : out   std_logic_vector(AXI4_ALEN_WIDTH -1 downto 0);
+            O_ARSIZE        : out   AXI4_ASIZE_TYPE;
+            O_ARBURST       : out   AXI4_ABURST_TYPE;
+            O_ARLOCK        : out   std_logic_vector(AXI4_ALOCK_WIDTH-1 downto 0);
+            O_ARCACHE       : out   AXI4_ACACHE_TYPE;
+            O_ARPROT        : out   AXI4_APROT_TYPE;
+            O_ARQOS         : out   AXI4_AQOS_TYPE;
+            O_ARREGION      : out   AXI4_AREGION_TYPE;
+            O_ARUSER        : out   std_logic_vector(O_AUSER_WIDTH   -1 downto 0);
+            O_ARVALID       : out   std_logic;
+            O_ARREADY       : in    std_logic;
+            ----------------------------------------------------------------------
+            -- Output AXI4 Read Data Channel Signals(Not Used).
+            ----------------------------------------------------------------------
+            O_RID           : in    std_logic_vector(O_ID_WIDTH      -1 downto 0);
+            O_RDATA         : in    std_logic_vector(O_DATA_WIDTH    -1 downto 0);
+            O_RRESP         : in    AXI4_RESP_TYPE;
+            O_RLAST         : in    std_logic;
+            O_RUSER         : in    std_logic_vector(O_RUSER_WIDTH   -1 downto 0);
+            O_RVALID        : in    std_logic;
+            O_RREADY        : out   std_logic;
+            ----------------------------------------------------------------------
             -- Output AXI4 Write Address Channel Signals.
             ----------------------------------------------------------------------
-            O_AWID          : out   std_logic_vector(O_ID_WIDTH    -1 downto 0);
-            O_AWADDR        : out   std_logic_vector(O_ADDR_WIDTH  -1 downto 0);
-            O_AWLEN         : out   AXI4_ALEN_TYPE;
+            O_AWID          : out   std_logic_vector(O_ID_WIDTH      -1 downto 0);
+            O_AWADDR        : out   std_logic_vector(O_ADDR_WIDTH    -1 downto 0);
+            O_AWLEN         : out   std_logic_vector(AXI4_ALEN_WIDTH -1 downto 0);
             O_AWSIZE        : out   AXI4_ASIZE_TYPE;
             O_AWBURST       : out   AXI4_ABURST_TYPE;
-            O_AWLOCK        : out   AXI4_ALOCK_TYPE;
+            O_AWLOCK        : out   std_logic_vector(AXI4_ALOCK_WIDTH-1 downto 0);
             O_AWCACHE       : out   AXI4_ACACHE_TYPE;
             O_AWPROT        : out   AXI4_APROT_TYPE;
             O_AWQOS         : out   AXI4_AQOS_TYPE;
             O_AWREGION      : out   AXI4_AREGION_TYPE;
-            O_AWUSER        : out   std_logic_vector(O_AUSER_WIDTH -1 downto 0);
+            O_AWUSER        : out   std_logic_vector(O_AUSER_WIDTH   -1 downto 0);
             O_AWVALID       : out   std_logic;
             O_AWREADY       : in    std_logic;
             ----------------------------------------------------------------------
             -- Output AXI4 Write Data Channel Signals.
             ----------------------------------------------------------------------
-            O_WID           : out   std_logic_vector(O_ID_WIDTH    -1 downto 0);
-            O_WDATA         : out   std_logic_vector(O_DATA_WIDTH  -1 downto 0);
-            O_WSTRB         : out   std_logic_vector(O_DATA_WIDTH/8-1 downto 0);
-            O_WUSER         : out   std_logic_vector(O_WUSER_WIDTH -1 downto 0);
+            O_WID           : out   std_logic_vector(O_ID_WIDTH      -1 downto 0);
+            O_WDATA         : out   std_logic_vector(O_DATA_WIDTH    -1 downto 0);
+            O_WSTRB         : out   std_logic_vector(O_DATA_WIDTH/8  -1 downto 0);
+            O_WUSER         : out   std_logic_vector(O_WUSER_WIDTH   -1 downto 0);
             O_WLAST         : out   std_logic;
             O_WVALID        : out   std_logic;
             O_WREADY        : in    std_logic;
             ----------------------------------------------------------------------
             -- Output AXI4 Write Response Channel Signals.
             ----------------------------------------------------------------------
-            O_BID           : in    std_logic_vector(O_ID_WIDTH    -1 downto 0);
+            O_BID           : in    std_logic_vector(O_ID_WIDTH      -1 downto 0);
             O_BRESP         : in    AXI4_RESP_TYPE;
-            O_BUSER         : in    std_logic_vector(O_BUSER_WIDTH -1 downto 0);
+            O_BUSER         : in    std_logic_vector(O_BUSER_WIDTH   -1 downto 0);
             O_BVALID        : in    std_logic;
             O_BREADY        : out   std_logic;
             ----------------------------------------------------------------------
             -- 
             ----------------------------------------------------------------------
+            IRQ             : out   std_logic;
             I_IRQ           : out   std_logic;
             O_IRQ           : out   std_logic
         );
@@ -597,6 +666,8 @@ begin
             I_ID_WIDTH      => I_WIDTH.ID         ,
             I_AUSER_WIDTH   => I_WIDTH.ARUSER     ,
             I_RUSER_WIDTH   => I_WIDTH.RUSER      ,
+            I_WUSER_WIDTH   => I_WIDTH.WUSER      ,
+            I_BUSER_WIDTH   => I_WIDTH.BUSER      ,
             I_MAX_XFER_SIZE => MAX_XFER_SIZE      ,
             I_PROC_VALID    => I_PROC_VALID       ,
             O_AXI_ID        => O_AXI_ID           ,
@@ -604,6 +675,7 @@ begin
             O_DATA_WIDTH    => O_WIDTH.WDATA      ,
             O_ID_WIDTH      => O_WIDTH.ID         ,
             O_AUSER_WIDTH   => O_WIDTH.AWUSER     ,
+            O_RUSER_WIDTH   => O_WIDTH.RUSER      ,
             O_WUSER_WIDTH   => O_WIDTH.WUSER      ,
             O_BUSER_WIDTH   => O_WIDTH.BUSER      ,
             O_MAX_XFER_SIZE => MAX_XFER_SIZE      ,
@@ -617,7 +689,7 @@ begin
             -----------------------------------------------------------------------
             -- Clock and Reset Signals.
             -----------------------------------------------------------------------
-            ACLK            => ACLK            , -- In :
+            ACLOCK          => ACLK            , -- In :
             ARESETn         => ARESETn         , -- In :
             -----------------------------------------------------------------------
             -- Control Status Register I/F AXI4 Read Address Channel Signals.
@@ -746,6 +818,66 @@ begin
             I_RVALID        => I_RVALID        , -- In :
             I_RREADY        => I_RREADY        , -- Out:
             ----------------------------------------------------------------------
+            -- Input AXI4 Write Address Channel Signals.
+            ----------------------------------------------------------------------
+            I_AWID          => I_AWID          , -- Out:
+            I_AWADDR        => I_AWADDR        , -- Out:
+            I_AWLEN         => I_AWLEN         , -- Out:
+            I_AWSIZE        => I_AWSIZE        , -- Out:
+            I_AWBURST       => I_AWBURST       , -- Out:
+            I_AWLOCK        => I_AWLOCK        , -- Out:
+            I_AWCACHE       => I_AWCACHE       , -- Out:
+            I_AWPROT        => I_AWPROT        , -- Out:
+            I_AWQOS         => I_AWQOS         , -- Out:
+            I_AWREGION      => I_AWREGION      , -- Out:
+            I_AWUSER        => I_AWUSER        , -- Out:
+            I_AWVALID       => I_AWVALID       , -- Out:
+            I_AWREADY       => I_AWREADY       , -- In :
+            ----------------------------------------------------------------------
+            -- Input AXI4 Write Data Channel Signals.
+            ----------------------------------------------------------------------
+            I_WID           => I_WID           , -- Out:
+            I_WDATA         => I_WDATA         , -- Out:
+            I_WSTRB         => I_WSTRB         , -- Out:
+            I_WUSER         => I_WUSER         , -- Out:
+            I_WLAST         => I_WLAST         , -- Out:
+            I_WVALID        => I_WVALID        , -- Out:
+            I_WREADY        => I_WREADY        , -- In :
+            ----------------------------------------------------------------------
+            -- Input AXI4 Write Response Channel Signals.
+            ----------------------------------------------------------------------
+            I_BID           => I_BID           , -- In :
+            I_BRESP         => I_BRESP         , -- In :
+            I_BUSER         => I_BUSER         , -- In :
+            I_BVALID        => I_BVALID        , -- In :
+            I_BREADY        => I_BREADY        , -- Out:
+            ----------------------------------------------------------------------
+            -- Output AXI4 Read Address Channel Signals.
+            ----------------------------------------------------------------------
+            O_ARID          => O_ARID          , -- Out:
+            O_ARADDR        => O_ARADDR        , -- Out:
+            O_ARLEN         => O_ARLEN         , -- Out:
+            O_ARSIZE        => O_ARSIZE        , -- Out:
+            O_ARBURST       => O_ARBURST       , -- Out:
+            O_ARLOCK        => O_ARLOCK        , -- Out:
+            O_ARCACHE       => O_ARCACHE       , -- Out:
+            O_ARPROT        => O_ARPROT        , -- Out:
+            O_ARQOS         => O_ARQOS         , -- Out:
+            O_ARREGION      => O_ARREGION      , -- Out:
+            O_ARUSER        => O_ARUSER        , -- Out:
+            O_ARVALID       => O_ARVALID       , -- Out:
+            O_ARREADY       => O_ARREADY       , -- In :
+            ----------------------------------------------------------------------
+            -- Output AXI4 Read Data Channel Signals.
+            ----------------------------------------------------------------------
+            O_RID           => O_RID           , -- In :
+            O_RDATA         => O_RDATA         , -- In :
+            O_RRESP         => O_RRESP         , -- In :
+            O_RLAST         => O_RLAST         , -- In :
+            O_RUSER         => O_RUSER         , -- In :
+            O_RVALID        => O_RVALID        , -- In :
+            O_RREADY        => O_RREADY        , -- Out:
+            ----------------------------------------------------------------------
             -- Output AXI4 Write Address Channel Signals.
             ----------------------------------------------------------------------
             O_AWID          => O_AWID          , -- Out:
@@ -782,6 +914,7 @@ begin
             ----------------------------------------------------------------------
             -- 
             ----------------------------------------------------------------------
+            IRQ             => open            ,  -- Out:
             I_IRQ           => I_IRQ           ,  -- Out:
             O_IRQ           => O_IRQ              -- Out:
         );

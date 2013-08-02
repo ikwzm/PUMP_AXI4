@@ -137,6 +137,9 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
                           integer :=  2;
         BUF_DEPTH       : --! @brief BUFFER DEPTH :
                           --! バッファの大きさ(バイト数)を２のべき乗で指定する.
+                          --! * バッファの大きさは I_MAX_XFER_SIZE で示される入力側
+                          --!   の最大転送バイト数と O_MAX_XFER_SIZE で示される出力
+                          --!   側の最大転送バイト数よりも大きくなければならない.
                           integer := 12
     );
     port(
@@ -357,6 +360,10 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     constant I_MAX_XFER_BYTES   : integer := 2**I_MAX_XFER_SIZE;
     constant O_MAX_XFER_BYTES   : integer := 2**O_MAX_XFER_SIZE;
     ------------------------------------------------------------------------------
+    -- バッファの総バイト数
+    ------------------------------------------------------------------------------
+    constant BUF_BYTES          : integer := 2**BUF_DEPTH;
+    ------------------------------------------------------------------------------
     -- バッファデータのビット幅.
     ------------------------------------------------------------------------------
     function MAX(A,B:integer) return integer is begin
@@ -366,7 +373,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     end function;
     constant BUF_DATA_WIDTH     : integer := MAX(O_DATA_WIDTH,I_DATA_WIDTH);
     -------------------------------------------------------------------------------
-    -- データバスのバイト数の２のべき乗値を計算する.
+    -- データバスのビット数の２のべき乗値を計算する.
     -------------------------------------------------------------------------------
     function CALC_DATA_SIZE(WIDTH:integer) return integer is
         variable value : integer;
@@ -378,9 +385,45 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
         return value;
     end function;
     ------------------------------------------------------------------------------
-    -- バッファデータのビット幅をバイト数(２のべき乗値)で示す.
+    -- バッファのデータ幅のビット数を２のべき乗値で示す.
     ------------------------------------------------------------------------------
-    constant BUF_DATA_SIZE      : integer := CALC_DATA_SIZE(BUF_DATA_WIDTH);
+    constant BUF_DATA_BIT_SIZE  : integer := CALC_DATA_SIZE(BUF_DATA_WIDTH);
+    ------------------------------------------------------------------------------
+    -- バッファのデータ幅をバイト数で示す.
+    ------------------------------------------------------------------------------
+    constant BUF_DATA_BYTES     : integer := BUF_DATA_WIDTH/8;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    constant I2O_DELAY_CYCLE    : integer := 0;
+    ------------------------------------------------------------------------------
+    -- 入力側のフロー制御用定数.
+    ------------------------------------------------------------------------------
+    constant I_FLOW_VALID       : integer := 1;
+    constant I_USE_PUSH_RSV_SIZE: integer := 0;
+    constant I_USE_PUSH_BUF_SIZE: integer := 0;
+    constant I_FIXED_FLOW_OPEN  : integer := 0;
+    constant I_FIXED_POOL_OPEN  : integer := 1;
+    constant I_REQ_ADDR_VALID   : integer := 1;
+    constant I_REQ_SIZE_VALID   : integer := 1;
+    constant I_FLOW_READY_LEVEL : std_logic_vector(SIZE_BITS-1 downto 0) :=
+                                  std_logic_vector(to_unsigned(BUF_BYTES-I_MAX_XFER_BYTES,SIZE_BITS));
+    constant I_BUF_READY_LEVEL  : std_logic_vector(SIZE_BITS-1 downto 0) :=
+                                  std_logic_vector(to_unsigned(BUF_BYTES-2*BUF_DATA_BYTES,SIZE_BITS));
+    ------------------------------------------------------------------------------
+    -- 出力側のフロー制御用定数.
+    ------------------------------------------------------------------------------
+    constant O_FLOW_VALID       : integer := 1;
+    constant O_USE_PULL_RSV_SIZE: integer := 0;
+    constant O_USE_PULL_BUF_SIZE: integer := 0;
+    constant O_FIXED_FLOW_OPEN  : integer := 0;
+    constant O_FIXED_POOL_OPEN  : integer := 1;
+    constant O_REQ_ADDR_VALID   : integer := 1;
+    constant O_REQ_SIZE_VALID   : integer := 1;
+    constant O_FLOW_READY_LEVEL : std_logic_vector(SIZE_BITS-1 downto 0) :=
+                                  std_logic_vector(to_unsigned(O_MAX_XFER_BYTES,SIZE_BITS));
+    constant O_BUF_READY_LEVEL  : std_logic_vector(SIZE_BITS-1 downto 0) :=
+                                  std_logic_vector(to_unsigned(  BUF_DATA_BYTES,SIZE_BITS));
     ------------------------------------------------------------------------------
     -- 入力側の各種定数.
     ------------------------------------------------------------------------------
@@ -399,6 +442,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     signal   i_req_valid        : std_logic;
     signal   i_req_ready        : std_logic;
     signal   i_xfer_busy        : std_logic;
+    signal   i_xfer_done        : std_logic;
     signal   i_ack_valid        : std_logic;
     signal   i_ack_error        : std_logic;
     signal   i_ack_next         : std_logic;
@@ -410,7 +454,6 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     signal   i_flow_stop        : std_logic;
     signal   i_flow_last        : std_logic;
     signal   i_flow_size        : std_logic_vector(SIZE_BITS       -1 downto 0);
-    signal   i_threshold_size   : std_logic_vector(SIZE_BITS       -1 downto 0);
     ------------------------------------------------------------------------------
     -- 出力側の各種定数.
     ------------------------------------------------------------------------------
@@ -429,6 +472,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     signal   o_req_valid        : std_logic;
     signal   o_req_ready        : std_logic;
     signal   o_xfer_busy        : std_logic;
+    signal   o_xfer_done        : std_logic;
     signal   o_ack_valid        : std_logic;
     signal   o_ack_error        : std_logic;
     signal   o_ack_next         : std_logic;
@@ -440,18 +484,37 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     signal   o_flow_stop        : std_logic;
     signal   o_flow_last        : std_logic;
     signal   o_flow_size        : std_logic_vector(SIZE_BITS       -1 downto 0);
-    signal   o_threshold_size   : std_logic_vector(SIZE_BITS       -1 downto 0);
     ------------------------------------------------------------------------------
     -- フローカウンタ制御用信号群.
     ------------------------------------------------------------------------------
-    signal   push_valid         : std_logic;
-    signal   push_error         : std_logic;
-    signal   push_last          : std_logic;
-    signal   push_size          : std_logic_vector(SIZE_BITS       -1 downto 0);
-    signal   pull_valid         : std_logic;
-    signal   pull_error         : std_logic;
-    signal   pull_last          : std_logic;
-    signal   pull_size          : std_logic_vector(SIZE_BITS       -1 downto 0);
+    signal   push_fin_valid     : std_logic;
+    signal   push_fin_error     : std_logic;
+    signal   push_fin_last      : std_logic;
+    signal   push_fin_size      : std_logic_vector(SIZE_BITS       -1 downto 0);
+    signal   push_rsv_valid     : std_logic;
+    signal   push_rsv_error     : std_logic;
+    signal   push_rsv_last      : std_logic;
+    signal   push_rsv_size      : std_logic_vector(SIZE_BITS       -1 downto 0);
+    signal   push_buf_valid     : std_logic;
+    signal   push_buf_ready     : std_logic;
+    signal   push_buf_reset     : std_logic;
+    signal   push_buf_error     : std_logic;
+    signal   push_buf_last      : std_logic;
+    signal   push_buf_size      : std_logic_vector(SIZE_BITS       -1 downto 0);
+    signal   pull_fin_valid     : std_logic;
+    signal   pull_fin_error     : std_logic;
+    signal   pull_fin_last      : std_logic;
+    signal   pull_fin_size      : std_logic_vector(SIZE_BITS       -1 downto 0);
+    signal   pull_rsv_valid     : std_logic;
+    signal   pull_rsv_error     : std_logic;
+    signal   pull_rsv_last      : std_logic;
+    signal   pull_rsv_size      : std_logic_vector(SIZE_BITS       -1 downto 0);
+    signal   pull_buf_valid     : std_logic;
+    signal   pull_buf_ready     : std_logic;
+    signal   pull_buf_reset     : std_logic;
+    signal   pull_buf_error     : std_logic;
+    signal   pull_buf_last      : std_logic;
+    signal   pull_buf_size      : std_logic_vector(SIZE_BITS       -1 downto 0);
     ------------------------------------------------------------------------------
     -- バッファへのアクセス用信号群.
     ------------------------------------------------------------------------------
@@ -468,453 +531,515 @@ begin
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
-    I_IF: AXI4_MASTER_READ_INTERFACE
-        generic map (
-            AXI4_ADDR_WIDTH => I_ADDR_WIDTH    ,
-            AXI4_DATA_WIDTH => I_DATA_WIDTH    ,
-            AXI4_ID_WIDTH   => I_ID_WIDTH      ,
-            VAL_BITS        => 1               ,
-            SIZE_BITS       => SIZE_BITS       ,
-            REQ_SIZE_BITS   => I_REG_SIZE_BITS,
-            REQ_SIZE_VALID  => 1               ,
-            FLOW_VALID      => 1               ,
-            BUF_DATA_WIDTH  => BUF_DATA_WIDTH  ,
-            BUF_PTR_BITS    => BUF_DEPTH       ,
-            XFER_MIN_SIZE   => I_MAX_XFER_SIZE ,
-            XFER_MAX_SIZE   => I_MAX_XFER_SIZE ,
-            QUEUE_SIZE      => I_RES_QUEUE
-        )
-        port map (
+    I_IF: AXI4_MASTER_READ_INTERFACE                     -- 
+        generic map (                                    -- 
+            AXI4_ADDR_WIDTH     => I_ADDR_WIDTH        , -- 
+            AXI4_DATA_WIDTH     => I_DATA_WIDTH        , -- 
+            AXI4_ID_WIDTH       => I_ID_WIDTH          , -- 
+            VAL_BITS            => 1                   , -- 
+            SIZE_BITS           => SIZE_BITS           , -- 
+            REQ_SIZE_BITS       => I_REG_SIZE_BITS     , -- 
+            REQ_SIZE_VALID      => I_REQ_SIZE_VALID    , -- 
+            FLOW_VALID          => I_FLOW_VALID        , -- 
+            BUF_DATA_WIDTH      => BUF_DATA_WIDTH      , -- 
+            BUF_PTR_BITS        => BUF_DEPTH           , -- 
+            XFER_MIN_SIZE       => I_MAX_XFER_SIZE     , -- 
+            XFER_MAX_SIZE       => I_MAX_XFER_SIZE     , -- 
+            QUEUE_SIZE          => I_RES_QUEUE           -- 
+        )                                                -- 
+        port map (                                       -- 
         --------------------------------------------------------------------------
         -- Clock and Reset Signals.
         --------------------------------------------------------------------------
-            CLK             => I_CLK           ,
-            RST             => RST             ,
-            CLR             => I_CLR           ,
+            CLK                 => I_CLK               , -- In  :
+            CLR                 => I_CLR               , -- In  :
+            RST                 => RST                 , -- In  :
         --------------------------------------------------------------------------
         -- AXI4 Read Address Channel Signals.
         --------------------------------------------------------------------------
-            ARID            => I_ARID          , -- Out :
-            ARADDR          => I_ARADDR        , -- Out :
-            ARLEN           => I_ARLEN         , -- Out :
-            ARSIZE          => I_ARSIZE        , -- Out :
-            ARBURST         => I_ARBURST       , -- Out :
-            ARLOCK          => I_ARLOCK        , -- Out :
-            ARCACHE         => I_ARCACHE       , -- Out :
-            ARPROT          => I_ARPROT        , -- Out :
-            ARQOS           => I_ARQOS         , -- Out :
-            ARREGION        => I_ARREGION      , -- Out :
-            ARVALID         => I_ARVALID       , -- Out :
-            ARREADY         => I_ARREADY       , -- In  :
+            ARID                => I_ARID              , -- Out :
+            ARADDR              => I_ARADDR            , -- Out :
+            ARLEN               => I_ARLEN             , -- Out :
+            ARSIZE              => I_ARSIZE            , -- Out :
+            ARBURST             => I_ARBURST           , -- Out :
+            ARLOCK              => I_ARLOCK            , -- Out :
+            ARCACHE             => I_ARCACHE           , -- Out :
+            ARPROT              => I_ARPROT            , -- Out :
+            ARQOS               => I_ARQOS             , -- Out :
+            ARREGION            => I_ARREGION          , -- Out :
+            ARVALID             => I_ARVALID           , -- Out :
+            ARREADY             => I_ARREADY           , -- In  :
         --------------------------------------------------------------------------
         -- AXI4 Read Data Channel Signals.
         --------------------------------------------------------------------------
-            RID             => I_RID           , -- In  :
-            RDATA           => I_RDATA         , -- In  :
-            RRESP           => I_RRESP         , -- In  :
-            RLAST           => I_RLAST         , -- In  :
-            RVALID          => I_RVALID        , -- In  :
-            RREADY          => I_RREADY        , -- Out :
+            RID                 => I_RID               , -- In  :
+            RDATA               => I_RDATA             , -- In  :
+            RRESP               => I_RRESP             , -- In  :
+            RLAST               => I_RLAST             , -- In  :
+            RVALID              => I_RVALID            , -- In  :
+            RREADY              => I_RREADY            , -- Out :
         ---------------------------------------------------------------------------
         -- Command Request Signals.
         ---------------------------------------------------------------------------
-            REQ_ADDR        => i_req_addr      , -- In  :
-            REQ_SIZE        => i_req_size      , -- In  :
-            REQ_ID          => I_ID            , -- In  :
-            REQ_BURST       => i_req_burst_type, -- In  :
-            REQ_LOCK        => I_LOCK          , -- In  :
-            REQ_CACHE       => I_CACHE         , -- In  :
-            REQ_PROT        => I_PROT          , -- In  :
-            REQ_QOS         => I_QOS           , -- In  :
-            REQ_REGION      => I_REGION        , -- In  :
-            REQ_BUF_PTR     => i_req_buf_ptr   , -- In  :
-            REQ_FIRST       => i_req_first     , -- In  :
-            REQ_LAST        => i_req_last      , -- In  :
-            REQ_SPECULATIVE => I_SPECULATIVE   , -- In  :
-            REQ_SAFETY      => I_SAFETY        , -- In  :
-            REQ_VAL(0)      => i_req_valid     , -- In  :
-            REQ_RDY         => i_req_ready     , -- Out :
-            XFER_SIZE_SEL   => I_XFER_SIZE_SEL , -- In  :
-            XFER_BUSY       => i_xfer_busy     , -- Out :
+            REQ_ADDR            => i_req_addr          , -- In  :
+            REQ_SIZE            => i_req_size          , -- In  :
+            REQ_ID              => I_ID                , -- In  :
+            REQ_BURST           => i_req_burst_type    , -- In  :
+            REQ_LOCK            => I_LOCK              , -- In  :
+            REQ_CACHE           => I_CACHE             , -- In  :
+            REQ_PROT            => I_PROT              , -- In  :
+            REQ_QOS             => I_QOS               , -- In  :
+            REQ_REGION          => I_REGION            , -- In  :
+            REQ_BUF_PTR         => i_req_buf_ptr       , -- In  :
+            REQ_FIRST           => i_req_first         , -- In  :
+            REQ_LAST            => i_req_last          , -- In  :
+            REQ_SPECULATIVE     => I_SPECULATIVE       , -- In  :
+            REQ_SAFETY          => I_SAFETY            , -- In  :
+            REQ_VAL(0)          => i_req_valid         , -- In  :
+            REQ_RDY             => i_req_ready         , -- Out :
+            XFER_SIZE_SEL       => I_XFER_SIZE_SEL     , -- In  :
         ---------------------------------------------------------------------------
         -- Response Signals.
         ---------------------------------------------------------------------------
-            ACK_VAL(0)      => i_ack_valid     , -- Out :
-            ACK_ERROR       => i_ack_error     , -- Out :
-            ACK_NEXT        => i_ack_next      , -- Out :
-            ACK_LAST        => i_ack_last      , -- Out :
-            ACK_STOP        => i_ack_stop      , -- Out :
-            ACK_NONE        => i_ack_none      , -- Out :
-            ACK_SIZE        => i_ack_size      , -- Out :
+            ACK_VAL(0)          => i_ack_valid         , -- Out :
+            ACK_ERROR           => i_ack_error         , -- Out :
+            ACK_NEXT            => i_ack_next          , -- Out :
+            ACK_LAST            => i_ack_last          , -- Out :
+            ACK_STOP            => i_ack_stop          , -- Out :
+            ACK_NONE            => i_ack_none          , -- Out :
+            ACK_SIZE            => i_ack_size          , -- Out :
+        ---------------------------------------------------------------------------
+        -- Transfer Status Signal.
+        ---------------------------------------------------------------------------
+            XFER_BUSY           => i_xfer_busy         , -- Out :
+            XFER_DONE           => i_xfer_done         , -- Out :
         ---------------------------------------------------------------------------
         -- Flow Control Signals.
         ---------------------------------------------------------------------------
-            FLOW_PAUSE      => i_flow_pause    , -- In  :
-            FLOW_STOP       => i_flow_stop     , -- In  :
-            FLOW_LAST       => i_flow_last     , -- In  :
-            FLOW_SIZE       => i_flow_size     , -- In  :
+            FLOW_PAUSE          => i_flow_pause        , -- In  :
+            FLOW_STOP           => i_flow_stop         , -- In  :
+            FLOW_LAST           => i_flow_last         , -- In  :
+            FLOW_SIZE           => i_flow_size         , -- In  :
         ---------------------------------------------------------------------------
         -- Reserve Size Signals.
         ---------------------------------------------------------------------------
-            RESV_VAL        => open            , -- Out :
-            RESV_SIZE       => open            , -- Out :
-            RESV_LAST       => open            , -- Out :
-            RESV_ERROR      => open            , -- Out :
+            PUSH_RSV_VAL(0)     => push_rsv_valid      , -- Out :
+            PUSH_RSV_SIZE       => push_rsv_size       , -- Out :
+            PUSH_RSV_LAST       => push_rsv_last       , -- Out :
+            PUSH_RSV_ERROR      => push_rsv_error      , -- Out :
         ---------------------------------------------------------------------------
         -- Push Size Signals.
         ---------------------------------------------------------------------------
-            PUSH_VAL(0)     => push_valid      , -- Out :
-            PUSH_SIZE       => push_size       , -- Out :
-            PUSH_LAST       => push_last       , -- Out :
-            PUSH_ERROR      => push_error      , -- Out :
+            PUSH_FIN_VAL(0)     => push_fin_valid      , -- Out :
+            PUSH_FIN_SIZE       => push_fin_size       , -- Out :
+            PUSH_FIN_LAST       => push_fin_last       , -- Out :
+            PUSH_FIN_ERROR      => push_fin_error      , -- Out :
+        ---------------------------------------------------------------------------
+        -- Push Size Signals.
+        ---------------------------------------------------------------------------
+            PUSH_BUF_RESET(0)   => push_buf_reset      , -- Out :
+            PUSH_BUF_VAL(0)     => push_buf_valid      , -- Out :
+            PUSH_BUF_SIZE       => push_buf_size       , -- Out :
+            PUSH_BUF_LAST       => push_buf_last       , -- Out :
+            PUSH_BUF_ERROR      => push_buf_error      , -- Out :
+            PUSH_BUF_RDY(0)     => push_buf_ready      , -- In  :
         ---------------------------------------------------------------------------
         -- Read Buffer Interface Signals.
         ---------------------------------------------------------------------------
-            BUF_WEN(0)      => buf_wen         , -- Out :
-            BUF_BEN         => buf_ben         , -- Out :
-            BUF_DATA        => buf_wdata       , -- Out :
-            BUF_PTR         => buf_wptr        , -- Out :
-            BUF_RDY         => buf_wready        -- In  :
+            BUF_WEN(0)          => buf_wen             , -- Out :
+            BUF_BEN             => buf_ben             , -- Out :
+            BUF_DATA            => buf_wdata           , -- Out :
+            BUF_PTR             => buf_wptr              -- Out :
         );
     I_ARUSER         <= (others => '0');
     i_req_burst_type <= AXI4_ABURST_FIXED when (I_ADDR_FIX = '1') else AXI4_ABURST_INCR;
-    i_threshold_size <= std_logic_vector(to_unsigned(2**BUF_DEPTH-I_MAX_XFER_BYTES,SIZE_BITS));
     ------------------------------------------------------------------------------
     -- 
     ------------------------------------------------------------------------------
-    O_IF: AXI4_MASTER_WRITE_INTERFACE
-        generic map (
-            AXI4_ADDR_WIDTH => O_ADDR_WIDTH    ,
-            AXI4_DATA_WIDTH => O_DATA_WIDTH    ,
-            AXI4_ID_WIDTH   => O_ID_WIDTH      ,
-            VAL_BITS        => 1               ,
-            SIZE_BITS       => SIZE_BITS       ,
-            REQ_SIZE_BITS   => O_REG_SIZE_BITS ,
-            REQ_SIZE_VALID  => 1               ,
-            FLOW_VALID      => 1               ,
-            BUF_DATA_WIDTH  => BUF_DATA_WIDTH  ,
-            BUF_PTR_BITS    => BUF_DEPTH       ,
-            XFER_MIN_SIZE   => O_MAX_XFER_SIZE ,
-            XFER_MAX_SIZE   => O_MAX_XFER_SIZE ,
-            QUEUE_SIZE      => O_RES_QUEUE
-        )
-        port map (
+    O_IF: AXI4_MASTER_WRITE_INTERFACE                    -- 
+        generic map (                                    -- 
+            AXI4_ADDR_WIDTH     => O_ADDR_WIDTH        , -- 
+            AXI4_DATA_WIDTH     => O_DATA_WIDTH        , -- 
+            AXI4_ID_WIDTH       => O_ID_WIDTH          , -- 
+            VAL_BITS            => 1                   , -- 
+            SIZE_BITS           => SIZE_BITS           , -- 
+            REQ_SIZE_BITS       => O_REG_SIZE_BITS     , -- 
+            REQ_SIZE_VALID      => O_REQ_SIZE_VALID    , -- 
+            FLOW_VALID          => O_FLOW_VALID        , -- 
+            BUF_DATA_WIDTH      => BUF_DATA_WIDTH      , -- 
+            BUF_PTR_BITS        => BUF_DEPTH           , -- 
+            XFER_MIN_SIZE       => O_MAX_XFER_SIZE     , -- 
+            XFER_MAX_SIZE       => O_MAX_XFER_SIZE     , -- 
+            QUEUE_SIZE          => O_RES_QUEUE           -- 
+            )                                            -- 
+        port map (                                       -- 
         --------------------------------------------------------------------------
         -- Clock and Reset Signals.
         --------------------------------------------------------------------------
-            CLK             => O_CLK           ,
-            RST             => RST             ,
-            CLR             => O_CLR           ,
+            CLK                 => O_CLK               , -- In  :
+            CLR                 => O_CLR               , -- In  :
+            RST                 => RST                 , -- In  :
         --------------------------------------------------------------------------
         -- AXI4 Write Address Channel Signals.
         --------------------------------------------------------------------------
-            AWID            => O_AWID          , -- Out :
-            AWADDR          => O_AWADDR        , -- Out :
-            AWLEN           => O_AWLEN         , -- Out :
-            AWSIZE          => O_AWSIZE        , -- Out :
-            AWBURST         => O_AWBURST       , -- Out :
-            AWLOCK          => O_AWLOCK        , -- Out :
-            AWCACHE         => O_AWCACHE       , -- Out :
-            AWPROT          => O_AWPROT        , -- Out :
-            AWQOS           => O_AWQOS         , -- Out :
-            AWREGION        => O_AWREGION      , -- Out :
-            AWVALID         => O_AWVALID       , -- Out :
-            AWREADY         => O_AWREADY       , -- In  :
+            AWID                => O_AWID              , -- Out :
+            AWADDR              => O_AWADDR            , -- Out :
+            AWLEN               => O_AWLEN             , -- Out :
+            AWSIZE              => O_AWSIZE            , -- Out :
+            AWBURST             => O_AWBURST           , -- Out :
+            AWLOCK              => O_AWLOCK            , -- Out :
+            AWCACHE             => O_AWCACHE           , -- Out :
+            AWPROT              => O_AWPROT            , -- Out :
+            AWQOS               => O_AWQOS             , -- Out :
+            AWREGION            => O_AWREGION          , -- Out :
+            AWVALID             => O_AWVALID           , -- Out :
+            AWREADY             => O_AWREADY           , -- In  :
         --------------------------------------------------------------------------
         -- AXI4 Write Data Channel Signals.
         --------------------------------------------------------------------------
-            WID             => O_WID           , -- Out :
-            WDATA           => O_WDATA         , -- Out :
-            WSTRB           => O_WSTRB         , -- Out :
-            WLAST           => O_WLAST         , -- Out :
-            WVALID          => O_WVALID        , -- Out :
-            WREADY          => O_WREADY        , -- In  :
+            WID                 => O_WID               , -- Out :
+            WDATA               => O_WDATA             , -- Out :
+            WSTRB               => O_WSTRB             , -- Out :
+            WLAST               => O_WLAST             , -- Out :
+            WVALID              => O_WVALID            , -- Out :
+            WREADY              => O_WREADY            , -- In  :
         --------------------------------------------------------------------------
         -- AXI4 Write Response Channel Signals.
         --------------------------------------------------------------------------
-            BID             => O_BID           , -- In  :
-            BRESP           => O_BRESP         , -- In  :
-            BVALID          => O_BVALID        , -- In  :
-            BREADY          => O_BREADY        , -- Out :
+            BID                 => O_BID               , -- In  :
+            BRESP               => O_BRESP             , -- In  :
+            BVALID              => O_BVALID            , -- In  :
+            BREADY              => O_BREADY            , -- Out :
         ---------------------------------------------------------------------------
         -- Command Request Signals.
         ---------------------------------------------------------------------------
-            REQ_ADDR        => o_req_addr      , -- In  :
-            REQ_SIZE        => o_req_size      , -- In  :
-            REQ_ID          => O_ID            , -- In  :
-            REQ_BURST       => o_req_burst_type, -- In  :
-            REQ_LOCK        => O_LOCK          , -- In  :
-            REQ_CACHE       => O_CACHE         , -- In  :
-            REQ_PROT        => O_PROT          , -- In  :
-            REQ_QOS         => O_QOS           , -- In  :
-            REQ_REGION      => O_REGION        , -- In  :
-            REQ_BUF_PTR     => o_req_buf_ptr   , -- In  :
-            REQ_FIRST       => o_req_first     , -- In  :
-            REQ_LAST        => o_req_last      , -- In  :
-            REQ_SPECULATIVE => O_SPECULATIVE   , -- In  :
-            REQ_SAFETY      => O_SAFETY        , -- In  :
-            REQ_VAL(0)      => o_req_valid     , -- In  :
-            REQ_RDY         => o_req_ready     , -- Out :
-            XFER_SIZE_SEL   => O_XFER_SIZE_SEL , -- In  :
-            XFER_BUSY       => o_xfer_busy     , -- Out :
+            REQ_ADDR            => o_req_addr          , -- In  :
+            REQ_SIZE            => o_req_size          , -- In  :
+            REQ_ID              => O_ID                , -- In  :
+            REQ_BURST           => o_req_burst_type    , -- In  :
+            REQ_LOCK            => O_LOCK              , -- In  :
+            REQ_CACHE           => O_CACHE             , -- In  :
+            REQ_PROT            => O_PROT              , -- In  :
+            REQ_QOS             => O_QOS               , -- In  :
+            REQ_REGION          => O_REGION            , -- In  :
+            REQ_BUF_PTR         => o_req_buf_ptr       , -- In  :
+            REQ_FIRST           => o_req_first         , -- In  :
+            REQ_LAST            => o_req_last          , -- In  :
+            REQ_SPECULATIVE     => O_SPECULATIVE       , -- In  :
+            REQ_SAFETY          => O_SAFETY            , -- In  :
+            REQ_VAL(0)          => o_req_valid         , -- In  :
+            REQ_RDY             => o_req_ready         , -- Out :
+            XFER_SIZE_SEL       => O_XFER_SIZE_SEL     , -- In  :
         ---------------------------------------------------------------------------
         -- Response Signals.
         ---------------------------------------------------------------------------
-            ACK_VAL(0)      => o_ack_valid     , -- Out :
-            ACK_ERROR       => o_ack_error     , -- Out :
-            ACK_NEXT        => o_ack_next      , -- Out :
-            ACK_LAST        => o_ack_last      , -- Out :
-            ACK_STOP        => o_ack_stop      , -- Out :
-            ACK_NONE        => o_ack_none      , -- Out :
-            ACK_SIZE        => o_ack_size      , -- Out :
+            ACK_VAL(0)          => o_ack_valid         , -- Out :
+            ACK_ERROR           => o_ack_error         , -- Out :
+            ACK_NEXT            => o_ack_next          , -- Out :
+            ACK_LAST            => o_ack_last          , -- Out :
+            ACK_STOP            => o_ack_stop          , -- Out :
+            ACK_NONE            => o_ack_none          , -- Out :
+            ACK_SIZE            => o_ack_size          , -- Out :
+        ---------------------------------------------------------------------------
+        -- Transfer Status Signal.
+        ---------------------------------------------------------------------------
+            XFER_BUSY           => o_xfer_busy         , -- Out :
+            XFER_DONE           => o_xfer_done         , -- Out :
         ---------------------------------------------------------------------------
         -- Flow Control Signals.
         ---------------------------------------------------------------------------
-            FLOW_PAUSE      => o_flow_pause    , -- In  :
-            FLOW_STOP       => o_flow_stop     , -- In  :
-            FLOW_LAST       => o_flow_last     , -- In  :
-            FLOW_SIZE       => o_flow_size     , -- In  :
+            FLOW_PAUSE          => o_flow_pause        , -- In  :
+            FLOW_STOP           => o_flow_stop         , -- In  :
+            FLOW_LAST           => o_flow_last         , -- In  :
+            FLOW_SIZE           => o_flow_size         , -- In  :
         ---------------------------------------------------------------------------
         -- Reserve Size Signals.
         ---------------------------------------------------------------------------
-            RESV_VAL        => open            , -- Out :
-            RESV_SIZE       => open            , -- Out :
-            RESV_LAST       => open            , -- Out :
-            RESV_ERROR      => open            , -- Out :
+            PULL_RSV_VAL(0)     => pull_rsv_valid      , -- Out :
+            PULL_RSV_SIZE       => pull_rsv_size       , -- Out :
+            PULL_RSV_LAST       => pull_rsv_last       , -- Out :
+            PULL_RSV_ERROR      => pull_rsv_error      , -- Out :
         ---------------------------------------------------------------------------
         -- Pull Size Signals.
         ---------------------------------------------------------------------------
-            PULL_VAL(0)     => pull_valid      , -- Out :
-            PULL_SIZE       => pull_size       , -- Out :
-            PULL_LAST       => pull_last       , -- Out :
-            PULL_ERROR      => pull_error      , -- Out :
+            PULL_FIN_VAL(0)     => pull_fin_valid      , -- Out :
+            PULL_FIN_SIZE       => pull_fin_size       , -- Out :
+            PULL_FIN_LAST       => pull_fin_last       , -- Out :
+            PULL_FIN_ERROR      => pull_fin_error      , -- Out :
+        ---------------------------------------------------------------------------
+        -- Pull Buffer Size Signals.
+        ---------------------------------------------------------------------------
+            PULL_BUF_RESET(0)   => pull_buf_reset      , -- Out :
+            PULL_BUF_VAL(0)     => pull_buf_valid      , -- Out :
+            PULL_BUF_SIZE       => pull_buf_size       , -- Out :
+            PULL_BUF_LAST       => pull_buf_last       , -- Out :
+            PULL_BUF_ERROR      => pull_buf_error      , -- Out :
+            PULL_BUF_RDY(0)     => pull_buf_ready      , -- Out :
         ---------------------------------------------------------------------------
         -- Read Buffer Interface Signals.
         ---------------------------------------------------------------------------
-            BUF_REN         => open            , -- Out :
-            BUF_DATA        => buf_rdata       , -- In  :
-            BUF_PTR         => buf_rptr        , -- Out :
-            BUF_RDY         => buf_rready
+            BUF_REN             => open                , -- Out :
+            BUF_DATA            => buf_rdata           , -- In  :
+            BUF_PTR             => buf_rptr              -- Out :
         );
     O_AWUSER         <= (others => '0');
     O_WUSER          <= (others => '0');
     o_req_burst_type <= AXI4_ABURST_FIXED when (O_ADDR_FIX = '1') else AXI4_ABURST_INCR;
-    o_threshold_size <= std_logic_vector(to_unsigned(O_MAX_XFER_BYTES,SIZE_BITS));
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-    CTRL: PUMP_CONTROLLER 
-        generic map (
-            I_CLK_RATE      => I_CLK_RATE      , 
-            I_REQ_ADDR_VALID=> 1               , 
-            I_REQ_ADDR_BITS => I_ADDR_WIDTH    ,
-            I_REG_ADDR_BITS => I_REG_ADDR_BITS ,
-            I_REQ_SIZE_VALID=> 1               ,
-            I_REQ_SIZE_BITS => I_REG_SIZE_BITS ,
-            I_REG_SIZE_BITS => I_REG_SIZE_BITS ,
-            I_REG_MODE_BITS => I_REG_MODE_BITS ,
-            I_REG_STAT_BITS => I_REG_STAT_BITS ,
-            O_CLK_RATE      => O_CLK_RATE      , 
-            O_REQ_ADDR_VALID=> 1               ,
-            O_REQ_ADDR_BITS => O_ADDR_WIDTH    ,
-            O_REG_ADDR_BITS => O_REG_ADDR_BITS ,
-            O_REQ_SIZE_VALID=> 1               ,
-            O_REQ_SIZE_BITS => O_REG_SIZE_BITS ,
-            O_REG_SIZE_BITS => O_REG_SIZE_BITS ,
-            O_REG_MODE_BITS => O_REG_MODE_BITS ,
-            O_REG_STAT_BITS => O_REG_STAT_BITS ,
-            BUF_DEPTH       => BUF_DEPTH       ,
-            I2O_DELAY_CYCLE => 0
-        )
-        port map (
+    CTRL: PUMP_CONTROLLER                                -- 
+        generic map (                                    -- 
+            I_CLK_RATE          => I_CLK_RATE          , -- 
+            I_REQ_ADDR_VALID    => I_REQ_ADDR_VALID    , -- 
+            I_REQ_ADDR_BITS     => I_ADDR_WIDTH        , -- 
+            I_REG_ADDR_BITS     => I_REG_ADDR_BITS     , -- 
+            I_REQ_SIZE_VALID    => I_REQ_SIZE_VALID    , -- 
+            I_REQ_SIZE_BITS     => I_REG_SIZE_BITS     , -- 
+            I_REG_SIZE_BITS     => I_REG_SIZE_BITS     , -- 
+            I_REG_MODE_BITS     => I_REG_MODE_BITS     , -- 
+            I_REG_STAT_BITS     => I_REG_STAT_BITS     , -- 
+            I_USE_PUSH_RSV_SIZE => I_USE_PUSH_RSV_SIZE , -- 
+            I_USE_PUSH_BUF_SIZE => I_USE_PUSH_BUF_SIZE , -- 
+            I_FIXED_FLOW_OPEN   => I_FIXED_FLOW_OPEN   , -- 
+            I_FIXED_POOL_OPEN   => I_FIXED_POOL_OPEN   , -- 
+            O_CLK_RATE          => O_CLK_RATE          , -- 
+            O_REQ_ADDR_VALID    => O_REQ_ADDR_VALID    , -- 
+            O_REQ_ADDR_BITS     => O_ADDR_WIDTH        , -- 
+            O_REG_ADDR_BITS     => O_REG_ADDR_BITS     , -- 
+            O_REQ_SIZE_VALID    => O_REQ_SIZE_VALID    , -- 
+            O_REQ_SIZE_BITS     => O_REG_SIZE_BITS     , -- 
+            O_REG_SIZE_BITS     => O_REG_SIZE_BITS     , -- 
+            O_REG_MODE_BITS     => O_REG_MODE_BITS     , -- 
+            O_REG_STAT_BITS     => O_REG_STAT_BITS     , -- 
+            O_USE_PULL_RSV_SIZE => O_USE_PULL_RSV_SIZE , -- 
+            O_USE_PULL_BUF_SIZE => O_USE_PULL_BUF_SIZE , -- 
+            O_FIXED_FLOW_OPEN   => O_FIXED_FLOW_OPEN   , -- 
+            O_FIXED_POOL_OPEN   => O_FIXED_POOL_OPEN   , -- 
+            BUF_DEPTH           => BUF_DEPTH           , -- 
+            I2O_DELAY_CYCLE     => I2O_DELAY_CYCLE       -- 
+        )                                                -- 
+        port map (                                       -- 
         ---------------------------------------------------------------------------
         -- Reset Signals.
         ---------------------------------------------------------------------------
-            RST             => RST             , -- In  :
+            RST                 => RST             , -- In  :
         ---------------------------------------------------------------------------
         -- Intake Clock and Clock Enable.
         ---------------------------------------------------------------------------
-            I_CLK           => I_CLK           , -- In  :
-            I_CLR           => I_CLR           , -- In  :
-            I_CKE           => I_CKE           , -- In  :
+            I_CLK               => I_CLK           , -- In  :
+            I_CLR               => I_CLR           , -- In  :
+            I_CKE               => I_CKE           , -- In  :
         ---------------------------------------------------------------------------
         -- Intake Control Register Interface.
         ---------------------------------------------------------------------------
-            I_ADDR_L        => I_ADDR_L        , -- In  :
-            I_ADDR_D        => I_ADDR_D        , -- In  :
-            I_ADDR_Q        => I_ADDR_Q        , -- Out :
-            I_SIZE_L        => I_SIZE_L        , -- In  :
-            I_SIZE_D        => I_SIZE_D        , -- In  :
-            I_SIZE_Q        => I_SIZE_Q        , -- Out :
-            I_MODE_L        => I_MODE_L        , -- In  :
-            I_MODE_D        => I_MODE_D        , -- In  :
-            I_MODE_Q        => I_MODE_Q        , -- Out :
-            I_STAT_L        => I_STAT_L        , -- In  :
-            I_STAT_D        => I_STAT_D        , -- In  :
-            I_STAT_Q        => I_STAT_Q        , -- Out :
-            I_STAT_I        => I_STAT_I        , -- In  :
-            I_RESET_L       => I_RESET_L       , -- In  :
-            I_RESET_D       => I_RESET_D       , -- In  :
-            I_RESET_Q       => I_RESET_Q       , -- Out :
-            I_START_L       => I_START_L       , -- In  :
-            I_START_D       => I_START_D       , -- In  :
-            I_START_Q       => I_START_Q       , -- Out :
-            I_STOP_L        => I_STOP_L        , -- In  :
-            I_STOP_D        => I_STOP_D        , -- In  :
-            I_STOP_Q        => I_STOP_Q        , -- Out :
-            I_PAUSE_L       => I_PAUSE_L       , -- In  :
-            I_PAUSE_D       => I_PAUSE_D       , -- In  :
-            I_PAUSE_Q       => I_PAUSE_Q       , -- Out :
-            I_FIRST_L       => I_FIRST_L       , -- In  :
-            I_FIRST_D       => I_FIRST_D       , -- In  :
-            I_FIRST_Q       => I_FIRST_Q       , -- Out :
-            I_LAST_L        => I_LAST_L        , -- In  :
-            I_LAST_D        => I_LAST_D        , -- In  :
-            I_LAST_Q        => I_LAST_Q        , -- Out :
-            I_DONE_EN_L     => I_DONE_EN_L     , -- In  :
-            I_DONE_EN_D     => I_DONE_EN_D     , -- In  :
-            I_DONE_EN_Q     => I_DONE_EN_Q     , -- Out :
-            I_DONE_ST_L     => I_DONE_ST_L     , -- In  :
-            I_DONE_ST_D     => I_DONE_ST_D     , -- In  :
-            I_DONE_ST_Q     => I_DONE_ST_Q     , -- Out :
-            I_ERR_ST_L      => I_ERR_ST_L      , -- In  :
-            I_ERR_ST_D      => I_ERR_ST_D      , -- In  :
-            I_ERR_ST_Q      => I_ERR_ST_Q      , -- Out :
+            I_ADDR_L            => I_ADDR_L        , -- In  :
+            I_ADDR_D            => I_ADDR_D        , -- In  :
+            I_ADDR_Q            => I_ADDR_Q        , -- Out :
+            I_SIZE_L            => I_SIZE_L        , -- In  :
+            I_SIZE_D            => I_SIZE_D        , -- In  :
+            I_SIZE_Q            => I_SIZE_Q        , -- Out :
+            I_MODE_L            => I_MODE_L        , -- In  :
+            I_MODE_D            => I_MODE_D        , -- In  :
+            I_MODE_Q            => I_MODE_Q        , -- Out :
+            I_STAT_L            => I_STAT_L        , -- In  :
+            I_STAT_D            => I_STAT_D        , -- In  :
+            I_STAT_Q            => I_STAT_Q        , -- Out :
+            I_STAT_I            => I_STAT_I        , -- In  :
+            I_RESET_L           => I_RESET_L       , -- In  :
+            I_RESET_D           => I_RESET_D       , -- In  :
+            I_RESET_Q           => I_RESET_Q       , -- Out :
+            I_START_L           => I_START_L       , -- In  :
+            I_START_D           => I_START_D       , -- In  :
+            I_START_Q           => I_START_Q       , -- Out :
+            I_STOP_L            => I_STOP_L        , -- In  :
+            I_STOP_D            => I_STOP_D        , -- In  :
+            I_STOP_Q            => I_STOP_Q        , -- Out :
+            I_PAUSE_L           => I_PAUSE_L       , -- In  :
+            I_PAUSE_D           => I_PAUSE_D       , -- In  :
+            I_PAUSE_Q           => I_PAUSE_Q       , -- Out :
+            I_FIRST_L           => I_FIRST_L       , -- In  :
+            I_FIRST_D           => I_FIRST_D       , -- In  :
+            I_FIRST_Q           => I_FIRST_Q       , -- Out :
+            I_LAST_L            => I_LAST_L        , -- In  :
+            I_LAST_D            => I_LAST_D        , -- In  :
+            I_LAST_Q            => I_LAST_Q        , -- Out :
+            I_DONE_EN_L         => I_DONE_EN_L     , -- In  :
+            I_DONE_EN_D         => I_DONE_EN_D     , -- In  :
+            I_DONE_EN_Q         => I_DONE_EN_Q     , -- Out :
+            I_DONE_ST_L         => I_DONE_ST_L     , -- In  :
+            I_DONE_ST_D         => I_DONE_ST_D     , -- In  :
+            I_DONE_ST_Q         => I_DONE_ST_Q     , -- Out :
+            I_ERR_ST_L          => I_ERR_ST_L      , -- In  :
+            I_ERR_ST_D          => I_ERR_ST_D      , -- In  :
+            I_ERR_ST_Q          => I_ERR_ST_Q      , -- Out :
         ---------------------------------------------------------------------------
         -- Intake Configuration Signals.
         ---------------------------------------------------------------------------
-            I_ADDR_FIX      => I_ADDR_FIX      , -- In  :
-            I_THRESHOLD_SIZE=> i_threshold_size, -- In  :
+            I_ADDR_FIX          => I_ADDR_FIX        , -- In  :
+            I_BUF_READY_LEVEL   => I_BUF_READY_LEVEL , -- In  :
+            I_FLOW_READY_LEVEL  => I_FLOW_READY_LEVEL, -- In  :
         ---------------------------------------------------------------------------
         -- Outlet Clock and Clock Enable.
         ---------------------------------------------------------------------------
-            O_CLK           => O_CLK           , -- In  :
-            O_CLR           => O_CLR           , -- In  :
-            O_CKE           => O_CKE           , -- In  :
+            O_CLK               => O_CLK           , -- In  :
+            O_CLR               => O_CLR           , -- In  :
+            O_CKE               => O_CKE           , -- In  :
         ---------------------------------------------------------------------------
         -- Outlet Control Register Interface.
         ---------------------------------------------------------------------------
-            O_ADDR_L        => O_ADDR_L        , -- In  :
-            O_ADDR_D        => O_ADDR_D        , -- In  :
-            O_ADDR_Q        => O_ADDR_Q        , -- Out :
-            O_SIZE_L        => O_SIZE_L        , -- In  :
-            O_SIZE_D        => O_SIZE_D        , -- In  :
-            O_SIZE_Q        => O_SIZE_Q        , -- Out :
-            O_MODE_L        => O_MODE_L        , -- In  :
-            O_MODE_D        => O_MODE_D        , -- In  :
-            O_MODE_Q        => O_MODE_Q        , -- Out :
-            O_STAT_L        => O_STAT_L        , -- In  :
-            O_STAT_D        => O_STAT_D        , -- In  :
-            O_STAT_Q        => O_STAT_Q        , -- Out :
-            O_STAT_I        => O_STAT_I        , -- In  :
-            O_RESET_L       => O_RESET_L       , -- In  :
-            O_RESET_D       => O_RESET_D       , -- In  :
-            O_RESET_Q       => O_RESET_Q       , -- Out :
-            O_START_L       => O_START_L       , -- In  :
-            O_START_D       => O_START_D       , -- In  :
-            O_START_Q       => O_START_Q       , -- Out :
-            O_STOP_L        => O_STOP_L        , -- In  :
-            O_STOP_D        => O_STOP_D        , -- In  :
-            O_STOP_Q        => O_STOP_Q        , -- Out :
-            O_PAUSE_L       => O_PAUSE_L       , -- In  :
-            O_PAUSE_D       => O_PAUSE_D       , -- In  :
-            O_PAUSE_Q       => O_PAUSE_Q       , -- Out :
-            O_FIRST_L       => O_FIRST_L       , -- In  :
-            O_FIRST_D       => O_FIRST_D       , -- In  :
-            O_FIRST_Q       => O_FIRST_Q       , -- Out :
-            O_LAST_L        => O_LAST_L        , -- In  :
-            O_LAST_D        => O_LAST_D        , -- In  :
-            O_LAST_Q        => O_LAST_Q        , -- Out :
-            O_DONE_EN_L     => O_DONE_EN_L     , -- In  :
-            O_DONE_EN_D     => O_DONE_EN_D     , -- In  :
-            O_DONE_EN_Q     => O_DONE_EN_Q     , -- Out :
-            O_DONE_ST_L     => O_DONE_ST_L     , -- In  :
-            O_DONE_ST_D     => O_DONE_ST_D     , -- In  :
-            O_DONE_ST_Q     => O_DONE_ST_Q     , -- Out :
-            O_ERR_ST_L      => O_ERR_ST_L      , -- In  :
-            O_ERR_ST_D      => O_ERR_ST_D      , -- In  :
-            O_ERR_ST_Q      => O_ERR_ST_Q      , -- Out :
+            O_ADDR_L            => O_ADDR_L        , -- In  :
+            O_ADDR_D            => O_ADDR_D        , -- In  :
+            O_ADDR_Q            => O_ADDR_Q        , -- Out :
+            O_SIZE_L            => O_SIZE_L        , -- In  :
+            O_SIZE_D            => O_SIZE_D        , -- In  :
+            O_SIZE_Q            => O_SIZE_Q        , -- Out :
+            O_MODE_L            => O_MODE_L        , -- In  :
+            O_MODE_D            => O_MODE_D        , -- In  :
+            O_MODE_Q            => O_MODE_Q        , -- Out :
+            O_STAT_L            => O_STAT_L        , -- In  :
+            O_STAT_D            => O_STAT_D        , -- In  :
+            O_STAT_Q            => O_STAT_Q        , -- Out :
+            O_STAT_I            => O_STAT_I        , -- In  :
+            O_RESET_L           => O_RESET_L       , -- In  :
+            O_RESET_D           => O_RESET_D       , -- In  :
+            O_RESET_Q           => O_RESET_Q       , -- Out :
+            O_START_L           => O_START_L       , -- In  :
+            O_START_D           => O_START_D       , -- In  :
+            O_START_Q           => O_START_Q       , -- Out :
+            O_STOP_L            => O_STOP_L        , -- In  :
+            O_STOP_D            => O_STOP_D        , -- In  :
+            O_STOP_Q            => O_STOP_Q        , -- Out :
+            O_PAUSE_L           => O_PAUSE_L       , -- In  :
+            O_PAUSE_D           => O_PAUSE_D       , -- In  :
+            O_PAUSE_Q           => O_PAUSE_Q       , -- Out :
+            O_FIRST_L           => O_FIRST_L       , -- In  :
+            O_FIRST_D           => O_FIRST_D       , -- In  :
+            O_FIRST_Q           => O_FIRST_Q       , -- Out :
+            O_LAST_L            => O_LAST_L        , -- In  :
+            O_LAST_D            => O_LAST_D        , -- In  :
+            O_LAST_Q            => O_LAST_Q        , -- Out :
+            O_DONE_EN_L         => O_DONE_EN_L     , -- In  :
+            O_DONE_EN_D         => O_DONE_EN_D     , -- In  :
+            O_DONE_EN_Q         => O_DONE_EN_Q     , -- Out :
+            O_DONE_ST_L         => O_DONE_ST_L     , -- In  :
+            O_DONE_ST_D         => O_DONE_ST_D     , -- In  :
+            O_DONE_ST_Q         => O_DONE_ST_Q     , -- Out :
+            O_ERR_ST_L          => O_ERR_ST_L      , -- In  :
+            O_ERR_ST_D          => O_ERR_ST_D      , -- In  :
+            O_ERR_ST_Q          => O_ERR_ST_Q      , -- Out :
         ---------------------------------------------------------------------------
         -- Intake Configuration Signals.
         ---------------------------------------------------------------------------
-            O_ADDR_FIX      => O_ADDR_FIX      , -- In  :
-            O_THRESHOLD_SIZE=> o_threshold_size, -- In  :
+            O_ADDR_FIX          => O_ADDR_FIX        , -- In  :
+            O_BUF_READY_LEVEL   => O_BUF_READY_LEVEL , -- In  :
+            O_FLOW_READY_LEVEL  => O_FLOW_READY_LEVEL, -- In  :
         ---------------------------------------------------------------------------
         -- Intake Transaction Command Request Signals.
         ---------------------------------------------------------------------------
-            I_REQ_VALID     => i_req_valid     , -- Out :
-            I_REQ_ADDR      => i_req_addr      , -- Out :
-            I_REQ_SIZE      => i_req_size      , -- Out :
-            I_REQ_BUF_PTR   => i_req_buf_ptr   , -- Out :
-            I_REQ_FIRST     => i_req_first     , -- Out :
-            I_REQ_LAST      => i_req_last      , -- Out :
-            I_REQ_READY     => i_req_ready     , -- In  :
+            I_REQ_VALID         => i_req_valid     , -- Out :
+            I_REQ_ADDR          => i_req_addr      , -- Out :
+            I_REQ_SIZE          => i_req_size      , -- Out :
+            I_REQ_BUF_PTR       => i_req_buf_ptr   , -- Out :
+            I_REQ_FIRST         => i_req_first     , -- Out :
+            I_REQ_LAST          => i_req_last      , -- Out :
+            I_REQ_READY         => i_req_ready     , -- In  :
         ---------------------------------------------------------------------------
         -- Intake Transaction Command Acknowledge Signals.
         ---------------------------------------------------------------------------
-            I_ACK_VALID     => i_ack_valid     , -- In  :
-            I_ACK_SIZE      => i_ack_size      , -- In  :
-            I_ACK_ERROR     => i_ack_error     , -- In  :
-            I_ACK_NEXT      => i_ack_next      , -- In  :
-            I_ACK_LAST      => i_ack_last      , -- In  :
-            I_ACK_STOP      => i_ack_stop      , -- In  :
-            I_ACK_NONE      => i_ack_none      , -- In  :
+            I_ACK_VALID         => i_ack_valid     , -- In  :
+            I_ACK_SIZE          => i_ack_size      , -- In  :
+            I_ACK_ERROR         => i_ack_error     , -- In  :
+            I_ACK_NEXT          => i_ack_next      , -- In  :
+            I_ACK_LAST          => i_ack_last      , -- In  :
+            I_ACK_STOP          => i_ack_stop      , -- In  :
+            I_ACK_NONE          => i_ack_none      , -- In  :
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+            I_XFER_BUSY         => i_xfer_busy     , -- In  :
+            I_XFER_DONE         => i_xfer_done     , -- In  :
         ---------------------------------------------------------------------------
         -- Intake Flow Control Signals.
         ---------------------------------------------------------------------------
-            I_FLOW_PAUSE    => i_flow_pause    , -- Out :
-            I_FLOW_STOP     => i_flow_stop     , -- Out :
-            I_FLOW_LAST     => i_flow_last     , -- Out :
-            I_FLOW_SIZE     => i_flow_size     , -- Out :
-            I_PUSH_VALID    => push_valid      , -- In  :
-            I_PUSH_LAST     => push_last       , -- In  :
-            I_PUSH_ERROR    => push_error      , -- In  :
-            I_PUSH_SIZE     => push_size       , -- In  :
+            I_FLOW_PAUSE        => i_flow_pause    , -- Out :
+            I_FLOW_STOP         => i_flow_stop     , -- Out :
+            I_FLOW_LAST         => i_flow_last     , -- Out :
+            I_FLOW_SIZE         => i_flow_size     , -- Out :
+            I_PUSH_FIN_VALID    => push_fin_valid  , -- In  :
+            I_PUSH_FIN_LAST     => push_fin_last   , -- In  :
+            I_PUSH_FIN_ERROR    => push_fin_error  , -- In  :
+            I_PUSH_FIN_SIZE     => push_fin_size   , -- In  :
+            I_PUSH_RSV_VALID    => push_rsv_valid  , -- In  :
+            I_PUSH_RSV_LAST     => push_rsv_last   , -- In  :
+            I_PUSH_RSV_ERROR    => push_rsv_error  , -- In  :
+            I_PUSH_RSV_SIZE     => push_rsv_size   , -- In  :
+            I_PUSH_BUF_RESET    => push_buf_reset  , -- In  :
+            I_PUSH_BUF_VALID    => push_buf_valid  , -- In  :
+            I_PUSH_BUF_LAST     => push_buf_last   , -- In  :
+            I_PUSH_BUF_ERROR    => push_buf_error  , -- In  :
+            I_PUSH_BUF_SIZE     => push_buf_size   , -- In  :
+            I_PUSH_BUF_READY    => push_buf_ready  , -- Out :
         ---------------------------------------------------------------------------
         -- Intake Status.
         ---------------------------------------------------------------------------
-            I_OPEN          => I_OPEN          , -- Out :
-            I_RUNNING       => I_RUNNING       , -- Out :
-            I_DONE          => I_DONE          , -- Out :
-            I_ERROR         => I_ERROR         , -- Out :
+            I_OPEN              => I_OPEN          , -- Out :
+            I_RUNNING           => I_RUNNING       , -- Out :
+            I_DONE              => I_DONE          , -- Out :
+            I_ERROR             => I_ERROR         , -- Out :
         ---------------------------------------------------------------------------
         -- Outlet Transaction Command Request Signals.
         ---------------------------------------------------------------------------
-            O_REQ_VALID     => o_req_valid     , -- Out :
-            O_REQ_ADDR      => o_req_addr      , -- Out :
-            O_REQ_SIZE      => o_req_size      , -- Out :
-            O_REQ_BUF_PTR   => o_req_buf_ptr   , -- Out :
-            O_REQ_FIRST     => o_req_first     , -- Out :
-            O_REQ_LAST      => o_req_last      , -- Out :
-            O_REQ_READY     => o_req_ready     , -- In  :
+            O_REQ_VALID         => o_req_valid     , -- Out :
+            O_REQ_ADDR          => o_req_addr      , -- Out :
+            O_REQ_SIZE          => o_req_size      , -- Out :
+            O_REQ_BUF_PTR       => o_req_buf_ptr   , -- Out :
+            O_REQ_FIRST         => o_req_first     , -- Out :
+            O_REQ_LAST          => o_req_last      , -- Out :
+            O_REQ_READY         => o_req_ready     , -- In  :
         ---------------------------------------------------------------------------
         -- Outlet Transaction Command Response Signals.
         ---------------------------------------------------------------------------
-            O_ACK_VALID     => o_ack_valid     , -- In  :
-            O_ACK_SIZE      => o_ack_size      , -- In  :
-            O_ACK_ERROR     => o_ack_error     , -- In  :
-            O_ACK_NEXT      => o_ack_next      , -- In  :
-            O_ACK_LAST      => o_ack_last      , -- In  :
-            O_ACK_STOP      => o_ack_stop      , -- In  :
-            O_ACK_NONE      => o_ack_none      , -- In  :
+            O_ACK_VALID         => o_ack_valid     , -- In  :
+            O_ACK_SIZE          => o_ack_size      , -- In  :
+            O_ACK_ERROR         => o_ack_error     , -- In  :
+            O_ACK_NEXT          => o_ack_next      , -- In  :
+            O_ACK_LAST          => o_ack_last      , -- In  :
+            O_ACK_STOP          => o_ack_stop      , -- In  :
+            O_ACK_NONE          => o_ack_none      , -- In  :
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+            O_XFER_BUSY         => o_xfer_busy     , -- In  :
+            O_XFER_DONE         => o_xfer_done     , -- In  :
         ---------------------------------------------------------------------------
         -- Outlet Flow Control Signals.
         ---------------------------------------------------------------------------
-            O_FLOW_PAUSE    => o_flow_pause    , -- Out :
-            O_FLOW_STOP     => o_flow_stop     , -- Out :
-            O_FLOW_LAST     => o_flow_last     , -- Out :
-            O_FLOW_SIZE     => o_flow_size     , -- Out :
-            O_PULL_VALID    => pull_valid      , -- In  :
-            O_PULL_LAST     => pull_last       , -- In  :
-            O_PULL_ERROR    => pull_error      , -- In  :
-            O_PULL_SIZE     => pull_size       , -- In  :
+            O_FLOW_PAUSE        => o_flow_pause    , -- Out :
+            O_FLOW_STOP         => o_flow_stop     , -- Out :
+            O_FLOW_LAST         => o_flow_last     , -- Out :
+            O_FLOW_SIZE         => o_flow_size     , -- Out :
+            O_PULL_FIN_VALID    => pull_fin_valid  , -- In  :
+            O_PULL_FIN_LAST     => pull_fin_last   , -- In  :
+            O_PULL_FIN_ERROR    => pull_fin_error  , -- In  :
+            O_PULL_FIN_SIZE     => pull_fin_size   , -- In  :
+            O_PULL_RSV_VALID    => pull_rsv_valid  , -- In  :
+            O_PULL_RSV_LAST     => pull_rsv_last   , -- In  :
+            O_PULL_RSV_ERROR    => pull_rsv_error  , -- In  :
+            O_PULL_RSV_SIZE     => pull_rsv_size   , -- In  :
+            O_PULL_BUF_RESET    => pull_buf_reset  , -- In  :
+            O_PULL_BUF_VALID    => pull_buf_valid  , -- In  :
+            O_PULL_BUF_LAST     => pull_buf_last   , -- In  :
+            O_PULL_BUF_ERROR    => pull_buf_error  , -- In  :
+            O_PULL_BUF_SIZE     => pull_buf_size   , -- In  :
+            O_PULL_BUF_READY    => pull_buf_ready  , -- Out :
         ---------------------------------------------------------------------------
         -- Outlet Status.
         ---------------------------------------------------------------------------
-            O_OPEN          => O_OPEN          , -- Out :
-            O_RUNNING       => O_RUNNING       , -- Out :
-            O_DONE          => O_DONE          , -- Out :
-            O_ERROR         => O_ERROR           -- Out :
+            O_OPEN              => O_OPEN          , -- Out :
+            O_RUNNING           => O_RUNNING       , -- Out :
+            O_DONE              => O_DONE          , -- Out :
+            O_ERROR             => O_ERROR           -- Out :
         );
     -------------------------------------------------------------------------------
     -- 
@@ -922,18 +1047,18 @@ begin
     RAM: SDPRAM 
         generic map(
             DEPTH       => BUF_DEPTH+3         ,
-            RWIDTH      => BUF_DATA_SIZE       , --
-            WWIDTH      => BUF_DATA_SIZE       , --
-            WEBIT       => BUF_DATA_SIZE-3     , --
+            RWIDTH      => BUF_DATA_BIT_SIZE   , --
+            WWIDTH      => BUF_DATA_BIT_SIZE   , --
+            WEBIT       => BUF_DATA_BIT_SIZE-3 , --
             ID          => 0                     -- 
         )                                        -- 
         port map (                               -- 
             WCLK        => I_CLK               , -- In  :
             WE          => buf_we              , -- In  :
-            WADDR       => buf_wptr(BUF_DEPTH-1 downto BUF_DATA_SIZE-3), -- In  :
+            WADDR       => buf_wptr(BUF_DEPTH-1 downto BUF_DATA_BIT_SIZE-3), -- In  :
             WDATA       => buf_wdata           , -- In  :
             RCLK        => O_CLK               , -- In  :
-            RADDR       => buf_rptr(BUF_DEPTH-1 downto BUF_DATA_SIZE-3), -- In  :
+            RADDR       => buf_rptr(BUF_DEPTH-1 downto BUF_DATA_BIT_SIZE-3), -- In  :
             RDATA       => buf_rdata             -- Out :
         );
     buf_we <= buf_ben when (buf_wen = '1') else (others => '0');
