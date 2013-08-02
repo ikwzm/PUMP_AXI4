@@ -181,6 +181,7 @@
     <transform xil_pn:end_ts="1363357473" xil_pn:in_ck="8972550500410964658" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="3339511213927817329" xil_pn:start_ts="1363357397">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForInputs"/>
       <status xil_pn:value="OutOfDateForOutputs"/>
       <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_beh.prj"/>
@@ -193,6 +194,7 @@
     <transform xil_pn:end_ts="1363357475" xil_pn:in_ck="1464123064449591107" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-7906703972340566701" xil_pn:start_ts="1363357473">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
       <status xil_pn:value="OutOfDateForOutputs"/>
       <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_isim_beh.wdb"/>
@@ -242,7 +244,7 @@
     </transform>
     <transform xil_pn:end_ts="1360566535" xil_pn:in_ck="-4334702108727434796" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="6824671163332831225" xil_pn:start_ts="1360566497">
       <status xil_pn:value="SuccessfullyRun"/>
-      <status xil_pn:value="NotReadyToRun"/>
+      <status xil_pn:value="ReadyToRun"/>
       <status xil_pn:value="OutOfDateForInputs"/>
       <status xil_pn:value="OutOfDateForPredecessor"/>
       <status xil_pn:value="OutOfDateForOutputs"/>
@@ -252,7 +254,7 @@
     <transform xil_pn:end_ts="1360566598" xil_pn:in_ck="-4334702108727434795" xil_pn:name="TRANEXT_map_virtex7" xil_pn:prop_ck="4905648241949837361" xil_pn:start_ts="1360566535">
       <status xil_pn:value="FailedRun"/>
       <status xil_pn:value="WarningsGenerated"/>
-      <status xil_pn:value="NotReadyToRun"/>
+      <status xil_pn:value="ReadyToRun"/>
       <status xil_pn:value="OutOfDateForInputs"/>
       <status xil_pn:value="OutOfDateForPredecessor"/>
       <status xil_pn:value="OutOfDateForOutputs"/>
