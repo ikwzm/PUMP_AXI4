@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_core.vhd
 --!     @brief   Pump Core Module (AXI4 to AXI4)
---!     @version 0.2.0
---!     @date    2013/8/10
+--!     @version 0.3.0
+--!     @date    2013/8/24
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -59,13 +59,13 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
                           integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
         I_ID_WIDTH      : --! @brief PUMP INTAKE AXI4 ID WIDTH :
                           --! I_ARID/I_RID のビット幅を指定する.
-                          integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
+                          integer :=  4;
         I_AUSER_WIDTH   : --! @brief PUMP INTAKE AXI4 AUSER WIDTH :
                           --! I_ARUSER のビット幅を指定する.
-                          integer range 1 to 32                  :=  4;
+                          integer :=  4;
         I_RUSER_WIDTH   : --! @brief PUMP INTAKE AXI4 RUSER WIDTH :
                           --! I_RUSER のビット幅を指定する.
-                          integer range 1 to 32                  :=  4;
+                          integer :=  4;
         I_AXI_ID        : --! @brief PUMP INTAKE AXI4 ID :
                           --! I_ARID/I_RIDの値を指定する.
                           integer :=  1;
@@ -102,16 +102,16 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
                           integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
         O_ID_WIDTH      : --! @brief PUMP OUTLET AXI4 ID WIDTH :
                           --! O_AWID/O_WID/O_BID のビット幅を指定する.
-                          integer range 1 to AXI4_ID_MAX_WIDTH   := AXI4_ID_MAX_WIDTH;
+                          integer :=  4;
         O_AUSER_WIDTH   : --! @brief PUMP OUTLET AXI4 AUSER WIDTH :
                           --! O_AWUSER のビット幅を指定する.
-                          integer range 1 to 32                  :=  4;
+                          integer :=  4;
         O_WUSER_WIDTH   : --! @brief PUMP OUTLET AXI4 WUSER WIDTH :
                           --! O_WUSER のビット幅を指定する.
-                          integer range 1 to 32                  :=  4;
+                          integer :=  4;
         O_BUSER_WIDTH   : --! @brief PUMP OUTLET AXI4 BUSER WIDTH :
                           --! O_BUSER のビット幅を指定する.
-                          integer range 1 to 32                  :=  4;
+                          integer :=  4;
         O_AXI_ID        : --! @brief PUMP OUTLET AXI4 ID :
                           --! O_AWID/O_WIDの値を指定する.
                           integer :=  2;
