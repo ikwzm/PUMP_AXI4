@@ -53,10 +53,11 @@ class ScenarioGenerater
 
   def initialize
     @program_name      = "make_scenario"
-    @program_version   = "0.0.3"
+    @program_version   = "0.0.4"
     @i_gen             = nil
     @o_gen             = nil
     @m_gen             = nil
+    @timeout           = 10000
     @no                = 0
     @i_id              = 1
     @o_id              = 2
@@ -78,6 +79,7 @@ class ScenarioGenerater
       opt.on("--output    FILE_NAME" ){|val| @file_name         = val      }
       opt.on("--i_width   INTEGER"   ){|val| @i_axi4_data_width = val.to_i }
       opt.on("--o_width   INTEGER"   ){|val| @o_axi4_data_width = val.to_i }
+      opt.on("--timeout   INTEGER"   ){|val| @timeout           = val.to_i }
       opt.on("--max_size  INTEGER"   ){|val| @i_max_xfer_size   = val.to_i 
                                              @o_max_xfer_size   = val.to_i }
       opt.on("--test_item INTEGER"   ){|val| @test_items.push(val.to_i)    }
@@ -142,7 +144,7 @@ class ScenarioGenerater
     io.print "             - ", sprintf("0x%08X", i_size)        , " # I_SIZE[31:00]\n"
     io.print "             - ", sprintf("0x%08X", o_mode | start), " # I_CTRL[31:00]\n"
     io.print "      RESP : OKAY\n"
-    io.print "  - WAIT  : {GPI(0) : 1, GPI(1) : 1, TIMEOUT: 10000}\n"
+    io.print "  - WAIT  : {GPI(0) : 1, GPI(1) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
     io.print "  - SYNC  : {PORT : LOCAL}\n"
     io.print "  - READ  : \n"
     io.print "      ADDR : 0x00000000\n"
@@ -169,7 +171,7 @@ class ScenarioGenerater
     io.print "             - 0x00000000"                         , " # I_SIZE[31:00]\n"
     io.print "             - 0x00000000"                         , " # I_CTRL[31:00]\n"
     io.print "      RESP : OKAY\n"
-    io.print "  - WAIT  : {GPI(0) : 1, GPI(1) : 1, TIMEOUT: 10000}\n"
+    io.print "  - WAIT  : {GPI(0) : 1, GPI(1) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
     io.print "  - SYNC  : {PORT : LOCAL}\n"
     @i_gen.read_byte(io, i_address, data, "OKAY")
     @o_gen.write_byte(io, o_address, data, "OKAY")
@@ -250,14 +252,14 @@ class ScenarioGenerater
         io.print "             - ", sprintf("0x%08X", i_size        ), " # I_SIZE[31:00]\n"
         io.print "             - ", sprintf("0x%08X", i_mode | start), " # I_CTRL[31:00]\n"
         io.print "      RESP : OKAY\n"
-        io.print "  - WAIT  : {GPI(0) : 1, TIMEOUT: 10000}\n"
+        io.print "  - WAIT  : {GPI(0) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
         io.print "  - SYNC  : {PORT : LOCAL}\n"
         io.print "  - WRITE : \n"
         io.print "      ADDR : 0x0000001C\n"
         io.print "      ID   : 10\n"
         io.print "      DATA : - ", sprintf("0x%08X", i_mode        ), " # I_CTRL[31:00]\n"
         io.print "      RESP : OKAY\n"
-        io.print "  - WAIT  : {GPI(0) : 0, TIMEOUT: 10000}\n"
+        io.print "  - WAIT  : {GPI(0) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
         io.print "  - SYNC  : {PORT : LOCAL}\n"
         @i_gen.read_byte(io, i_address, data[count..count+i_size-1], "OKAY")
         count += i_size
@@ -265,14 +267,14 @@ class ScenarioGenerater
       end 
       @o_gen.write_byte(io, o_address, data, "OKAY")
       io.print "- CSR : \n"
-      io.print "  - WAIT  : {GPI(1) : 1, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(1) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
       io.print "  - WRITE : \n"
       io.print "      ADDR : 0x0000000C\n"
       io.print "      ID   : 10\n"
       io.print "      DATA : - ", sprintf("0x%08X", o_mode          ), " # O_CTRL[31:00]\n"
       io.print "      RESP : OKAY\n"
-      io.print "  - WAIT  : {GPI(1) : 0, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(1) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
     }
   end
@@ -328,28 +330,28 @@ class ScenarioGenerater
         io.print "             - ", sprintf("0x%08X", o_size        ), " # O_SIZE[31:00]\n"
         io.print "             - ", sprintf("0x%08X", o_mode | start), " # O_CTRL[31:00]\n"
         io.print "      RESP : OKAY\n"
-        io.print "  - WAIT  : {GPI(1) : 1, TIMEOUT: 10000}\n"
+        io.print "  - WAIT  : {GPI(1) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
         io.print "  - SYNC  : {PORT : LOCAL}\n"
         io.print "  - WRITE : \n"
         io.print "      ADDR : 0x0000000C\n"
         io.print "      ID   : 10\n"
         io.print "      DATA : - ", sprintf("0x%08X", o_mode        ), " # O_CTRL[31:00]\n"
         io.print "      RESP : OKAY\n"
-        io.print "  - WAIT  : {GPI(1) : 0, TIMEOUT: 10000}\n"
+        io.print "  - WAIT  : {GPI(1) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
         io.print "  - SYNC  : {PORT : LOCAL}\n"
         @o_gen.write_byte(io, o_address, data[count..count+o_size-1], "OKAY")
         count += o_size
         first = 0
       end 
       io.print "- CSR : \n"
-      io.print "  - WAIT  : {GPI(0) : 1, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(0) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
       io.print "  - WRITE : \n"
       io.print "      ADDR : 0x0000001C\n"
       io.print "      ID   : 10\n"
       io.print "      DATA : - ", sprintf("0x%08X",i_mode           ), " # I_CTRL[31:00]\n"
       io.print "      RESP : OKAY\n"
-      io.print "  - WAIT  : {GPI(0) : 0, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(0) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
     }
   end
@@ -420,23 +422,23 @@ class ScenarioGenerater
       end 
       @o_gen.write_byte(io, o_address, data, "OKAY")
       io.print "- CSR : \n"
-      io.print "  - WAIT  : {GPI(0) : 1, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(0) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
       io.print "  - WRITE : \n"
       io.print "      ADDR : 0x0000003C\n"
       io.print "      ID   : 10\n"
       io.print "      DATA : - ", sprintf("0x%08X", m_mode          ), " # PI_CTRL[31:00]\n"
       io.print "      RESP : OKAY\n"
-      io.print "  - WAIT  : {GPI(0) : 0, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(0) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
-      io.print "  - WAIT  : {GPI(1) : 1, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(1) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
       io.print "  - WRITE : \n"
       io.print "      ADDR : 0x0000000C\n"
       io.print "      ID   : 10\n"
       io.print "      DATA : - ", sprintf("0x%08X", o_mode          ), " # CO_CTRL[31:00]\n"
       io.print "      RESP : OKAY\n"
-      io.print "  - WAIT  : {GPI(1) : 0, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(1) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
     }
   end
@@ -507,24 +509,36 @@ class ScenarioGenerater
         m_address += 0x10
       end 
       io.print "- CSR : \n"
-      io.print "  - WAIT  : {GPI(0) : 1, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(0) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
       io.print "  - WRITE : \n"
       io.print "      ADDR : 0x0000001C\n"
       io.print "      ID   : 10\n"
       io.print "      DATA : - ", sprintf("0x%08X",i_mode           ), " # PI_CTRL[31:00]\n"
       io.print "      RESP : OKAY\n"
-      io.print "  - WAIT  : {GPI(0) : 0, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(0) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
-      io.print "  - WAIT  : {GPI(1) : 1, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(1) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
       io.print "  - WRITE : \n"
       io.print "      ADDR : 0x0000002C\n"
       io.print "      ID   : 10\n"
       io.print "      DATA : - ", sprintf("0x%08X", m_mode          ), " # CO_CTRL[31:00]\n"
       io.print "      RESP : OKAY\n"
-      io.print "  - WAIT  : {GPI(1) : 0, TIMEOUT: 10000}\n"
+      io.print "  - WAIT  : {GPI(1) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
       io.print "  - SYNC  : {PORT : LOCAL}\n"
+    }
+  end
+
+  def test_7(io)
+    test_num = 0
+    [0x10000].each{|size|
+      (0x00012000..0x00012007).each {|i_address|
+      (0xFF000000..0xFF000007).each {|o_address|
+        title = @name.to_s + ".7." + test_num.to_s
+        gen1(title, io, i_address, o_address, size, size)
+        test_num += 1
+      }}
     }
   end
 
@@ -556,6 +570,7 @@ class ScenarioGenerater
         test_4(io) if (item == 4)
         test_5(io) if (item == 5)
         test_6(io) if (item == 6)
+        test_7(io) if (item == 7)
     }
   end
 end
