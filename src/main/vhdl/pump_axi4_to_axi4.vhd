@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
---!     @version 0.6.0
---!     @date    2014/2/24
+--!     @version 0.7.0
+--!     @date    2014/3/29
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -322,6 +322,7 @@ use     PIPEWORK.AXI4_COMPONENTS.AXI4_MASTER_READ_INTERFACE;
 use     PIPEWORK.AXI4_COMPONENTS.AXI4_MASTER_WRITE_INTERFACE;
 use     PIPEWORK.AXI4_COMPONENTS.AXI4_REGISTER_INTERFACE;
 use     PIPEWORK.COMPONENTS.QUEUE_ARBITER;
+use     PIPEWORK.COMPONENTS.REGISTER_ACCESS_ADAPTER;
 use     PIPEWORK.PUMP_COMPONENTS.PUMP_CONTROLLER;
 use     PIPEWORK.PUMP_COMPONENTS.PUMP_OPERATION_PROCESSOR;
 architecture RTL of PUMP_AXI4_TO_AXI4 is
@@ -877,7 +878,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_REG_MODE_BITS : integer                                := 16;
             I_REG_STAT_BITS : integer                                :=  8;
             I_MAX_XFER_SIZE : integer                                :=  8;
-            I_RES_QUEUE     : integer                                :=  1;
+            I_REQ_QUEUE     : integer                                :=  1;
             O_CLK_RATE      : integer                                :=  1;
             O_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
             O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
@@ -1062,24 +1063,28 @@ begin
     -- 
     -------------------------------------------------------------------------------
     CSR_IF: block
+        constant sig_1          : std_logic := '1';
         signal   regs_req       : std_logic;
         signal   regs_write     : std_logic;
         signal   regs_ack       : std_logic;
-        constant regs_err       : std_logic := '0';
+        signal   regs_err       : std_logic;
         signal   regs_addr      : std_logic_vector(REGS_ADDR_WIDTH  -1 downto 0);
         signal   regs_ben       : std_logic_vector(REGS_DATA_WIDTH/8-1 downto 0);
         signal   regs_wdata     : std_logic_vector(REGS_DATA_WIDTH  -1 downto 0);
         signal   regs_rdata     : std_logic_vector(REGS_DATA_WIDTH  -1 downto 0);
     begin 
-        AXI4: AXI4_REGISTER_INTERFACE
-            generic map (
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        AXI4: AXI4_REGISTER_INTERFACE                  --
+            generic map (                              -- 
                 AXI4_ADDR_WIDTH => C_ADDR_WIDTH      , --
                 AXI4_DATA_WIDTH => C_DATA_WIDTH      , --
                 AXI4_ID_WIDTH   => C_ID_WIDTH        , --
                 REGS_ADDR_WIDTH => REGS_ADDR_WIDTH   , --
                 REGS_DATA_WIDTH => REGS_DATA_WIDTH     --
-            )
-            port map (
+            )                                          -- 
+            port map (                                 -- 
             -----------------------------------------------------------------------
             -- Clock and Reset Signals.
             -----------------------------------------------------------------------
@@ -1145,55 +1150,39 @@ begin
         ---------------------------------------------------------------------------
         -- 
         ---------------------------------------------------------------------------
-        regs_ack <= regs_req;
-        ---------------------------------------------------------------------------
-        -- 
-        ---------------------------------------------------------------------------
-        process (regs_wdata) begin
-            for i in 0 to REGS_DATA_BITS/REGS_DATA_WIDTH-1 loop
-                regs_wbit(REGS_DATA_WIDTH*(i+1)-1 downto REGS_DATA_WIDTH*i) <= regs_wdata;
-            end loop;
-        end process;
-        ---------------------------------------------------------------------------
-        -- 
-        ---------------------------------------------------------------------------
-        process (regs_addr, regs_req, regs_write, regs_ben)
-            variable addr      : unsigned(REGS_ADDR_WIDTH-1 downto 0);
-            constant ben_bit_0 : std_logic_vector(REGS_DATA_WIDTH-1 downto 0) := (others => '0');
-            variable ben_bit   : std_logic_vector(REGS_DATA_WIDTH-1 downto 0);
-        begin
-            addr := to_01(unsigned(regs_addr));
-            for i in 0 to REGS_DATA_WIDTH/8-1 loop
-                if (regs_ben(i) = '1') then
-                    ben_bit(8*(i+1)-1 downto 8*i) := (8*(i+1)-1 downto 8*i => '1');
-                else
-                    ben_bit(8*(i+1)-1 downto 8*i) := (8*(i+1)-1 downto 8*i => '0');
-                end if;
-            end loop;
-            for i in 0 to REGS_DATA_BITS/REGS_DATA_WIDTH-1 loop
-                if (regs_req = '1' and regs_write = '1' and i = addr/(REGS_DATA_WIDTH/8)) then
-                    regs_load(REGS_DATA_WIDTH*(i+1)-1 downto REGS_DATA_WIDTH*i) <= ben_bit;
-                else
-                    regs_load(REGS_DATA_WIDTH*(i+1)-1 downto REGS_DATA_WIDTH*i) <= ben_bit_0;
-                end if;
-            end loop;
-        end process;
-        ---------------------------------------------------------------------------
-        -- 
-        ---------------------------------------------------------------------------
-        process (regs_rbit, regs_addr)
-            variable addr      : unsigned(REGS_ADDR_WIDTH-1 downto 0);
-            variable data      : std_logic_vector(REGS_DATA_WIDTH-1 downto 0);
-        begin
-            addr := to_01(unsigned(regs_addr));
-            data := (others => '0');
-            for i in 0 to REGS_DATA_BITS/REGS_DATA_WIDTH-1 loop
-                if (i = addr/(REGS_DATA_WIDTH/8)) then
-                    data := data or regs_rbit(REGS_DATA_WIDTH*(i+1)-1 downto REGS_DATA_WIDTH*i);
-                end if;
-            end loop;
-            regs_rdata <= data;
-        end process;
+        DEC: REGISTER_ACCESS_ADAPTER                   -- 
+            generic map (                              -- 
+                ADDR_WIDTH      => REGS_ADDR_WIDTH   , -- 
+                DATA_WIDTH      => REGS_DATA_WIDTH   , -- 
+                WBIT_MIN        => regs_wbit'low     , -- 
+                WBIT_MAX        => regs_wbit'high    , -- 
+                RBIT_MIN        => regs_rbit'low     , -- 
+                RBIT_MAX        => regs_rbit'high    , -- 
+                I_CLK_RATE      => 1                 , -- 
+                O_CLK_RATE      => 1                 , -- 
+                O_CLK_REGS      => 0                   -- 
+            )                                          -- 
+            port map (                                 -- 
+                RST             => RST               , -- In  :
+                I_CLK           => C_CLK             , -- In  :
+                I_CLR           => CLR               , -- In  :
+                I_CKE           => sig_1             , -- In  :
+                I_REQ           => regs_req          , -- In  :
+                I_SEL           => sig_1             , -- In  :
+                I_WRITE         => regs_write        , -- In  :
+                I_ADDR          => regs_addr         , -- In  :
+                I_BEN           => regs_ben          , -- In  :
+                I_WDATA         => regs_wdata        , -- In  :
+                I_RDATA         => regs_rdata        , -- Out :
+                I_ACK           => regs_ack          , -- Out :
+                I_ERR           => regs_err          , -- Out :
+                O_CLK           => C_CLK             , -- In  :
+                O_CLR           => CLR               , -- In  :
+                O_CKE           => sig_1             , -- In  :
+                O_WDATA         => regs_wbit         , -- Out :
+                O_WLOAD         => regs_load         , -- Out :
+                O_RDATA         => regs_rbit           -- In  :
+            );                                         -- 
     end block;
     -------------------------------------------------------------------------------
     -- 
@@ -1227,6 +1216,7 @@ begin
         signal   mr_req_ready       : std_logic;
         signal   mr_xfer_busy       : std_logic_vector(1 downto 0);
         signal   mr_xfer_done       : std_logic_vector(1 downto 0);
+        signal   mr_xfer_error      : std_logic_vector(1 downto 0);
         signal   mr_ack_valid       : std_logic_vector(1 downto 0);
         signal   mr_ack_error       : std_logic;
         signal   mr_ack_next        : std_logic;
@@ -1271,6 +1261,7 @@ begin
         signal   mw_req_ready       : std_logic;
         signal   mw_xfer_busy       : std_logic_vector(1 downto 0);
         signal   mw_xfer_done       : std_logic_vector(1 downto 0);
+        signal   mw_xfer_error      : std_logic_vector(1 downto 0);
         signal   mw_ack_valid       : std_logic_vector(1 downto 0);
         signal   mw_ack_error       : std_logic;
         signal   mw_ack_next        : std_logic;
@@ -1378,6 +1369,7 @@ begin
                 XFER_SIZE_SEL   => MR_XFER_SIZE_SEL  , -- In  :
                 XFER_BUSY       => mr_xfer_busy      , -- Out :
                 XFER_DONE       => mr_xfer_done      , -- Out :
+                XFER_ERROR      => mr_xfer_error     , -- Out :
             -----------------------------------------------------------------------
             -- Response Signals.
             -----------------------------------------------------------------------
@@ -1506,6 +1498,7 @@ begin
                 XFER_SIZE_SEL   => MW_XFER_SIZE_SEL  , -- In  :
                 XFER_BUSY       => mw_xfer_busy      , -- Out :
                 XFER_DONE       => mw_xfer_done      , -- Out :
+                XFER_ERROR      => mw_xfer_error     , -- Out :
             -----------------------------------------------------------------------
             -- Response Signals.
             -----------------------------------------------------------------------
@@ -1689,6 +1682,7 @@ begin
                     M_BUF_RDY       => mr_buf_wready(0)  , -- Out :
                     M_XFER_BUSY     => mr_xfer_busy(0)   , -- In  :
                     M_XFER_DONE     => mr_xfer_done(0)   , -- In  :
+                    M_XFER_ERROR    => mr_xfer_error(0)  , -- In  :
                 -------------------------------------------------------------------
                 -- Control Status Register Interface Signals.
                 -------------------------------------------------------------------
@@ -1862,6 +1856,7 @@ begin
                     M_BUF_RDY       => mr_buf_wready(1)  , -- Out :
                     M_XFER_BUSY     => mr_xfer_busy(1)   , -- In  :
                     M_XFER_DONE     => mr_xfer_done(1)   , -- In  :
+                    M_XFER_ERROR    => mr_xfer_error(1)  , -- In  :
                 -------------------------------------------------------------------
                 -- Control Status Register Interface Signals.
                 -------------------------------------------------------------------
@@ -2030,7 +2025,7 @@ begin
             I_REG_MODE_BITS => CI_MODE_REGS_BITS ,
             I_REG_STAT_BITS => CI_STAT_RESV_BITS ,
             I_MAX_XFER_SIZE => I_MAX_XFER_SIZE   ,
-            I_RES_QUEUE     => 1                 ,
+            I_REQ_QUEUE     => 2                 ,
             O_CLK_RATE      => 1                 ,
             O_ADDR_WIDTH    => O_ADDR_WIDTH      ,
             O_DATA_WIDTH    => O_DATA_WIDTH      ,

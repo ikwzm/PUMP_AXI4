@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_core.vhd
 --!     @brief   Pump Core Module (AXI4 to AXI4)
---!     @version 0.6.0
---!     @date    2014/2/24
+--!     @version 0.7.0
+--!     @date    2014/3/29
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -85,8 +85,8 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
                           --! PUMP INTAKE の最大転送バイト数を２のべき乗値で指定す
                           --! る.
                           integer :=  8;
-        I_RES_QUEUE     : --! @brief PUMP INTAKE RESPONSE QUEUE SIZE :
-                          --! PUMP INTAKE のレスポンスキューの大きさを指定する.
+        I_REQ_QUEUE     : --! @brief PUMP INTAKE REQUEST QUEUE SIZE :
+                          --! PUMP INTAKE のリクエストキューの大きさを指定する.
                           --! 詳細は PipeWork.Components の AXI4_MASTER_READ_INTERFACE を参照.
                           integer :=  1;
         O_CLK_RATE      : --! @brief OUTPUT CLOCK RATE :
@@ -443,6 +443,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     signal   i_req_ready        : std_logic;
     signal   i_xfer_busy        : std_logic;
     signal   i_xfer_done        : std_logic;
+    signal   i_xfer_error       : std_logic;
     signal   i_ack_valid        : std_logic;
     signal   i_ack_error        : std_logic;
     signal   i_ack_next         : std_logic;
@@ -473,6 +474,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     signal   o_req_ready        : std_logic;
     signal   o_xfer_busy        : std_logic;
     signal   o_xfer_done        : std_logic;
+    signal   o_xfer_error       : std_logic;
     signal   o_ack_valid        : std_logic;
     signal   o_ack_error        : std_logic;
     signal   o_ack_next         : std_logic;
@@ -545,7 +547,7 @@ begin
             XFER_SIZE_BITS      => SIZE_BITS           , -- 
             XFER_MIN_SIZE       => I_MAX_XFER_SIZE     , -- 
             XFER_MAX_SIZE       => I_MAX_XFER_SIZE     , -- 
-            QUEUE_SIZE          => I_RES_QUEUE           -- 
+            QUEUE_SIZE          => I_REQ_QUEUE           -- 
         )                                                -- 
         port map (                                       -- 
         --------------------------------------------------------------------------
@@ -613,6 +615,7 @@ begin
         ---------------------------------------------------------------------------
             XFER_BUSY(0)        => i_xfer_busy         , -- Out :
             XFER_DONE(0)        => i_xfer_done         , -- Out :
+            XFER_ERROR(0)       => i_xfer_error        , -- Out :
         ---------------------------------------------------------------------------
         -- Flow Control Signals.
         ---------------------------------------------------------------------------
@@ -745,6 +748,7 @@ begin
         ---------------------------------------------------------------------------
             XFER_BUSY(0)        => o_xfer_busy         , -- Out :
             XFER_DONE(0)        => o_xfer_done         , -- Out :
+            XFER_ERROR(0)       => o_xfer_error        , -- Out :
         ---------------------------------------------------------------------------
         -- Flow Control Signals.
         ---------------------------------------------------------------------------
@@ -959,6 +963,7 @@ begin
         ---------------------------------------------------------------------------
             I_XFER_BUSY         => i_xfer_busy     , -- In  :
             I_XFER_DONE         => i_xfer_done     , -- In  :
+            I_XFER_ERROR        => i_xfer_error    , -- In  :
         ---------------------------------------------------------------------------
         -- Intake Flow Control Signals.
         ---------------------------------------------------------------------------
@@ -1012,6 +1017,7 @@ begin
         ---------------------------------------------------------------------------
             O_XFER_BUSY         => o_xfer_busy     , -- In  :
             O_XFER_DONE         => o_xfer_done     , -- In  :
+            O_XFER_ERROR        => o_xfer_error    , -- In  :
         ---------------------------------------------------------------------------
         -- Outlet Flow Control Signals.
         ---------------------------------------------------------------------------
