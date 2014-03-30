@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_test_bench.vhd
 --!     @brief   Test Bench for Pump Sample Module (AXI4 to AXI4)
---!     @version 0.3.0
---!     @date    2013/8/24
+--!     @version 0.7.0
+--!     @date    2014/3/29
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012,2013 Ichiro Kawazome
+--      Copyright (C) 2012-2014 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without

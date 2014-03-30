@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------------
---!     @file    pump_axi4_to_axi4_test_bench_32_64.vhd
+--!     @file    pump_axi4_to_axi4_test_bench_32_32.vhd
 --!     @brief   Test Bench for Pump Sample Module (AXI4 to AXI4)
 --!     @version 0.7.0
 --!     @date    2014/3/29
@@ -39,9 +39,9 @@
 -----------------------------------------------------------------------------------
 library ieee;
 use     ieee.std_logic_1164.all;
-entity  PUMP_AXI4_TO_AXI4_TEST_BENCH_32_64 is
-end     PUMP_AXI4_TO_AXI4_TEST_BENCH_32_64;
-architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH_32_64 is
+entity  PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_TEST_8 is
+end     PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_TEST_8;
+architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_TEST_8 is
     component  PUMP_AXI4_TO_AXI4_TEST_BENCH
         generic (
             NAME            : STRING;
@@ -54,10 +54,11 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH_32_64 is
 begin
     TB: PUMP_AXI4_TO_AXI4_TEST_BENCH
         generic map (
-            NAME            => string'("PUMP_AXI4_TO_AXI4_TEST_BENCH_32_64"),
-            SCENARIO_FILE   => string'("pump_axi4_to_axi4_test_bench_32_64.snr"),
+            NAME            => string'("PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32"),
+            SCENARIO_FILE   => string'("pump_axi4_to_axi4_test_bench_32_32_test_8.snr"),
             I_DATA_WIDTH    => 32,
-            O_DATA_WIDTH    => 64,
+            O_DATA_WIDTH    => 32,
             MAX_XFER_SIZE   =>  6
         );        
 end MODEL;
+
