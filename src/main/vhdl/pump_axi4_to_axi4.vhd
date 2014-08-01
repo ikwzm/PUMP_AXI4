@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
---!     @version 0.7.0
---!     @date    2014/3/29
+--!     @version 0.8.0
+--!     @date    2014/8/1
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -445,7 +445,8 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     -- Mode[15]    = 1:AXI4 Master I/F をセイフティモードで動かすことを示す.
     -- Mode[14]    = 1:AXI4 Master I/F を投機モードで動かすことを示す.
     -- Mode[13]    = 1:AXI4 Master I/F をアドレス固定モードにすることを示す.
-    -- Mode[11:08] = AXI4 Master I/F のキャッシュモードを指定する.
+    -- Mode[12:08] = AXI4 Master I/F の ARUSER/AWUSER の値を指定する.
+    -- Mode[07:04] = AXI4 Master I/F のキャッシュモードを指定する.
     -- Mode[01]    = 1:エラー発生時(Status[1]='1')に割り込みを発生する.
     -- Mode[00]    = 1:転送終了時(Status[0]='1')に割り込みを発生する.
     -- Size[31:00] = 転送サイズ.
@@ -539,7 +540,8 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     -- Mode[15]    = 1:AXI4 Master Write I/F をセイフティモードで動かす.
     -- Mode[14]    = 1:AXI4 Master Write I/F を投機モードで動かす.
     -- Mode[13]    = 1:AXI4 Master Write I/F をアドレス固定モードにする.
-    -- Mode[11:08] = AXI4 Master Write I/F のキャッシュモードを指定する.
+    -- Mode[12:08] = AXI4 Master Write I/F の AWUSER の値を指定する.
+    -- Mode[07:04] = AXI4 Master Write I/F のキャッシュモードを指定する.
     -- Mode[01]    = 1:エラー発生時(Status[1]='1')に割り込みを発生する.
     -- Mode[00]    = 1:転送終了時(Status[0]='1')に割り込みを発生する.
     -------------------------------------------------------------------------------
@@ -550,8 +552,10 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant CO_MODE_SAFETY_POS : integer := 8*CO_MODE_REGS_ADDR + 15;
     constant CO_MODE_SPECUL_POS : integer := 8*CO_MODE_REGS_ADDR + 14;
     constant CO_MODE_AFIX_POS   : integer := 8*CO_MODE_REGS_ADDR + 13;
-    constant CO_MODE_CACHE_HI   : integer := 8*CO_MODE_REGS_ADDR + 11;
-    constant CO_MODE_CACHE_LO   : integer := 8*CO_MODE_REGS_ADDR +  8;
+    constant CO_MODE_AUSER_HI   : integer := 8*CO_MODE_REGS_ADDR + 12;
+    constant CO_MODE_AUSER_LO   : integer := 8*CO_MODE_REGS_ADDR +  8;
+    constant CO_MODE_CACHE_HI   : integer := 8*CO_MODE_REGS_ADDR +  7;
+    constant CO_MODE_CACHE_LO   : integer := 8*CO_MODE_REGS_ADDR +  4;
     constant CO_MODE_ERROR_POS  : integer := 8*CO_MODE_REGS_ADDR +  1;
     constant CO_MODE_DONE_POS   : integer := 8*CO_MODE_REGS_ADDR +  0;
     -------------------------------------------------------------------------------
@@ -636,7 +640,8 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     -- Mode[15]    = 1:AXI4 Master Read I/F をセイフティモードで動かす.
     -- Mode[14]    = 1:AXI4 Master Read I/F を投機モードで動かす.
     -- Mode[13]    = 1:AXI4 Master Read I/F をアドレス固定モードにする.
-    -- Mode[11:08] = AXI4 Master Read I/F のキャッシュモードを指定する.
+    -- Mode[11:08] = AXI4 Master Read I/F の ARUSER の値を指定する.
+    -- Mode[07:04] = AXI4 Master Read I/F のキャッシュモードを指定する.
     -- Mode[01]    = 1:エラー発生時(Status[1]='1')に割り込みを発生する.
     -- Mode[00]    = 1:転送終了時(Status[0]='1')に割り込みを発生する.
     -------------------------------------------------------------------------------
@@ -647,8 +652,10 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant CI_MODE_SAFETY_POS : integer := 8*CI_MODE_REGS_ADDR + 15;
     constant CI_MODE_SPECUL_POS : integer := 8*CI_MODE_REGS_ADDR + 14;
     constant CI_MODE_AFIX_POS   : integer := 8*CI_MODE_REGS_ADDR + 13;
-    constant CI_MODE_CACHE_HI   : integer := 8*CI_MODE_REGS_ADDR + 11;
-    constant CI_MODE_CACHE_LO   : integer := 8*CI_MODE_REGS_ADDR +  8;
+    constant CI_MODE_AUSER_HI   : integer := 8*CI_MODE_REGS_ADDR + 12;
+    constant CI_MODE_AUSER_LO   : integer := 8*CI_MODE_REGS_ADDR +  8;
+    constant CI_MODE_CACHE_HI   : integer := 8*CI_MODE_REGS_ADDR +  7;
+    constant CI_MODE_CACHE_LO   : integer := 8*CI_MODE_REGS_ADDR +  4;
     constant CI_MODE_ERROR_POS  : integer := 8*CI_MODE_REGS_ADDR +  1;
     constant CI_MODE_DONE_POS   : integer := 8*CI_MODE_REGS_ADDR +  0;
     -------------------------------------------------------------------------------
@@ -720,15 +727,18 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     -------------------------------------------------------------------------------
     -- Pump Outlet Processor Mode Register
     -------------------------------------------------------------------------------
-    -- Mode[43:40] = AXI4 Master Read I/F のキャッシュモードを指定する.
+    -- Mode[44:40] = AXI4 Master Read I/F の ARUSER の値を指定する.
+    -- Mode[39:36] = AXI4 Master Read I/F のキャッシュモードを指定する.
     -- Mode[33]    = 1:Operation Code を読み込んだ時(Status[1]='1')に割り込みを発生する.
     -- Mode[32]    = 1:オペレーション終了時(Status[0]='1')に割り込みを発生する.
     -------------------------------------------------------------------------------
     constant PO_MODE_REGS_ADDR  : integer := PO_REGS_BASE_ADDR + 16#08#;
     constant PO_MODE_REGS_HI    : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_HI;
     constant PO_MODE_REGS_LO    : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO;
-    constant PO_MODE_CACHE_HI   : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 43;
-    constant PO_MODE_CACHE_LO   : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 40;
+    constant PO_MODE_AUSER_HI   : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 44;
+    constant PO_MODE_AUSER_LO   : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 40;
+    constant PO_MODE_CACHE_HI   : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 39;
+    constant PO_MODE_CACHE_LO   : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 36;
     constant PO_MODE_FETCH_POS  : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 33;
     constant PO_MODE_END_POS    : integer := 8*PO_REGS_BASE_ADDR + PO_MODE_LO + 32;
     -------------------------------------------------------------------------------
@@ -792,15 +802,18 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     -------------------------------------------------------------------------------
     -- Pump Intake Processor Mode Register
     -------------------------------------------------------------------------------
-    -- Mode[43:40] = AXI4 Master Read I/F のキャッシュモードを指定する.
+    -- Mode[44:40] = AXI4 Master Read I/F の ARUSER の値を指定する.
+    -- Mode[39:36] = AXI4 Master Read I/F のキャッシュモードを指定する.
     -- Mode[33]    = 1:Operation Code を読み込んだ時(Status[1]='1')に割り込みを発生する.
     -- Mode[32]    = 1:オペレーション終了時(Status[0]='1')に割り込みを発生する.
     -------------------------------------------------------------------------------
     constant PI_MODE_REGS_ADDR  : integer := PI_REGS_BASE_ADDR + 16#08#;
     constant PI_MODE_REGS_HI    : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_HI;
     constant PI_MODE_REGS_LO    : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO;
-    constant PI_MODE_CACHE_HI   : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 43;
-    constant PI_MODE_CACHE_LO   : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 40;
+    constant PI_MODE_AUSER_HI   : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 44;
+    constant PI_MODE_AUSER_LO   : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 40;
+    constant PI_MODE_CACHE_HI   : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 39;
+    constant PI_MODE_CACHE_LO   : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 36;
     constant PI_MODE_FETCH_POS  : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 33;
     constant PI_MODE_END_POS    : integer := 8*PI_REGS_BASE_ADDR + PI_MODE_LO + 32;
     -------------------------------------------------------------------------------
@@ -843,6 +856,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     signal   core_o_done        : std_logic;
     signal   core_o_error       : std_logic;
     signal   core_o_stat        : std_logic_vector(CO_STAT_RESV_HI downto CO_STAT_RESV_LO);
+    signal   core_o_auser       : std_logic_vector(O_AUSER_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     -- Pump Core Intake signals.
     -------------------------------------------------------------------------------
@@ -851,6 +865,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     signal   core_i_done        : std_logic;
     signal   core_i_error       : std_logic;
     signal   core_i_stat        : std_logic_vector(CI_STAT_RESV_HI downto CI_STAT_RESV_LO);
+    signal   core_i_auser       : std_logic_vector(I_AUSER_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
@@ -861,6 +876,22 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     -------------------------------------------------------------------------------
     constant i_ruser            : std_logic_vector(0 downto 0) := (others => '0');
     constant o_buser            : std_logic_vector(0 downto 0) := (others => '0');
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+    function resize(ARG:std_logic_vector;LEN:integer) return std_logic_vector is
+        variable val : std_logic_vector(LEN-1        downto 0);
+        alias    av  : std_logic_vector(ARG'length-1 downto 0) is ARG;
+    begin
+        for i in val'range loop
+            if (i > av'high) then
+                val(i) := '0';
+            else
+                val(i) := av(i);
+            end if;
+        end loop;
+        return val;
+    end function;
     -------------------------------------------------------------------------------
     -- PUMP_AXI4_TO_AXI4_CORE のコンポーネント宣言.
     -------------------------------------------------------------------------------
@@ -948,6 +979,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_PROT          : in  AXI4_APROT_TYPE  ;
             I_QOS           : in  AXI4_AQOS_TYPE   ;
             I_REGION        : in  AXI4_AREGION_TYPE;
+            I_AUSER         : in  std_logic_vector(I_AUSER_WIDTH  -1 downto 0);
             O_CLK           : in  std_logic; 
             O_CLR           : in  std_logic;
             O_CKE           : in  std_logic;
@@ -999,8 +1031,9 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             O_PROT          : in  AXI4_APROT_TYPE  ;
             O_QOS           : in  AXI4_AQOS_TYPE   ;
             O_REGION        : in  AXI4_AREGION_TYPE;
-            I_ARID          : out std_logic_vector(I_ID_WIDTH    -1 downto 0);
-            I_ARADDR        : out std_logic_vector(I_ADDR_WIDTH  -1 downto 0);
+            O_AUSER         : in  std_logic_vector(O_AUSER_WIDTH  -1 downto 0);
+            I_ARID          : out std_logic_vector(I_ID_WIDTH     -1 downto 0);
+            I_ARADDR        : out std_logic_vector(I_ADDR_WIDTH   -1 downto 0);
             I_ARLEN         : out AXI4_ALEN_TYPE;
             I_ARSIZE        : out AXI4_ASIZE_TYPE;
             I_ARBURST       : out AXI4_ABURST_TYPE;
@@ -1009,18 +1042,18 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_ARPROT        : out AXI4_APROT_TYPE;
             I_ARQOS         : out AXI4_AQOS_TYPE;
             I_ARREGION      : out AXI4_AREGION_TYPE;
-            I_ARUSER        : out std_logic_vector(I_AUSER_WIDTH -1 downto 0);
+            I_ARUSER        : out std_logic_vector(I_AUSER_WIDTH  -1 downto 0);
             I_ARVALID       : out std_logic;
             I_ARREADY       : in  std_logic;
-            I_RID           : in  std_logic_vector(I_ID_WIDTH    -1 downto 0);
-            I_RDATA         : in  std_logic_vector(I_DATA_WIDTH  -1 downto 0);
+            I_RID           : in  std_logic_vector(I_ID_WIDTH     -1 downto 0);
+            I_RDATA         : in  std_logic_vector(I_DATA_WIDTH   -1 downto 0);
             I_RRESP         : in  AXI4_RESP_TYPE;
             I_RLAST         : in  std_logic;
-            I_RUSER         : in  std_logic_vector(I_RUSER_WIDTH -1 downto 0);
+            I_RUSER         : in  std_logic_vector(I_RUSER_WIDTH  -1 downto 0);
             I_RVALID        : in  std_logic;
             I_RREADY        : out std_logic;
-            O_AWID          : out std_logic_vector(O_ID_WIDTH    -1 downto 0);
-            O_AWADDR        : out std_logic_vector(O_ADDR_WIDTH  -1 downto 0);
+            O_AWID          : out std_logic_vector(O_ID_WIDTH     -1 downto 0);
+            O_AWADDR        : out std_logic_vector(O_ADDR_WIDTH   -1 downto 0);
             O_AWLEN         : out AXI4_ALEN_TYPE;
             O_AWSIZE        : out AXI4_ASIZE_TYPE;
             O_AWBURST       : out AXI4_ABURST_TYPE;
@@ -1029,19 +1062,19 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             O_AWPROT        : out AXI4_APROT_TYPE;
             O_AWQOS         : out AXI4_AQOS_TYPE;
             O_AWREGION      : out AXI4_AREGION_TYPE;
-            O_AWUSER        : out std_logic_vector(O_AUSER_WIDTH -1 downto 0);
+            O_AWUSER        : out std_logic_vector(O_AUSER_WIDTH  -1 downto 0);
             O_AWVALID       : out std_logic;
             O_AWREADY       : in  std_logic;
-            O_WID           : out std_logic_vector(O_ID_WIDTH    -1 downto 0);
-            O_WDATA         : out std_logic_vector(O_DATA_WIDTH  -1 downto 0);
-            O_WSTRB         : out std_logic_vector(O_DATA_WIDTH/8-1 downto 0);
-            O_WUSER         : out std_logic_vector(O_WUSER_WIDTH -1 downto 0);
+            O_WID           : out std_logic_vector(O_ID_WIDTH     -1 downto 0);
+            O_WDATA         : out std_logic_vector(O_DATA_WIDTH   -1 downto 0);
+            O_WSTRB         : out std_logic_vector(O_DATA_WIDTH/8 -1 downto 0);
+            O_WUSER         : out std_logic_vector(O_WUSER_WIDTH  -1 downto 0);
             O_WLAST         : out std_logic;
             O_WVALID        : out std_logic;
             O_WREADY        : in  std_logic;
-            O_BID           : in  std_logic_vector(O_ID_WIDTH    -1 downto 0);
+            O_BID           : in  std_logic_vector(O_ID_WIDTH     -1 downto 0);
             O_BRESP         : in  AXI4_RESP_TYPE;
-            O_BUSER         : in  std_logic_vector(O_BUSER_WIDTH -1 downto 0);
+            O_BUSER         : in  std_logic_vector(O_BUSER_WIDTH  -1 downto 0);
             O_BVALID        : in  std_logic;
             O_BREADY        : out std_logic;
             I_OPEN          : out std_logic;
@@ -1206,7 +1239,7 @@ begin
         constant MR_QOS             : AXI4_AQOS_TYPE   := (others => '0');
         constant MR_REGION          : AXI4_AREGION_TYPE:= (others => '0');
         signal   mr_cache           : AXI4_ACACHE_TYPE;
-        constant MR_AUSER           : std_logic_vector(M_AUSER_WIDTH -1 downto 0) := (others => '0');
+        signal   mr_auser           : std_logic_vector(4 downto 0);
         signal   mr_req_addr        : std_logic_vector(M_ADDR_WIDTH  -1 downto 0);
         signal   mr_req_size        : std_logic_vector(MR_SIZE_BITS  -1 downto 0);
         signal   mr_req_ptr         : std_logic_vector(MR_BUF_SIZE   -1 downto 0);
@@ -1418,7 +1451,7 @@ begin
                 BUF_DATA        => mr_buf_wdata      , -- Out :
                 BUF_PTR         => mr_buf_wptr         -- Out :
             );
-        M_ARUSER <= MR_AUSER;
+        M_ARUSER <= resize(mr_auser, M_ARUSER'length);
         ---------------------------------------------------------------------------
         -- 
         ---------------------------------------------------------------------------
@@ -1587,6 +1620,19 @@ begin
             mr_req_last     <= pi_req_first when (num = 1) else po_req_last;
             mr_cache        <= regs_rbit(PI_MODE_CACHE_HI downto PI_MODE_CACHE_LO) when (num = 1) else
                                regs_rbit(PO_MODE_CACHE_HI downto PO_MODE_CACHE_LO);
+            process (M_CLK, RST) begin
+                if (RST = '1') then
+                        mr_auser <= (others => '0');
+                elsif (M_CLK'event and M_CLK = '1') then
+                    if (CLR = '1') then
+                        mr_auser <= (others => '0');
+                    elsif (mr_req_ready = '1' and mr_req_valid(0) = '1') then
+                        mr_auser <= regs_rbit(PO_MODE_AUSER_HI downto PO_MODE_AUSER_LO);
+                    elsif (mr_req_ready = '1' and mr_req_valid(1) = '1') then
+                        mr_auser <= regs_rbit(PI_MODE_AUSER_HI downto PI_MODE_AUSER_LO);
+                    end if;
+                end if;
+            end process;
             shift <= '1' when (mr_ack_valid /= ALL0) else '0';
         end generate;
         ---------------------------------------------------------------------------
@@ -1602,6 +1648,7 @@ begin
             mr_req_last     <= po_req_last;
             mr_buf_wready(1)<= '0';
             mr_cache        <= regs_rbit(PO_MODE_CACHE_HI downto PO_MODE_CACHE_LO);
+            mr_auser        <= regs_rbit(PO_MODE_AUSER_HI downto PO_MODE_AUSER_LO);
         end generate;
         ---------------------------------------------------------------------------
         -- 
@@ -1616,6 +1663,7 @@ begin
             mr_req_last     <= pi_req_last;
             mr_buf_wready(0)<= '0';
             mr_cache        <= regs_rbit(PI_MODE_CACHE_HI downto PI_MODE_CACHE_LO);
+            mr_auser        <= regs_rbit(PI_MODE_AUSER_HI downto PI_MODE_AUSER_LO);
         end generate;
         ---------------------------------------------------------------------------
         -- 
@@ -2110,6 +2158,7 @@ begin
             I_PROT          => I_PROT            ,
             I_QOS           => I_QOS             ,
             I_REGION        => I_REGION          ,
+            I_AUSER         => core_i_auser      ,
         ---------------------------------------------------------------------------
         -- Pump Outlet Control Register I/F Signals.
         ---------------------------------------------------------------------------
@@ -2161,6 +2210,7 @@ begin
             O_PROT          => O_PROT            ,
             O_QOS           => O_QOS             ,
             O_REGION        => O_REGION          ,
+            O_AUSER         => core_o_auser      ,
         --------------------------------------------------------------------------
         -- Pump Intake AXI4 Read Address Channel Signals.
         --------------------------------------------------------------------------
@@ -2241,43 +2291,48 @@ begin
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-    core_i_stat <= (others => '0');
-    core_o_stat <= (others => '0');
+    core_i_auser <= RESIZE(regs_rbit(CI_MODE_AUSER_HI downto CI_MODE_AUSER_LO), I_AUSER_WIDTH);
+    core_o_auser <= RESIZE(regs_rbit(CO_MODE_AUSER_HI downto CO_MODE_AUSER_LO), O_AUSER_WIDTH);
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-    I_AWID          <= (others => '0');
-    I_AWADDR        <= (others => '0');
-    I_AWLEN         <= (others => '0');
-    I_AWSIZE        <= (others => '0');
-    I_AWBURST       <= (others => '0');
-    I_AWLOCK        <= (others => '0');
-    I_AWCACHE       <= (others => '0');
-    I_AWPROT        <= (others => '0');
-    I_AWQOS         <= (others => '0');
-    I_AWREGION      <= (others => '0');
-    I_AWUSER        <= (others => '0');
-    I_AWVALID       <= '0';
-    I_WDATA         <= (others => '0');
-    I_WSTRB         <= (others => '0');
-    I_WLAST         <= '0';
-    I_WVALID        <= '0';
+    core_i_stat  <= (others => '0');
+    core_o_stat  <= (others => '0');
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-    O_ARID          <= (others => '0');
-    O_ARADDR        <= (others => '0');
-    O_ARLEN         <= (others => '0');
-    O_ARSIZE        <= (others => '0');
-    O_ARBURST       <= (others => '0');
-    O_ARLOCK        <= (others => '0');
-    O_ARCACHE       <= (others => '0');
-    O_ARPROT        <= (others => '0');
-    O_ARQOS         <= (others => '0');
-    O_ARREGION      <= (others => '0');
-    O_ARUSER        <= (others => '0');
-    O_ARVALID       <= '0';
-    O_RREADY        <= '0';
+    I_AWID       <= (others => '0');
+    I_AWADDR     <= (others => '0');
+    I_AWLEN      <= (others => '0');
+    I_AWSIZE     <= (others => '0');
+    I_AWBURST    <= (others => '0');
+    I_AWLOCK     <= (others => '0');
+    I_AWCACHE    <= (others => '0');
+    I_AWPROT     <= (others => '0');
+    I_AWQOS      <= (others => '0');
+    I_AWREGION   <= (others => '0');
+    I_AWUSER     <= (others => '0');
+    I_AWVALID    <= '0';
+    I_WDATA      <= (others => '0');
+    I_WSTRB      <= (others => '0');
+    I_WLAST      <= '0';
+    I_WVALID     <= '0';
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+    O_ARID       <= (others => '0');
+    O_ARADDR     <= (others => '0');
+    O_ARLEN      <= (others => '0');
+    O_ARSIZE     <= (others => '0');
+    O_ARBURST    <= (others => '0');
+    O_ARLOCK     <= (others => '0');
+    O_ARCACHE    <= (others => '0');
+    O_ARPROT     <= (others => '0');
+    O_ARQOS      <= (others => '0');
+    O_ARREGION   <= (others => '0');
+    O_ARUSER     <= (others => '0');
+    O_ARVALID    <= '0';
+    O_RREADY     <= '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
