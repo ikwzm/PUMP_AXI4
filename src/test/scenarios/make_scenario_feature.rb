@@ -110,7 +110,7 @@ class ScenarioGenerater
   #-------------------------------------------------------------------------------
   # 
   #-------------------------------------------------------------------------------
-  def  gen_simple_read(io, model, address, data, resp)
+  def  gen_simple_read(io, model, address, data, resp, cache=nil, auser=nil)
     pos = 0
     max_xfer_size = model.read_transaction.max_transaction_size
     while (pos < data.length)
@@ -118,7 +118,13 @@ class ScenarioGenerater
       if (pos + len > data.length)
           len = data.length - pos
       end
-      io.print model.read( {:Address => address, :Data => data[pos..pos+len-1], :Response => resp})
+      io.print model.read( {
+               :Address         => address, 
+               :AddressUser     => auser,
+               :Cache           => cache,
+               :Data            => data[pos..pos+len-1], 
+               :Response        => resp
+      } )
       pos     += len
       address += len
     end
@@ -126,7 +132,7 @@ class ScenarioGenerater
   #-------------------------------------------------------------------------------
   # 
   #-------------------------------------------------------------------------------
-  def  gen_simple_write(io, model, address, data, resp)
+  def  gen_simple_write(io, model, address, data, resp, cache=nil, auser=nil)
     pos = 0
     max_xfer_size = model.write_transaction.max_transaction_size
     while (pos < data.length)
@@ -134,7 +140,13 @@ class ScenarioGenerater
       if (pos + len > data.length)
           len = data.length - pos
       end
-      io.print model.write({:Address => address, :Data => data[pos..pos+len-1], :Response => resp})
+      io.print model.write( {
+               :Address         => address, 
+               :AddressUser     => auser,
+               :Cache           => cache,
+               :Data            => data[pos..pos+len-1], 
+               :Response        => resp
+      } )
       pos     += len
       address += len
     end
@@ -142,7 +154,7 @@ class ScenarioGenerater
   #-------------------------------------------------------------------------------
   # 
   #-------------------------------------------------------------------------------
-  def  gen_pipeline_read(io, model, address, data, resp)
+  def  gen_pipeline_read(io, model, address, data, resp, cache=nil, auser=nil)
     pos           = 0
     max_xfer_size = model.read_transaction.max_transaction_size
     data_xfer_pattern_1 = Dummy_Plug::ScenarioWriter::GenericNumberGenerater.new([32,0])
@@ -154,6 +166,8 @@ class ScenarioGenerater
       end
       io.print model.read( {
                :Address         => address, 
+               :AddressUser     => auser,
+               :Cache           => cache,
                :Data            => data[pos..pos+len-1], 
                :Response        => resp, 
                :DataStartEvent  => (pos == 0) ? :ADDR_VALID         : :NO_WAIT,
@@ -166,7 +180,7 @@ class ScenarioGenerater
   #-------------------------------------------------------------------------------
   # 
   #-------------------------------------------------------------------------------
-  def  gen_pipeline_write(io, model, address, data, resp)
+  def  gen_pipeline_write(io, model, address, data, resp, cache=nil, auser=nil)
     pos           = 0
     max_xfer_size = model.read_transaction.max_transaction_size
     data_xfer_pattern = Dummy_Plug::ScenarioWriter::GenericNumberGenerater.new([3,0])
@@ -177,6 +191,8 @@ class ScenarioGenerater
       end
       io.print model.write( {
                :Address           => address, 
+               :AddressUser       => auser,
+               :Cache             => cache,
                :Data              => data[pos..pos+len-1], 
                :Response          => resp, 
                :DataStartEvent    => (pos == 0) ? :ADDR_VALID    : :NO_WAIT,
@@ -192,7 +208,7 @@ class ScenarioGenerater
   #-------------------------------------------------------------------------------
   # 
   #-------------------------------------------------------------------------------
-  def gen_ctrl_regs(arg)
+  def gen_ctrl_regs(arg,cache=nil,auser=nil)
     ctrl_regs  = 0
     ctrl_regs |= (0x80000000) if (arg.index(:Reset))
     ctrl_regs |= (0x40000000) if (arg.index(:Pause))
@@ -207,12 +223,14 @@ class ScenarioGenerater
     ctrl_regs |= (0x00004000) if (arg.index(:Speculative))
     ctrl_regs |= (0x00000002) if (arg.index(:Error_Enable))
     ctrl_regs |= (0x00000001) if (arg.index(:Done_Enable))
+    ctrl_regs |= ((cache << 4) & 0x000000F0) if (cache != nil)
+    ctrl_regs |= ((auser << 8) & 0x00001F00) if (auser != nil)
     return ctrl_regs
   end
   #-------------------------------------------------------------------------------
   # 
   #-------------------------------------------------------------------------------
-  def gen_op_code(arg)
+  def gen_op_code(arg,cache=nil,auser=nil)
     op_code  = 0
     op_code |= (0xC0000000) if (arg.index(:Transfer))
     op_code |= (0xD0000000) if (arg.index(:Link))
@@ -222,16 +240,18 @@ class ScenarioGenerater
     op_code |= (0x01000000) if (arg.index(:Last ))
     op_code |= (0x00008000) if (arg.index(:Safety))
     op_code |= (0x00004000) if (arg.index(:Speculative))
+    op_code |= ((cache << 4) & 0x000000F0) if (cache != nil)
+    op_code |= ((auser << 8) & 0x00001F00) if (auser != nil)
     return op_code
   end
   #-------------------------------------------------------------------------------
   # 
   #-------------------------------------------------------------------------------
-  def simple_test(title, io, i_address, o_address, i_size, o_size)
+  def simple_test(title, io, i_address, o_address, i_size, o_size, i_cahce, o_cache, i_auser, o_auser)
     size   = i_size
     data   = (1..size).collect{rand(256)}
-    i_mode = gen_ctrl_regs([:Last,:First,:Done_Enable,:Error_Enable])
-    o_mode = gen_ctrl_regs([:Last,:First,:Done_Enable,:Error_Enable])
+    i_mode = gen_ctrl_regs([:Last,:First,:Done_Enable,:Error_Enable], i_cache, i_auser)
+    o_mode = gen_ctrl_regs([:Last,:First,:Done_Enable,:Error_Enable], o_cache, o_auser)
     done   = gen_ctrl_regs([:Done])
     start  = gen_ctrl_regs([:Start])
     io.print "---\n"
@@ -278,17 +298,17 @@ class ScenarioGenerater
              })
     io.print "  - WAIT  : {GPI(0) : 0, GPI(1) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
     io.print "  - SYNC  : {PORT : LOCAL}\n"
-    gen_simple_read( io, @i_model, i_address, data, "OKAY")
-    gen_simple_write(io, @o_model, o_address, data, "OKAY")
+    gen_simple_read( io, @i_model, i_address, data, "OKAY", i_cache, i_auser)
+    gen_simple_write(io, @o_model, o_address, data, "OKAY", o_cache, o_auser)
   end
   #-------------------------------------------------------------------------------
   # 
   #-------------------------------------------------------------------------------
-  def pipeline_test(title, io, i_address, o_address, i_size, o_size)
+  def pipeline_test(title, io, i_address, o_address, i_size, o_size, i_cache, o_cache, i_auser, o_auser)
     size   = i_size
     data   = (1..size).collect{rand(256)}
-    i_mode = gen_ctrl_regs([:Last,:First,:Done_Enable,:Error_Enable,:Speculative])
-    o_mode = gen_ctrl_regs([:Last,:First,:Done_Enable,:Error_Enable,:Speculative])
+    i_mode = gen_ctrl_regs([:Last,:First,:Done_Enable,:Error_Enable,:Speculative], i_cache, i_auser)
+    o_mode = gen_ctrl_regs([:Last,:First,:Done_Enable,:Error_Enable,:Speculative], o_cache, o_auser)
     done   = gen_ctrl_regs([:Done])
     start  = gen_ctrl_regs([:Start])
     io.print "---\n"
@@ -335,8 +355,8 @@ class ScenarioGenerater
              })
     io.print "  - WAIT  : {GPI(0) : 0, GPI(1) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
     io.print "  - SYNC  : {PORT : LOCAL}\n"
-    gen_pipeline_read( io, @i_model, i_address, data, "OKAY")
-    gen_pipeline_write(io, @o_model, o_address, data, "OKAY")
+    gen_pipeline_read( io, @i_model, i_address, data, "OKAY", i_cache, i_auser)
+    gen_pipeline_write(io, @o_model, o_address, data, "OKAY", o_cache, o_auser)
   end
   #-------------------------------------------------------------------------------
   # 
@@ -348,7 +368,7 @@ class ScenarioGenerater
       (0xFC00..0xFC00).each {|i_address|
       (0x1000..0x1000).each {|o_address|
         title = @name.to_s + ".8." + test_num.to_s
-        pipeline_test(title, io, i_address, o_address, size, size)
+        pipeline_test(title, io, i_address, o_address, size, size, 3, 3, 1, 1)
         test_num += 1
       }}
     }
@@ -356,7 +376,7 @@ class ScenarioGenerater
       (0x7030..0x7033).each {|i_address|
       (0x1020..0x1023).each {|o_address|
         title = @name.to_s + ".8." + test_num.to_s
-        pipeline_test(title, io, i_address, o_address, size, size)
+        pipeline_test(title, io, i_address, o_address, size, size, nil, nil, nil, nil)
         test_num += 1
       }}
     }
