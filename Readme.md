@@ -12,11 +12,12 @@ PUMP AXI4 to AXI4 (PipeWork Example)
 以下の開発環境で合成出来ることを確認しています.
 
 * Xilinx ISE14.2
-* Xilinx Vivado 2013.4
+* Xilinx Vivado 2014.1
 
 ###IP for Xilinx###
 
-./target/xilinx/ip/ikwzm_pipework_pump_axi4_to_axi4_0.6.zip 
+./target/xilinx/ip/ikwzm_pipework_pump_axi4_to_axi4_0.8.zip     
+./target/xilinx/ip/ikwzm_pipework_pump_axi3_to_axi3_0.8.zip 
 
 ###シミュレーション###
 
