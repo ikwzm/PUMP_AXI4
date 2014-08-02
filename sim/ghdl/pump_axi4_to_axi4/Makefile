@@ -31,6 +31,9 @@ DUT : $(addsuffix .o,$(PIPEWORK_COMPONENTS))
 pump_axi4_to_axi4.o                           : $(SRC_PATH)/main/vhdl/pump_axi4_to_axi4.vhd 
 	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
 
+pump_axi3_to_axi3.o                           : $(SRC_PATH)/main/vhdl/pump_axi3_to_axi3.vhd 
+	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
+
 pump_axi4_to_axi4_core.o                      : $(SRC_PATH)/main/vhdl/pump_axi4_to_axi4_core.vhd 
 	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
 
