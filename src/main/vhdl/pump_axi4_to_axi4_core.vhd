@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_core.vhd
 --!     @brief   Pump Core Module (AXI4 to AXI4)
---!     @version 0.8.0
---!     @date    2014/8/1
+--!     @version 0.9.0
+--!     @date    2014/11/3
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -89,6 +89,16 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
                           --! PUMP INTAKE のリクエストキューの大きさを指定する.
                           --! 詳細は PipeWork.Components の AXI4_MASTER_READ_INTERFACE を参照.
                           integer :=  1;
+        I_RDATA_REGS    : --! @brief RDATA REGISTER TYPE :
+                          --! RDATA/RRESP/RLAST/RVALID の入力をどうするか指定する.
+                          --! * RDATA_REGS=0 スルー入力(レジスタは通さない).
+                          --! * RDATA_REGS=1 １段だけレジスタを通す. 
+                          --!   ただしバースト転送時には１サイクル毎にウェイトが入る.
+                          --! * RDATA_REGS=2 ２段のレジスタを通す.
+                          --! * RDATA_REGS=3 ３段のレジスタを通す.
+                          --!   このモードの場合、必ずRDATA/RRESPは一つのレジスタ
+                          --!   で受けるので外部インターフェース向き.
+                          integer := 0;
         O_CLK_RATE      : --! @brief OUTPUT CLOCK RATE :
                           --! I_CLK_RATEとペアで入力側のクロック(I_CLK)と出力側の
                           --! クロック(O_CLK)との関係を指定する.
@@ -135,6 +145,10 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
                           --! PUMP OUTLET のレスポンスキューの大きさを指定する.
                           --! 詳細は PipeWork.Components の AXI4_MASTER_WRITE_INTERFACE を参照.
                           integer :=  2;
+        O_RES_REGS      : --! @brief PUMP OUTLET RESPONSE REGISTER USE :
+                          --! レスポンスの入力側にレジスタを挿入する.
+                          --! 詳細は PipeWork.Components の AXI4_MASTER_WRITE_INTERFACE を参照.
+                          integer :=  1;
         BUF_DEPTH       : --! @brief BUFFER DEPTH :
                           --! バッファの大きさ(バイト数)を２のべき乗で指定する.
                           --! * バッファの大きさは I_MAX_XFER_SIZE で示される入力側
@@ -549,7 +563,8 @@ begin
             XFER_SIZE_BITS      => SIZE_BITS           , -- 
             XFER_MIN_SIZE       => I_MAX_XFER_SIZE     , -- 
             XFER_MAX_SIZE       => I_MAX_XFER_SIZE     , -- 
-            QUEUE_SIZE          => I_REQ_QUEUE           -- 
+            QUEUE_SIZE          => I_REQ_QUEUE         , -- 
+            RDATA_REGS          => I_RDATA_REGS          --
         )                                                -- 
         port map (                                       -- 
         --------------------------------------------------------------------------
@@ -685,8 +700,9 @@ begin
             XFER_SIZE_BITS      => SIZE_BITS           , -- 
             XFER_MIN_SIZE       => O_MAX_XFER_SIZE     , -- 
             XFER_MAX_SIZE       => O_MAX_XFER_SIZE     , -- 
-            QUEUE_SIZE          => O_RES_QUEUE           -- 
-            )                                            -- 
+            QUEUE_SIZE          => O_RES_QUEUE         , -- 
+            RESP_REGS           => O_RES_REGS            -- 
+        )                                                -- 
         port map (                                       -- 
         --------------------------------------------------------------------------
         -- Clock and Reset Signals.
