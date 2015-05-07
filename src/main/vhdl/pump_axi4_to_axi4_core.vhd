@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_core.vhd
 --!     @brief   Pump Core Module (AXI4 to AXI4)
---!     @version 0.9.0
---!     @date    2014/11/3
+--!     @version 1.0.0
+--!     @date    2015/5/6
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2014 Ichiro Kawazome
+--      Copyright (C) 2012-2015 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -59,13 +59,13 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
                           integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
         I_ID_WIDTH      : --! @brief PUMP INTAKE AXI4 ID WIDTH :
                           --! I_ARID/I_RID のビット幅を指定する.
-                          integer :=  4;
+                          integer := 4;
         I_AUSER_WIDTH   : --! @brief PUMP INTAKE AXI4 AUSER WIDTH :
                           --! I_ARUSER のビット幅を指定する.
-                          integer :=  4;
+                          integer range 1 to 32                  :=  4;
         I_RUSER_WIDTH   : --! @brief PUMP INTAKE AXI4 RUSER WIDTH :
                           --! I_RUSER のビット幅を指定する.
-                          integer :=  4;
+                          integer range 1 to 32                  :=  4;
         I_AXI_ID        : --! @brief PUMP INTAKE AXI4 ID :
                           --! I_ARID/I_RIDの値を指定する.
                           integer :=  1;
@@ -99,6 +99,12 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
                           --!   このモードの場合、必ずRDATA/RRESPは一つのレジスタ
                           --!   で受けるので外部インターフェース向き.
                           integer := 0;
+        I_ACK_REGS      : --! @brief PUMP INTAKE ACKNOWLEDGE SIGNALS REGSITERED OUT :
+                          --! PUMP INTAKE 側の Acknowledge Signals の出力をレジスタ
+                          --! 出力にするか否かを指定する.
+                          --! * I_ACK_REGS=0で組み合わせ出力.
+                          --! * I_ACK_REGS=1でレジスタ出力.
+                          integer range 0 to 1 := 0;
         O_CLK_RATE      : --! @brief OUTPUT CLOCK RATE :
                           --! I_CLK_RATEとペアで入力側のクロック(I_CLK)と出力側の
                           --! クロック(O_CLK)との関係を指定する.
@@ -112,16 +118,16 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
                           integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
         O_ID_WIDTH      : --! @brief PUMP OUTLET AXI4 ID WIDTH :
                           --! O_AWID/O_WID/O_BID のビット幅を指定する.
-                          integer :=  4;
+                          integer := 4;
         O_AUSER_WIDTH   : --! @brief PUMP OUTLET AXI4 AUSER WIDTH :
                           --! O_AWUSER のビット幅を指定する.
-                          integer :=  4;
+                          integer range 1 to 32                  :=  4;
         O_WUSER_WIDTH   : --! @brief PUMP OUTLET AXI4 WUSER WIDTH :
                           --! O_WUSER のビット幅を指定する.
-                          integer :=  4;
+                          integer range 1 to 32                  :=  4;
         O_BUSER_WIDTH   : --! @brief PUMP OUTLET AXI4 BUSER WIDTH :
                           --! O_BUSER のビット幅を指定する.
-                          integer :=  4;
+                          integer range 1 to 32                  :=  4;
         O_AXI_ID        : --! @brief PUMP OUTLET AXI4 ID :
                           --! O_AWID/O_WIDの値を指定する.
                           integer :=  2;
@@ -141,6 +147,20 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
                           --! PUMP OUTLET の最大転送バイト数を２のべき乗値で指定す
                           --! る.
                           integer :=  8;
+        O_REQ_REGS      : --! @brief  PUMP OUTLET REQUEST REGISTER USE :
+                          --! ライトトランザクションの最初のデータ出力のタイミング
+                          --! を指定する.
+                          --! * REQ_REGS=0でアドレスの出力と同時にデータを出力する.
+                          --! * REQ_REGS=1でアドレスを出力してから１クロック後に
+                          --!   データを出力する.
+                          --! * REQ_REGS=1にすると動作周波数が向上する可能性がある.
+                          integer range 0 to 1 := 0;
+        O_ACK_REGS      : --! @brief PUMP OUTLET ACKNOWLEDGE SIGNALS REGSITERED OUT :
+                          --! PUMP OUTLET 側の Acknowledge Signals の出力をレジスタ
+                          --! 出力にするか否かを指定する.
+                          --! * O_ACK_REGS=0で組み合わせ出力.
+                          --! * O_ACK_REGS=1でレジスタ出力.
+                          integer range 0 to 1 := 0;
         O_RES_QUEUE     : --! @brief PUMP OUTLET RESPONSE QUEUE SIZE :
                           --! PUMP OUTLET のレスポンスキューの大きさを指定する.
                           --! 詳細は PipeWork.Components の AXI4_MASTER_WRITE_INTERFACE を参照.
@@ -563,8 +583,9 @@ begin
             XFER_SIZE_BITS      => SIZE_BITS           , -- 
             XFER_MIN_SIZE       => I_MAX_XFER_SIZE     , -- 
             XFER_MAX_SIZE       => I_MAX_XFER_SIZE     , -- 
-            QUEUE_SIZE          => I_REQ_QUEUE         , -- 
-            RDATA_REGS          => I_RDATA_REGS          --
+            QUEUE_SIZE          => I_REQ_QUEUE         , --
+            RDATA_REGS          => I_RDATA_REGS        , --
+            ACK_REGS            => I_ACK_REGS            -- 
         )                                                -- 
         port map (                                       -- 
         --------------------------------------------------------------------------
@@ -700,6 +721,8 @@ begin
             XFER_SIZE_BITS      => SIZE_BITS           , -- 
             XFER_MIN_SIZE       => O_MAX_XFER_SIZE     , -- 
             XFER_MAX_SIZE       => O_MAX_XFER_SIZE     , -- 
+            REQ_REGS            => O_REQ_REGS          , -- 
+            ACK_REGS            => O_ACK_REGS          , -- 
             QUEUE_SIZE          => O_RES_QUEUE         , -- 
             RESP_REGS           => O_RES_REGS            -- 
         )                                                -- 

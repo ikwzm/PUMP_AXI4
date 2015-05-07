@@ -6,9 +6,9 @@ SRC_PATH             = ../../../src
 GHDL       = ghdl
 GHDLFLAGS  = --mb-comments -P$(DUMMY_PLUG_WORK_PATH) -P$(PIPEWORK_WORK_PATH)
 
-PIPEWORK_COMPONENTS = pump_axi4_to_axi4_core    \
-                      pump_axi4_to_axi4         \
-                      $(END_LIST)
+DUT_COMPONENTS = pump_axi4_to_axi4_core    \
+                 pump_axi4_to_axi4         \
+                 $(END_LIST)
 
 TEST_BENCH = pump_axi4_to_axi4_test_bench_32_32        \
              pump_axi4_to_axi4_test_bench_32_64        \
@@ -22,11 +22,11 @@ all: DUT $(TEST_BENCH)
 clean:
 	rm -f *.o *.cf $(TEST_BENCH)
 
-$(TEST_BENCH) : $(addsuffix .o,$(TEST_BENCH)) $(addsuffix .snr,$(TEST_BENCH))
+$(TEST_BENCH) : $(addsuffix .o,$(TEST_BENCH)) $(addsuffix .snr,$(TEST_BENCH)) DUT
 	 $(GHDL) -e $(GHDLFLAGS) --work=WORK $@
 	-$(GHDL) -r $(GHDLFLAGS) --work=WORK $@
 
-DUT : $(addsuffix .o,$(PIPEWORK_COMPONENTS))
+DUT : $(addsuffix .o,$(DUT_COMPONENTS))
 
 pump_axi4_to_axi4.o                           : $(SRC_PATH)/main/vhdl/pump_axi4_to_axi4.vhd 
 	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<

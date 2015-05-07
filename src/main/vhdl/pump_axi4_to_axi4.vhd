@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
---!     @version 0.9.0
---!     @date    2014/11/3
+--!     @version 1.0.0
+--!     @date    2015/5/7
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2014 Ichiro Kawazome
+--      Copyright (C) 2012-2015 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -352,6 +352,9 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant I_PROT             : AXI4_APROT_TYPE  := (others => '0');
     constant I_QOS              : AXI4_AQOS_TYPE   := (others => '0');
     constant I_REGION           : AXI4_AREGION_TYPE:= (others => '0');
+    constant I_ACK_REGS         : integer := 1;
+    constant I_REQ_QUEUE        : integer := 2;
+    constant I_RDATA_REGS       : integer := 3;
     -------------------------------------------------------------------------------
     -- 定数
     -------------------------------------------------------------------------------
@@ -360,6 +363,10 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant O_PROT             : AXI4_APROT_TYPE  := (others => '0');
     constant O_QOS              : AXI4_AQOS_TYPE   := (others => '0');
     constant O_REGION           : AXI4_AREGION_TYPE:= (others => '0');
+    constant O_REQ_REGS         : integer := 1;
+    constant O_ACK_REGS         : integer := 1;
+    constant O_RES_QUEUE        : integer := 2;
+    constant O_RES_REGS         : integer := 1;
     -------------------------------------------------------------------------------
     -- レジスタアクセス用の信号群.
     -------------------------------------------------------------------------------
@@ -927,8 +934,8 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
             I_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
             I_ID_WIDTH      : integer                                :=  4;
-            I_AUSER_WIDTH   : integer                                :=  4;
-            I_RUSER_WIDTH   : integer                                :=  4;
+            I_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
+            I_RUSER_WIDTH   : integer range 1 to 32                  :=  4;
             I_AXI_ID        : integer                                :=  1;
             I_REG_ADDR_BITS : integer                                := 64;
             I_REG_SIZE_BITS : integer                                := 32;
@@ -936,20 +943,23 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_REG_STAT_BITS : integer                                :=  8;
             I_MAX_XFER_SIZE : integer                                :=  8;
             I_REQ_QUEUE     : integer                                :=  1;
+            I_ACK_REGS      : integer range 0 to 1                   :=  0;
             I_RDATA_REGS    : integer                                :=  0;
             O_CLK_RATE      : integer                                :=  1;
             O_ADDR_WIDTH    : integer range 1 to AXI4_ADDR_MAX_WIDTH := 32;
             O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
             O_ID_WIDTH      : integer                                :=  4;
-            O_AUSER_WIDTH   : integer                                :=  4;
-            O_WUSER_WIDTH   : integer                                :=  4;
-            O_BUSER_WIDTH   : integer                                :=  4;
+            O_AUSER_WIDTH   : integer range 1 to 32                  :=  4;
+            O_WUSER_WIDTH   : integer range 1 to 32                  :=  4;
+            O_BUSER_WIDTH   : integer range 1 to 32                  :=  4;
             O_AXI_ID        : integer                                :=  2;
             O_REG_ADDR_BITS : integer                                := 64;
             O_REG_SIZE_BITS : integer                                := 32;
             O_REG_MODE_BITS : integer                                := 16;
             O_REG_STAT_BITS : integer                                :=  8;
             O_MAX_XFER_SIZE : integer                                :=  1;
+            O_REQ_REGS      : integer range 0 to 1                   :=  0;
+            O_ACK_REGS      : integer range 0 to 1                   :=  0;
             O_RES_QUEUE     : integer                                :=  2;
             O_RES_REGS      : integer                                :=  1;
             BUF_DEPTH       : integer                                := 12
@@ -1256,6 +1266,8 @@ begin
         constant MR_BUF_WIDTH       : integer := 5;
         constant MR_SIZE_BITS       : integer := MR_BUF_SIZE+1;
         constant MR_RES_QUEUE       : integer := 1;
+        constant MR_RDATA_REGS      : integer := 1;
+        constant MR_ACK_REGS        : integer := 1;
         constant MR_MAX_XFER_SIZE   : integer := 4;
         constant MR_ID              : std_logic_vector(M_ID_WIDTH -1 downto 0) := 
                                       std_logic_vector(to_unsigned(M_AXI_ID, M_ID_WIDTH));
@@ -1301,6 +1313,9 @@ begin
         constant MW_BUF_WIDTH       : integer := 5;
         constant MW_SIZE_BITS       : integer := MR_BUF_SIZE+1;
         constant MW_RES_QUEUE       : integer := 1;
+        constant MW_REQ_REGS        : integer := 1;
+        constant MW_ACK_REGS        : integer := 1;
+        constant MW_RESP_REGS       : integer := 1;
         constant MW_MAX_XFER_SIZE   : integer := 4;
         constant MW_ID              : std_logic_vector(M_ID_WIDTH -1 downto 0) := 
                                       std_logic_vector(to_unsigned(M_AXI_ID, M_ID_WIDTH));
@@ -1375,7 +1390,9 @@ begin
                 XFER_SIZE_BITS  => MR_SIZE_BITS      , -- 
                 XFER_MIN_SIZE   => MR_MAX_XFER_SIZE  , -- 
                 XFER_MAX_SIZE   => MR_MAX_XFER_SIZE  , -- 
-                QUEUE_SIZE      => MR_RES_QUEUE        -- 
+                QUEUE_SIZE      => MR_RES_QUEUE      , -- 
+                RDATA_REGS      => MR_RDATA_REGS     , --
+                ACK_REGS        => MR_ACK_REGS         -- 
             )
             port map (
             -----------------------------------------------------------------------
@@ -1497,7 +1514,10 @@ begin
                 XFER_SIZE_BITS  => MW_SIZE_BITS      , -- 
                 XFER_MIN_SIZE   => MW_MAX_XFER_SIZE  , -- 
                 XFER_MAX_SIZE   => MW_MAX_XFER_SIZE  , -- 
-                QUEUE_SIZE      => MW_RES_QUEUE        -- 
+                REQ_REGS        => MW_REQ_REGS       , -- 
+                ACK_REGS        => MW_ACK_REGS       , -- 
+                QUEUE_SIZE      => MW_RES_QUEUE      , -- 
+                RESP_REGS       => MW_RESP_REGS        -- 
             )
             port map (
             -----------------------------------------------------------------------
@@ -2131,8 +2151,9 @@ begin
             I_REG_MODE_BITS => CI_MODE_REGS_BITS ,
             I_REG_STAT_BITS => CI_STAT_RESV_BITS ,
             I_MAX_XFER_SIZE => I_MAX_XFER_SIZE   ,
-            I_REQ_QUEUE     => 2                 ,
-            I_RDATA_REGS    => 3                 ,
+            I_ACK_REGS      => I_ACK_REGS        ,
+            I_REQ_QUEUE     => I_REQ_QUEUE       ,
+            I_RDATA_REGS    => I_RDATA_REGS      ,
             O_CLK_RATE      => 1                 ,
             O_ADDR_WIDTH    => O_ADDR_WIDTH      ,
             O_DATA_WIDTH    => O_DATA_WIDTH      ,
@@ -2146,8 +2167,10 @@ begin
             O_REG_MODE_BITS => CO_MODE_REGS_BITS ,
             O_REG_STAT_BITS => CO_STAT_RESV_BITS ,
             O_MAX_XFER_SIZE => O_MAX_XFER_SIZE   ,
-            O_RES_QUEUE     => 2                 ,
-            O_RES_REGS      => 1                 ,
+            O_REQ_REGS      => O_REQ_REGS        ,
+            O_ACK_REGS      => O_ACK_REGS        ,
+            O_RES_QUEUE     => O_RES_QUEUE       ,
+            O_RES_REGS      => O_RES_REGS        ,
             BUF_DEPTH       => BUF_DEPTH       
         )
         port map (
