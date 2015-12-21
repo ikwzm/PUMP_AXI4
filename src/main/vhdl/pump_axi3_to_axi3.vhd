@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi3_to_axi3.vhd
 --!     @brief   Pump Sample Module (AXI3 to AXI3)
---!     @version 0.9.0
---!     @date    2014/11/3
+--!     @version 1.0.0
+--!     @date    2015/12/21
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2014 Ichiro Kawazome
+--      Copyright (C) 2012-2015 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -169,6 +169,7 @@ entity  PUMP_AXI3_TO_AXI3 is
     -------------------------------------------------------------------------------
     -- Operation Code Fetch I/F AXI4 Write Data Channel Signals.
     -------------------------------------------------------------------------------
+        M_WID           : out   std_logic_vector(M_ID_WIDTH    -1 downto 0);
         M_WDATA         : out   std_logic_vector(M_DATA_WIDTH  -1 downto 0);
         M_WSTRB         : out   std_logic_vector(M_DATA_WIDTH/8-1 downto 0);
         M_WLAST         : out   std_logic;
@@ -204,6 +205,7 @@ entity  PUMP_AXI3_TO_AXI3 is
     -------------------------------------------------------------------------------
     -- Pump Intake I/F AXI4 Write Data Channel Signals.
     -------------------------------------------------------------------------------
+        I_WID           : out   std_logic_vector(I_ID_WIDTH    -1 downto 0);
         I_WDATA         : out   std_logic_vector(I_DATA_WIDTH  -1 downto 0);
         I_WSTRB         : out   std_logic_vector(I_DATA_WIDTH/8-1 downto 0);
         I_WLAST         : out   std_logic;
@@ -289,6 +291,7 @@ entity  PUMP_AXI3_TO_AXI3 is
     -------------------------------------------------------------------------------
     -- Pump Outlet I/F AXI4 Write Data Channel Signals.
     -------------------------------------------------------------------------------
+        O_WID           : out   std_logic_vector(O_ID_WIDTH    -1 downto 0);
         O_WDATA         : out   std_logic_vector(O_DATA_WIDTH  -1 downto 0);
         O_WSTRB         : out   std_logic_vector(O_DATA_WIDTH/8-1 downto 0);
         O_WLAST         : out   std_logic;
@@ -684,7 +687,7 @@ begin
         ---------------------------------------------------------------------------
         -- Operation Code Fetch I/F AXI4 Read Address Channel Signals.
         ---------------------------------------------------------------------------
-            M_ARID              => M_ARID          , -- Out :
+            M_ARID              => open            , -- Out :
             M_ARADDR            => M_ARADDR        , -- Out :
             M_ARLEN(3 downto 0) => M_ARLEN         , -- Out :
             M_ARLEN(7 downto 4) => m_arlen_hi      , -- Out :
@@ -710,7 +713,7 @@ begin
         ---------------------------------------------------------------------------
         -- Operation Code Fetch I/F AXI4 Write Address Channel Signals.
         ---------------------------------------------------------------------------
-            M_AWID              => M_AWID          , -- Out :
+            M_AWID              => open            , -- Out :
             M_AWADDR            => M_AWADDR        , -- Out :
             M_AWLEN(3 downto 0) => M_AWLEN         , -- Out :
             M_AWLEN(7 downto 4) => m_awlen_hi      , -- Out :
@@ -746,7 +749,7 @@ begin
         ---------------------------------------------------------------------------
         -- Pump Intake I/F AXI4 Write Address Channel Signals.
         ---------------------------------------------------------------------------
-            I_AWID              => I_AWID          , -- Out :
+            I_AWID              => open            , -- Out :
             I_AWADDR            => I_AWADDR        , -- Out :
             I_AWLEN(3 downto 0) => I_AWLEN         , -- Out :
             I_AWLEN(7 downto 4) => i_awlen_hi      , -- Out :
@@ -778,7 +781,7 @@ begin
         ---------------------------------------------------------------------------
         -- Pump Intake I/F AXI4 Read Address Channel Signals.
         ---------------------------------------------------------------------------
-            I_ARID              => I_ARID          , -- Out :
+            I_ARID              => open            , -- Out :
             I_ARADDR            => I_ARADDR        , -- Out :
             I_ARLEN(3 downto 0) => I_ARLEN         , -- Out :
             I_ARLEN(7 downto 4) => i_arlen_hi      , -- Out :
@@ -808,7 +811,7 @@ begin
         ---------------------------------------------------------------------------
         -- Pump Outlet I/F AXI4 Read Address Channel Signals.
         ---------------------------------------------------------------------------
-            O_ARID              => O_ARID          , -- Out :
+            O_ARID              => open            , -- Out :
             O_ARADDR            => O_ARADDR        , -- Out :
             O_ARLEN(3 downto 0) => O_ARLEN         , -- Out :
             O_ARLEN(7 downto 4) => o_arlen_hi      , -- Out :
@@ -834,7 +837,7 @@ begin
         ---------------------------------------------------------------------------
         -- Pump Outlet I/F AXI4 Write Address Channel Signals.
         ---------------------------------------------------------------------------
-            O_AWID              => O_AWID          , -- Out :
+            O_AWID              => open            , -- Out :
             O_AWADDR            => O_AWADDR        , -- Out :
             O_AWLEN(3 downto 0) => O_AWLEN         , -- Out :
             O_AWLEN(7 downto 4) => o_awlen_hi      , -- Out :
@@ -870,6 +873,15 @@ begin
             O_IRQ               => O_IRQ           , -- Out :
             IRQ                 => IRQ               -- Out :
         );
+    M_ARID      <= std_logic_vector(to_unsigned(M_AXI_ID, M_ID_WIDTH));
+    M_AWID      <= std_logic_vector(to_unsigned(M_AXI_ID, M_ID_WIDTH));
+    M_WID       <= std_logic_vector(to_unsigned(M_AXI_ID, M_ID_WIDTH));
+    I_ARID      <= std_logic_vector(to_unsigned(I_AXI_ID, I_ID_WIDTH));
+    I_AWID      <= std_logic_vector(to_unsigned(I_AXI_ID, I_ID_WIDTH));
+    I_WID       <= std_logic_vector(to_unsigned(I_AXI_ID, I_ID_WIDTH));
+    O_ARID      <= std_logic_vector(to_unsigned(O_AXI_ID, O_ID_WIDTH));
+    O_AWID      <= std_logic_vector(to_unsigned(O_AXI_ID, O_ID_WIDTH));
+    O_WID       <= std_logic_vector(to_unsigned(O_AXI_ID, O_ID_WIDTH));
     M_ARLOCK(1) <= '0';
     M_AWLOCK(1) <= '0';
     I_ARLOCK(1) <= '0';
