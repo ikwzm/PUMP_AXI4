@@ -270,7 +270,6 @@ class ScenarioGenerater
                            ]
              })
     io.print "  - WAIT  : {GPI(0) : 1, GPI(1) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
-    io.print "  - SYNC  : {PORT : LOCAL}\n"
     io.print @c_model.read({
                :Address => 0x00000000, 
                :Data    => [sprintf("0x%08X", o_address+size),
@@ -283,7 +282,6 @@ class ScenarioGenerater
                             sprintf("0x%08X", o_mode | done )
                            ]
              })
-    io.print "  - SYNC  : {PORT : LOCAL}\n"
     io.print @c_model.write({
                :Address => 0x00000000, 
                :Data    => ["0x00000000"                     ,
@@ -297,7 +295,6 @@ class ScenarioGenerater
                            ]
              })
     io.print "  - WAIT  : {GPI(0) : 0, GPI(1) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
-    io.print "  - SYNC  : {PORT : LOCAL}\n"
     gen_simple_read( io, @i_model, i_address, data, "OKAY", i_cache, i_auser)
     gen_simple_write(io, @o_model, o_address, data, "OKAY", o_cache, o_auser)
   end
@@ -327,7 +324,6 @@ class ScenarioGenerater
                            ]
              })
     io.print "  - WAIT  : {GPI(0) : 1, GPI(1) : 1, TIMEOUT: ", @timeout.to_s, "}\n"
-    io.print "  - SYNC  : {PORT : LOCAL}\n"
     io.print @c_model.read({
                :Address => 0x00000000, 
                :Data    => [sprintf("0x%08X", o_address+size),
@@ -340,7 +336,6 @@ class ScenarioGenerater
                             sprintf("0x%08X", i_mode | done )
                            ]
              })
-    io.print "  - SYNC  : {PORT : LOCAL}\n"
     io.print @c_model.write({
                :Address => 0x00000000, 
                :Data    => ["0x00000000"                     ,
@@ -354,7 +349,6 @@ class ScenarioGenerater
                            ]
              })
     io.print "  - WAIT  : {GPI(0) : 0, GPI(1) : 0, TIMEOUT: ", @timeout.to_s, "}\n"
-    io.print "  - SYNC  : {PORT : LOCAL}\n"
     gen_pipeline_read( io, @i_model, i_address, data, "OKAY", i_cache, i_auser)
     gen_pipeline_write(io, @o_model, o_address, data, "OKAY", o_cache, o_auser)
   end

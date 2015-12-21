@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_test_bench.vhd
 --!     @brief   Test Bench for Pump Sample Module (AXI4 to AXI4)
---!     @version 0.7.0
---!     @date    2014/3/29
+--!     @version 1.0.0
+--!     @date    2015/12/13
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2014 Ichiro Kawazome
+--      Copyright (C) 2012-2015 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,8 @@ entity  PUMP_AXI4_TO_AXI4_TEST_BENCH is
         SCENARIO_FILE   : STRING;
         I_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
         O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
-        MAX_XFER_SIZE   : integer                                :=  6
+        MAX_XFER_SIZE   : integer                                :=  6;
+        BUF_DEPTH       : integer                                := 12
     );
 end     PUMP_AXI4_TO_AXI4_TEST_BENCH;
 -----------------------------------------------------------------------------------
@@ -131,7 +132,6 @@ architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH is
     constant I_AXI_ID        : integer :=  1;
     constant O_AXI_ID        : integer :=  2;
     constant M_AXI_ID        : integer :=  3;
-    constant BUF_DEPTH       : integer := 12;
     constant SYNC_WIDTH      : integer :=  2;
     constant GPO_WIDTH       : integer :=  8;
     constant GPI_WIDTH       : integer :=  GPO_WIDTH;
