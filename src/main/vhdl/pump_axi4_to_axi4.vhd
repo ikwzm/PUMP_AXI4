@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
---!     @version 1.0.0
---!     @date    2015/5/7
+--!     @version 1.1.0
+--!     @date    2017/11/5
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2015 Ichiro Kawazome
+--      Copyright (C) 2012-2017 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -58,6 +58,7 @@ entity  PUMP_AXI4_TO_AXI4 is
         I_ID_WIDTH      : integer                 :=  8;
         I_AUSER_WIDTH   : integer                 :=  4;
         I_MAX_XFER_SIZE : integer                 :=  8;
+        I_QUEUE_SIZE    : integer                 :=  1;
         I_PROC_VALID    : integer range 0 to    1 :=  1;
         O_AXI_ID        : integer                 :=  2;
         O_ADDR_WIDTH    : integer range 1 to   64 := 32;
@@ -66,6 +67,7 @@ entity  PUMP_AXI4_TO_AXI4 is
         O_AUSER_WIDTH   : integer                 :=  4;
         O_MAX_XFER_SIZE : integer                 :=  8;
         O_PROC_VALID    : integer range 0 to    1 :=  1;
+        O_QUEUE_SIZE    : integer                 :=  1;
         BUF_DEPTH       : integer                 := 12
     );
     port(
@@ -1265,7 +1267,7 @@ begin
         constant MR_BUF_SIZE        : integer := 4;
         constant MR_BUF_WIDTH       : integer := 5;
         constant MR_SIZE_BITS       : integer := MR_BUF_SIZE+1;
-        constant MR_RES_QUEUE       : integer := 1;
+        constant MR_QUEUE_SIZE      : integer := I_QUEUE_SIZE;
         constant MR_RDATA_REGS      : integer := 1;
         constant MR_ACK_REGS        : integer := 1;
         constant MR_MAX_XFER_SIZE   : integer := 4;
@@ -1312,7 +1314,7 @@ begin
         constant MW_BUF_SIZE        : integer := 4;
         constant MW_BUF_WIDTH       : integer := 5;
         constant MW_SIZE_BITS       : integer := MR_BUF_SIZE+1;
-        constant MW_RES_QUEUE       : integer := 1;
+        constant MW_QUEUE_SIZE      : integer := O_QUEUE_SIZE;
         constant MW_REQ_REGS        : integer := 1;
         constant MW_ACK_REGS        : integer := 1;
         constant MW_RESP_REGS       : integer := 1;
@@ -1390,7 +1392,7 @@ begin
                 XFER_SIZE_BITS  => MR_SIZE_BITS      , -- 
                 XFER_MIN_SIZE   => MR_MAX_XFER_SIZE  , -- 
                 XFER_MAX_SIZE   => MR_MAX_XFER_SIZE  , -- 
-                QUEUE_SIZE      => MR_RES_QUEUE      , -- 
+                QUEUE_SIZE      => MR_QUEUE_SIZE     , -- 
                 RDATA_REGS      => MR_RDATA_REGS     , --
                 ACK_REGS        => MR_ACK_REGS         -- 
             )
@@ -1516,7 +1518,7 @@ begin
                 XFER_MAX_SIZE   => MW_MAX_XFER_SIZE  , -- 
                 REQ_REGS        => MW_REQ_REGS       , -- 
                 ACK_REGS        => MW_ACK_REGS       , -- 
-                QUEUE_SIZE      => MW_RES_QUEUE      , -- 
+                QUEUE_SIZE      => MW_QUEUE_SIZE     , -- 
                 RESP_REGS       => MW_RESP_REGS        -- 
             )
             port map (

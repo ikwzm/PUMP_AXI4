@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi3_to_axi3.vhd
 --!     @brief   Pump Sample Module (AXI3 to AXI3)
---!     @version 1.0.0
---!     @date    2015/12/21
+--!     @version 1.1.0
+--!     @date    2017/11/5
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2015 Ichiro Kawazome
+--      Copyright (C) 2012-2017 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -58,6 +58,7 @@ entity  PUMP_AXI3_TO_AXI3 is
         I_ID_WIDTH      : integer                 :=  8;
         I_AUSER_WIDTH   : integer                 :=  4;
         I_MAX_XFER_SIZE : integer                 :=  8;
+        I_QUEUE_SIZE    : integer                 :=  1;
         I_PROC_VALID    : integer range 0 to    1 :=  1;
         O_AXI_ID        : integer                 :=  2;
         O_ADDR_WIDTH    : integer range 1 to   64 := 32;
@@ -66,6 +67,7 @@ entity  PUMP_AXI3_TO_AXI3 is
         O_AUSER_WIDTH   : integer                 :=  4;
         O_MAX_XFER_SIZE : integer                 :=  8;
         O_PROC_VALID    : integer range 0 to    1 :=  1;
+        O_QUEUE_SIZE    : integer                 :=  1;
         BUF_DEPTH       : integer                 := 12
     );
     port(
@@ -338,6 +340,7 @@ architecture RTL of PUMP_AXI3_TO_AXI3 is
             I_ID_WIDTH      : integer                 :=  8;
             I_AUSER_WIDTH   : integer                 :=  4;
             I_MAX_XFER_SIZE : integer                 :=  8;
+            I_QUEUE_SIZE    : integer                 :=  1;
             I_PROC_VALID    : integer range 0 to    1 :=  1;
             O_AXI_ID        : integer                 :=  2;
             O_ADDR_WIDTH    : integer range 1 to   64 := 32;
@@ -345,6 +348,7 @@ architecture RTL of PUMP_AXI3_TO_AXI3 is
             O_ID_WIDTH      : integer                 :=  8;
             O_AUSER_WIDTH   : integer                 :=  4;
             O_MAX_XFER_SIZE : integer                 :=  8;
+            O_QUEUE_SIZE    : integer                 :=  1;
             O_PROC_VALID    : integer range 0 to    1 :=  1;
             BUF_DEPTH       : integer                 := 12
         );
@@ -615,6 +619,7 @@ begin
             I_ID_WIDTH      => I_ID_WIDTH      ,
             I_AUSER_WIDTH   => I_AUSER_WIDTH   ,
             I_MAX_XFER_SIZE => I_MAX_XFER_SIZE ,
+            I_QUEUE_SIZE    => I_QUEUE_SIZE    ,
             I_PROC_VALID    => I_PROC_VALID    ,
             O_AXI_ID        => O_AXI_ID        ,
             O_ADDR_WIDTH    => O_ADDR_WIDTH    ,
@@ -623,6 +628,7 @@ begin
             O_AUSER_WIDTH   => O_AUSER_WIDTH   ,
             O_MAX_XFER_SIZE => O_MAX_XFER_SIZE ,
             O_PROC_VALID    => O_PROC_VALID    ,
+            O_QUEUE_SIZE    => O_QUEUE_SIZE    ,
             BUF_DEPTH       => BUF_DEPTH       
         )
         port map(
