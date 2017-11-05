@@ -1273,7 +1273,7 @@ begin
         constant MR_MAX_XFER_SIZE   : integer := 4;
         constant MR_ID              : std_logic_vector(M_ID_WIDTH -1 downto 0) := 
                                       std_logic_vector(to_unsigned(M_AXI_ID, M_ID_WIDTH));
-        constant MR_XFER_SIZE_SEL   : std_logic_vector(MR_MAX_XFER_SIZE downto MR_MAX_XFER_SIZE) := "1";
+        constant MR_XFER_SIZE_SEL   : std_logic_vector(MR_MAX_XFER_SIZE downto MR_MAX_XFER_SIZE) := std_logic_vector'("1");
         constant MR_SPECULATIVE     : std_logic := '0';
         constant MR_SAFETY          : std_logic := '1';
         constant MR_LOCK            : AXI4_ALOCK_TYPE  := (others => '0');
@@ -1323,7 +1323,7 @@ begin
                                       std_logic_vector(to_unsigned(M_AXI_ID, M_ID_WIDTH));
         constant MW_SPECULATIVE     : std_logic := '0';
         constant MW_SAFETY          : std_logic := '1';
-        constant MW_XFER_SIZE_SEL   : std_logic_vector(MW_MAX_XFER_SIZE downto MW_MAX_XFER_SIZE) := "1";
+        constant MW_XFER_SIZE_SEL   : std_logic_vector(MW_MAX_XFER_SIZE downto MW_MAX_XFER_SIZE) := std_logic_vector'("1");
         constant MW_LOCK            : AXI4_ALOCK_TYPE  := (others => '0');
         constant MW_PROT            : AXI4_APROT_TYPE  := (others => '0');
         constant MW_QOS             : AXI4_AQOS_TYPE   := (others => '0');
@@ -1353,7 +1353,7 @@ begin
         constant mw_flow_size       : std_logic_vector(MW_SIZE_BITS  -1 downto 0) := (others => '0');
         constant mw_buf_rdata       : std_logic_vector(2**(MW_BUF_WIDTH)-1 downto 0) := (others => '0');
         signal   mw_buf_rptr        : std_logic_vector(MW_BUF_SIZE   -1 downto 0);
-        constant mw_buf_rready      : std_logic_vector(1 downto 0) := "00";
+        constant mw_buf_rready      : std_logic_vector(1 downto 0) := std_logic_vector'("00");
         ---------------------------------------------------------------------------
         -- 
         ---------------------------------------------------------------------------
