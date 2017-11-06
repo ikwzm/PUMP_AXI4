@@ -355,7 +355,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant I_QOS              : AXI4_AQOS_TYPE   := (others => '0');
     constant I_REGION           : AXI4_AREGION_TYPE:= (others => '0');
     constant I_ACK_REGS         : integer := 1;
-    constant I_REQ_QUEUE        : integer := 2;
+    constant I_REQ_QUEUE        : integer := I_QUEUE_SIZE;
     constant I_RDATA_REGS       : integer := 3;
     -------------------------------------------------------------------------------
     -- 定数
@@ -367,7 +367,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     constant O_REGION           : AXI4_AREGION_TYPE:= (others => '0');
     constant O_REQ_REGS         : integer := 1;
     constant O_ACK_REGS         : integer := 1;
-    constant O_RES_QUEUE        : integer := 2;
+    constant O_RES_QUEUE        : integer := O_QUEUE_SIZE;
     constant O_RES_REGS         : integer := 1;
     -------------------------------------------------------------------------------
     -- レジスタアクセス用の信号群.
@@ -1267,7 +1267,7 @@ begin
         constant MR_BUF_SIZE        : integer := 4;
         constant MR_BUF_WIDTH       : integer := 5;
         constant MR_SIZE_BITS       : integer := MR_BUF_SIZE+1;
-        constant MR_QUEUE_SIZE      : integer := I_QUEUE_SIZE;
+        constant MR_QUEUE_SIZE      : integer := 1;
         constant MR_RDATA_REGS      : integer := 1;
         constant MR_ACK_REGS        : integer := 1;
         constant MR_MAX_XFER_SIZE   : integer := 4;
@@ -1314,7 +1314,7 @@ begin
         constant MW_BUF_SIZE        : integer := 4;
         constant MW_BUF_WIDTH       : integer := 5;
         constant MW_SIZE_BITS       : integer := MR_BUF_SIZE+1;
-        constant MW_QUEUE_SIZE      : integer := O_QUEUE_SIZE;
+        constant MW_QUEUE_SIZE      : integer := 1;
         constant MW_REQ_REGS        : integer := 1;
         constant MW_ACK_REGS        : integer := 1;
         constant MW_RESP_REGS       : integer := 1;
