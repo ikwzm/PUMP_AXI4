@@ -12,7 +12,7 @@ proc init_gui { IPINST } {
 	set Page1           [ ipgui::add_page  $IPINST -name "INTAKE I/F" -layout vertical]
 	set tabgroup2       [ ipgui::add_group $IPINST -parent $Page1     -name {INTAKE AXI I/F} -layout vertical]
 	set I_MAX_XFER_SIZE [ ipgui::add_param $IPINST -parent $tabgroup2 -name I_MAX_XFER_SIZE]
-	set I_QUEUE_SIZE    [ ipgui::add_param $IPINST -parent $tabgroup3 -name I_QUEUE_SIZE]
+	set I_QUEUE_SIZE    [ ipgui::add_param $IPINST -parent $tabgroup2 -name I_QUEUE_SIZE]
 	set I_ADDR_WIDTH    [ ipgui::add_param $IPINST -parent $tabgroup2 -name I_ADDR_WIDTH]
 	set I_DATA_WIDTH    [ ipgui::add_param $IPINST -parent $tabgroup2 -name I_DATA_WIDTH]
 	set I_AXI_ID        [ ipgui::add_param $IPINST -parent $tabgroup2 -name I_AXI_ID]

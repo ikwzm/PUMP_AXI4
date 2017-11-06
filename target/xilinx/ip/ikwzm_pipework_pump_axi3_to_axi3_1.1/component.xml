@@ -4442,6 +4442,17 @@
       <spirit:enumeration spirit:text="USE">1</spirit:enumeration>
       <spirit:enumeration spirit:text="NO USE">0</spirit:enumeration>
     </spirit:choice>
+    <spirit:choice>
+      <spirit:name>choices_8</spirit:name>
+      <spirit:enumeration spirit:text="1">1</spirit:enumeration>
+      <spirit:enumeration spirit:text="2">2</spirit:enumeration>
+      <spirit:enumeration spirit:text="3">3</spirit:enumeration>
+      <spirit:enumeration spirit:text="4">4</spirit:enumeration>
+      <spirit:enumeration spirit:text="5">5</spirit:enumeration>
+      <spirit:enumeration spirit:text="6">6</spirit:enumeration>
+      <spirit:enumeration spirit:text="7">7</spirit:enumeration>
+      <spirit:enumeration spirit:text="8">8</spirit:enumeration>
+    </spirit:choice>
   </spirit:choices>
   <spirit:fileSets>
     <spirit:fileSet>
@@ -4544,7 +4555,7 @@
     <spirit:parameter>
       <spirit:name>O_QUEUE_SIZE</spirit:name>
       <spirit:displayName>OUTLET AXI I/F PIPELINE QUEUE SIZE</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.O_QUEUE_SIZE" spirit:choiceRef="choices_5" spirit:order="1400">4</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.O_QUEUE_SIZE" spirit:choiceRef="choices_8" spirit:order="1400">4</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>O_AUSER_WIDTH</spirit:name>
@@ -4584,7 +4595,7 @@
     <spirit:parameter>
       <spirit:name>I_QUEUE_SIZE</spirit:name>
       <spirit:displayName>INTAKE AXI I/F PIPELINE QUEUE SIZE</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.I_QUEUE_SIZE" spirit:choiceRef="choices_5" spirit:order="2200">4</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.I_QUEUE_SIZE" spirit:choiceRef="choices_8" spirit:order="2200">4</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>I_AUSER_WIDTH</spirit:name>
