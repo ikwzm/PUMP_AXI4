@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
---!     @file    pump_axi4_to_axi4_test_bench_32_32.vhd
+--!     @file    pump_axi4_to_axi4_test_bench_32_32_test_7.vhd
 --!     @brief   Test Bench for Pump Sample Module (AXI4 to AXI4)
---!     @version 0.2.0
---!     @date    2014/2/22
+--!     @version 1.8.6
+--!     @date    2021/5/25
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2014 Ichiro Kawazome
+--      Copyright (C) 2012-2021 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -40,25 +40,24 @@
 library ieee;
 use     ieee.std_logic_1164.all;
 entity  PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_TEST_7 is
+    generic (
+        NAME            :  STRING  := string'("PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32");
+        SCENARIO_FILE   :  STRING  := string'("pump_axi4_to_axi4_test_bench_32_32_test_7.snr");
+        I_DATA_WIDTH    :  integer := 32;
+        O_DATA_WIDTH    :  integer := 32;
+        MAX_XFER_SIZE   :  integer := 6;
+        FINISH_ABORT    :  boolean := FALSE
+    );
 end     PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_TEST_7;
 architecture MODEL of PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32_TEST_7 is
-    component  PUMP_AXI4_TO_AXI4_TEST_BENCH
-        generic (
-            NAME            : STRING;
-            SCENARIO_FILE   : STRING;
-            I_DATA_WIDTH    : integer;
-            O_DATA_WIDTH    : integer;
-            MAX_XFER_SIZE   : integer
-        );
-    end component;
 begin
-    TB: PUMP_AXI4_TO_AXI4_TEST_BENCH
-        generic map (
-            NAME            => string'("PUMP_AXI4_TO_AXI4_TEST_BENCH_32_32"),
-            SCENARIO_FILE   => string'("pump_axi4_to_axi4_test_bench_32_32_test_7.snr"),
-            I_DATA_WIDTH    => 32,
-            O_DATA_WIDTH    => 32,
-            MAX_XFER_SIZE   =>  6
-        );        
+    TB: entity WORK.PUMP_AXI4_TO_AXI4_TEST_BENCH generic map (
+        NAME            => NAME         ,  
+        SCENARIO_FILE   => SCENARIO_FILE,
+        I_DATA_WIDTH    => I_DATA_WIDTH ,
+        O_DATA_WIDTH    => O_DATA_WIDTH ,
+        MAX_XFER_SIZE   => MAX_XFER_SIZE,
+        FINISH_ABORT    => FINISH_ABORT
+    );        
 end MODEL;
 

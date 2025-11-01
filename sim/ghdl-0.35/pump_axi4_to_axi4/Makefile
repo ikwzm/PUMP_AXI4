@@ -1,6 +1,6 @@
 
-DUMMY_PLUG_WORK_PATH = ../../../Dummy_Plug/sim/ghdl/dummy_plug
-PIPEWORK_WORK_PATH   = ../../../PipeWork/sim/ghdl
+DUMMY_PLUG_WORK_PATH = ../../../Dummy_Plug/sim/ghdl-0.35/dummy_plug
+PIPEWORK_WORK_PATH   = ../../../PipeWork/sim/ghdl-0.35
 SRC_PATH             = ../../../src
 
 GHDL       = ghdl

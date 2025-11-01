@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_core.vhd
 --!     @brief   Pump Core Module (AXI4 to AXI4)
---!     @version 1.0.0
---!     @date    2015/5/6
+--!     @version 1.8.1
+--!     @date    2020/10/2
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2015 Ichiro Kawazome
+--      Copyright (C) 2012-2020 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -363,6 +363,7 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         I_OPEN          : out std_logic;
         I_RUNNING       : out std_logic;
         I_DONE          : out std_logic;
+        I_NONE          : out std_logic;
         I_ERROR         : out std_logic;
     -------------------------------------------------------------------------------
     -- Pump Outlet Status Signals.
@@ -370,6 +371,7 @@ entity  PUMP_AXI4_TO_AXI4_CORE is
         O_OPEN          : out std_logic;
         O_RUNNING       : out std_logic;
         O_DONE          : out std_logic;
+        O_NONE          : out std_logic;
         O_ERROR         : out std_logic
     );
 end PUMP_AXI4_TO_AXI4_CORE;
@@ -475,6 +477,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     signal   i_req_burst_type   : AXI4_ABURST_TYPE;
     signal   i_req_first        : std_logic;
     signal   i_req_last         : std_logic;
+    signal   i_req_none         : std_logic;
     signal   i_req_valid        : std_logic;
     signal   i_req_ready        : std_logic;
     signal   i_xfer_busy        : std_logic;
@@ -506,6 +509,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4_CORE is
     signal   o_req_burst_type   : AXI4_ABURST_TYPE;
     signal   o_req_first        : std_logic;
     signal   o_req_last         : std_logic;
+    signal   o_req_none         : std_logic;
     signal   o_req_valid        : std_logic;
     signal   o_req_ready        : std_logic;
     signal   o_xfer_busy        : std_logic;
@@ -1008,6 +1012,7 @@ begin
             I_REQ_BUF_PTR       => i_req_buf_ptr   , -- Out :
             I_REQ_FIRST         => i_req_first     , -- Out :
             I_REQ_LAST          => i_req_last      , -- Out :
+            I_REQ_NONE          => i_req_none      , -- Out :
             I_REQ_READY         => i_req_ready     , -- In  :
         ---------------------------------------------------------------------------
         -- Intake Transaction Command Acknowledge Signals.
@@ -1052,6 +1057,7 @@ begin
             I_OPEN              => I_OPEN          , -- Out :
             I_RUNNING           => I_RUNNING       , -- Out :
             I_DONE              => I_DONE          , -- Out :
+            I_NONE              => I_NONE          , -- Out :
             I_ERROR             => I_ERROR         , -- Out :
         ---------------------------------------------------------------------------
         -- Outlet Transaction Command Request Signals.
@@ -1062,6 +1068,7 @@ begin
             O_REQ_BUF_PTR       => o_req_buf_ptr   , -- Out :
             O_REQ_FIRST         => o_req_first     , -- Out :
             O_REQ_LAST          => o_req_last      , -- Out :
+            O_REQ_NONE          => o_req_none      , -- Out :
             O_REQ_READY         => o_req_ready     , -- In  :
         ---------------------------------------------------------------------------
         -- Outlet Transaction Command Response Signals.
@@ -1106,6 +1113,7 @@ begin
             O_OPEN              => O_OPEN          , -- Out :
             O_RUNNING           => O_RUNNING       , -- Out :
             O_DONE              => O_DONE          , -- Out :
+            O_NONE              => O_NONE          , -- Out :
             O_ERROR             => O_ERROR           -- Out :
         );
     -------------------------------------------------------------------------------

@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4.vhd
 --!     @brief   Pump Sample Module (AXI4 to AXI4)
---!     @version 1.1.0
---!     @date    2017/11/5
+--!     @version 1.8.5
+--!     @date    2021/5/18
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2017 Ichiro Kawazome
+--      Copyright (C) 2012-2021 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -374,6 +374,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     -------------------------------------------------------------------------------
     signal   regs_load          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
     signal   regs_wbit          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
+    signal   regs_rena          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
     signal   regs_rbit          : std_logic_vector(REGS_DATA_BITS   -1 downto 0);
     signal   pump_load          : std_logic_vector(CORE_DATA_BITS   -1 downto 0);
     signal   pump_wbit          : std_logic_vector(CORE_DATA_BITS   -1 downto 0);
@@ -889,6 +890,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     signal   core_o_open        : std_logic;
     signal   core_o_run         : std_logic;
     signal   core_o_done        : std_logic;
+    signal   core_o_none        : std_logic;
     signal   core_o_error       : std_logic;
     signal   core_o_stat        : std_logic_vector(CO_STAT_RESV_HI downto CO_STAT_RESV_LO);
     signal   core_o_auser       : std_logic_vector(O_AUSER_WIDTH-1 downto 0);
@@ -898,6 +900,7 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
     signal   core_i_open        : std_logic;
     signal   core_i_run         : std_logic;
     signal   core_i_done        : std_logic;
+    signal   core_i_none        : std_logic;
     signal   core_i_error       : std_logic;
     signal   core_i_stat        : std_logic_vector(CI_STAT_RESV_HI downto CI_STAT_RESV_LO);
     signal   core_i_auser       : std_logic_vector(I_AUSER_WIDTH-1 downto 0);
@@ -1120,10 +1123,12 @@ architecture RTL of PUMP_AXI4_TO_AXI4 is
             I_OPEN          : out std_logic;
             I_RUNNING       : out std_logic;
             I_DONE          : out std_logic;
+            I_NONE          : out std_logic;
             I_ERROR         : out std_logic;
             O_OPEN          : out std_logic;
             O_RUNNING       : out std_logic;
             O_DONE          : out std_logic;
+            O_NONE          : out std_logic;
             O_ERROR         : out std_logic
         );
     end component;
@@ -1254,6 +1259,7 @@ begin
                 O_CKE           => sig_1             , -- In  :
                 O_WDATA         => regs_wbit         , -- Out :
                 O_WLOAD         => regs_load         , -- Out :
+                O_RENAB         => regs_rena         , -- Out :
                 O_RDATA         => regs_rbit           -- In  :
             );                                         -- 
     end block;
@@ -2362,6 +2368,7 @@ begin
             I_OPEN          => core_i_open       , -- Out :
             I_RUNNING       => core_i_run        , -- Out :
             I_DONE          => core_i_done       , -- Out :
+            I_NONE          => core_i_none       , -- Out :
             I_ERROR         => core_i_error      , -- Out :
         ---------------------------------------------------------------------------
         -- Pump Outlet Status Signals.
@@ -2369,6 +2376,7 @@ begin
             O_OPEN          => core_o_open       , -- Out :
             O_RUNNING       => core_o_run        , -- Out :
             O_DONE          => core_o_done       , -- Out :
+            O_NONE          => core_o_none       , -- Out :
             O_ERROR         => core_o_error        -- Out :
         );
     regs_rbit(CO_CTRL_RESV_POS) <= '0';

@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    pump_axi4_to_axi4_test_bench.vhd
 --!     @brief   Test Bench for Pump Sample Module (AXI4 to AXI4)
---!     @version 1.1.0
---!     @date    2017/11/5
+--!     @version 1.8.6
+--!     @date    2021/5/25
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2017 Ichiro Kawazome
+--      Copyright (C) 2012-2021 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,8 @@ entity  PUMP_AXI4_TO_AXI4_TEST_BENCH is
         I_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
         O_DATA_WIDTH    : integer range 8 to AXI4_DATA_MAX_WIDTH := 32;
         MAX_XFER_SIZE   : integer                                :=  6;
-        BUF_DEPTH       : integer                                := 12
+        BUF_DEPTH       : integer                                := 12;
+        FINISH_ABORT    : boolean := FALSE
     );
 end     PUMP_AXI4_TO_AXI4_TEST_BENCH;
 -----------------------------------------------------------------------------------
@@ -1345,10 +1346,13 @@ begin
     -- 
     -------------------------------------------------------------------------------
     process begin
+        loop
+            ACLK <= '0'; wait for PERIOD / 2;
+            ACLK <= '1'; wait for PERIOD / 2;
+            exit when(C_FINISH = '1');
+        end loop;
         ACLK <= '0';
-        wait for PERIOD / 2;
-        ACLK <= '1';
-        wait for PERIOD / 2;
+        wait;
     end process;
 
     ARESETn  <= '1' when (RESET = '0') else '0';
@@ -1386,7 +1390,21 @@ begin
         WRITE(L,T & "  Mismatch : ");WRITE(L,O_REPORT.mismatch_count);WRITELINE(OUTPUT,L);
         WRITE(L,T & "  Warning  : ");WRITE(L,O_REPORT.warning_count );WRITELINE(OUTPUT,L);
         WRITE(L,T);                                                   WRITELINE(OUTPUT,L);
-        assert FALSE report "Simulation complete." severity FAILURE;
+        assert (C_REPORT.error_count    = 0 and
+                M_REPORT.error_count    = 0 and
+                I_REPORT.error_count    = 0 and
+                O_REPORT.error_count    = 0)
+            report "Simulation complete(error)."    severity FAILURE;
+        assert (C_REPORT.mismatch_count = 0 and
+                M_REPORT.mismatch_count = 0 and
+                I_REPORT.mismatch_count = 0 and
+                O_REPORT.mismatch_count = 0)
+            report "Simulation complete(mismatch)." severity FAILURE;
+        if (FINISH_ABORT) then
+            assert FALSE report "Simulation complete(success)."  severity FAILURE;
+        else
+            assert FALSE report "Simulation complete(success)."  severity NOTE;
+        end if;
         wait;
     end process;
     
