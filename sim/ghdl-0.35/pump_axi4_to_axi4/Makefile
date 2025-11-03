@@ -1,10 +1,12 @@
-
-DUMMY_PLUG_WORK_PATH = ../../../Dummy_Plug/sim/ghdl-0.35/dummy_plug
-PIPEWORK_WORK_PATH   = ../../../PipeWork/sim/ghdl-0.35
+DUMMY_PLUG_PATH      = ../../../Dummy_Plug
+DUMMY_PLUG_WORK_PATH = $(DUMMY_PLUG_PATH)/sim/ghdl-0.35/dummy_plug
+PIPEWORK_PATH        = ../../../PipeWork
+PIPEWORK_WORK_PATH   = $(PIPEWORK_PATH)/sim/ghdl-0.35
+PIPEWORK_TOOLS_PATH  = $(PIPEWORK_PATH)/tools
 SRC_PATH             = ../../../src
 
 GHDL       = ghdl
-GHDLFLAGS  = --mb-comments -P$(DUMMY_PLUG_WORK_PATH) -P$(PIPEWORK_WORK_PATH)
+GHDLFLAGS  = --mb-comments
 
 DUT_COMPONENTS = pump_axi4_to_axi4_core    \
                  pump_axi4_to_axi4         \
@@ -29,16 +31,16 @@ $(TEST_BENCH) : $(addsuffix .o,$(TEST_BENCH)) $(addsuffix .snr,$(TEST_BENCH)) DU
 
 DUT : $(addsuffix .o,$(DUT_COMPONENTS))
 
-pump_axi4_to_axi4.o                           : $(SRC_PATH)/main/vhdl/pump_axi4_to_axi4.vhd 
+pump_axi4_to_axi4.o                           : $(SRC_PATH)/main/vhdl/pump_axi4_to_axi4.vhd pipework.o
 	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
 
-pump_axi3_to_axi3.o                           : $(SRC_PATH)/main/vhdl/pump_axi3_to_axi3.vhd 
+pump_axi3_to_axi3.o                           : $(SRC_PATH)/main/vhdl/pump_axi3_to_axi3.vhd  pipework.o
 	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
 
-pump_axi4_to_axi4_core.o                      : $(SRC_PATH)/main/vhdl/pump_axi4_to_axi4_core.vhd 
+pump_axi4_to_axi4_core.o                      : $(SRC_PATH)/main/vhdl/pump_axi4_to_axi4_core.vhd pipework.o
 	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
 
-pump_axi4_to_axi4_test_bench.o                : $(SRC_PATH)/test/vhdl/pump_axi4_to_axi4_test_bench.vhd 
+pump_axi4_to_axi4_test_bench.o                : $(SRC_PATH)/test/vhdl/pump_axi4_to_axi4_test_bench.vhd dummy_plug.o
 	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
 
 pump_axi4_to_axi4_test_bench_32_32.o          : $(SRC_PATH)/test/vhdl/pump_axi4_to_axi4_test_bench_32_32.vhd        pump_axi4_to_axi4_test_bench.o
@@ -58,6 +60,18 @@ pump_axi4_to_axi4_test_bench_64_32.o          : $(SRC_PATH)/test/vhdl/pump_axi4_
 
 pump_axi4_to_axi4_test_bench_64_64.o          : $(SRC_PATH)/test/vhdl/pump_axi4_to_axi4_test_bench_64_64.vhd        pump_axi4_to_axi4_test_bench.o
 	 $(GHDL) -a $(GHDLFLAGS) --work=WORK $<
+
+pipework.vhd   : libs.yml
+	$(PIPEWORK_TOOLS_PATH)/vhdl-archiver.rb  --config libs.yml --library PipeWork --archive pipework.vhd
+
+pipework.o     : pipework.vhd
+	 $(GHDL) -a $(GHDLFLAGS) --work=PIPEWORK $<
+
+dummy_plug.vhd : libs.yml
+	$(PIPEWORK_TOOLS_PATH)/vhdl-archiver.rb  --config libs.yml --library Dummy_Plug --archive dummy_plug.vhd
+
+dummy_plug.o   : dummy_plug.vhd
+	 $(GHDL) -a $(GHDLFLAGS) --work=DUMMY_PLUG $<
 
 pump_axi4_to_axi4_test_bench_32_32.snr        : $(SRC_PATH)/test/scenarios/make_scenario.rb
 	 $(SRC_PATH)/test/scenarios/make_scenario.rb \

@@ -13,11 +13,11 @@ PUMP AXI4 to AXI4 (PipeWork Example)
 
 * Xilinx ISE14.2
 * Xilinx Vivado 2014.1
-
+* Xilinx Vivado 2025.2
 
 ### IP for Xilinx
 
-./target/xilinx/ip/ikwzm_pipework_pump_axi3_to_axi3_1.2
+./target/xilinx/ip/ikwzm_pipework_pump_axi3_to_axi3_2.4
 
 ### シミュレーション
 
