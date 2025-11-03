@@ -1,0 +1,13 @@
+
+- Global:
+    Print    :  true
+
+- Library:
+    Name     :  pipework
+    PathList :  ["../../PipeWork/src/"]
+    Use      :  ["SDPRAM(XILINX_ULTRASCALE_AUTO_SELECT)", "QUEUE_ARBITER(ONE_HOT_ARCH)"]
+
+- Library:
+    Name     :  work
+    PathList :  ["../../src/main/vhdl/"]
+    Top      :  ["PUMP_AXI3_TO_AXI3","PUMP_AXI4_TO_AXI4"]
